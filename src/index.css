@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+@theme {
+  /* App Background */
+  --color-app-bg: #1e1e2e;
+  --color-pane-bg: #181825;
+  --color-border: #313244;
+
+  /* Text */
+  --color-text-primary: #cdd6f4;
+  --color-text-secondary: #6c7086;
+  --color-link: #89b4fa;
+
+  /* Accents */
+  --color-context-tag-bg: #ffffff;
+  --color-context-tag-text: #1967D2;
+  --color-highlight: #673ab7;
+
+  /* Task Status */
+  --color-status-inbox-bg: #FBBC05;
+  --color-status-inbox-text: #000000;
+  --color-status-inbox-border: #D4990A;
+
+  --color-status-next-bg: #0F9D58;
+  --color-status-next-text: #000000;
+  --color-status-next-border: #0B7A42;
+
+  --color-status-queued-bg: #1967D2;
+  --color-status-queued-text: #ffffff;
+  --color-status-queued-border: #1256B0;
+
+  --color-status-scheduled-bg: #ADE8F4;
+  --color-status-scheduled-text: #000000;
+  --color-status-scheduled-border: #378ADD;
+
+  --color-status-waiting-bg: #DB4437;
+  --color-status-waiting-text: #000000;
+  --color-status-waiting-border: #B03228;
+
+  --color-status-someday-bg: #ffffff;
+  --color-status-someday-text: #000000;
+  --color-status-someday-border: #BBBBBB;
+
+  --color-status-done-bg: #000000;
+  --color-status-done-text: #ffffff;
+  --color-status-done-border: #333333;
+
+  /* Project Status */
+  --color-status-planning-bg: #ffffff;
+  --color-status-planning-text: #000000;
+  --color-status-planning-border: #BBBBBB;
+
+  --color-status-inprogress-bg: #1967D2;
+  --color-status-inprogress-text: #ffffff;
+  --color-status-inprogress-border: #1256B0;
+
+  --color-status-stalled-bg: #673ab7;
+  --color-status-stalled-text: #ffffff;
+  --color-status-stalled-border: #4a2a8a;
+
+  --color-status-completed-bg: #000000;
+  --color-status-completed-text: #ffffff;
+  --color-status-completed-border: #333333;
+
+  /* Priority */
+  --color-priority-stat-bg: #DB4437;
+  --color-priority-stat-text: #ffffff;
+
+  --color-priority-urgent-bg: #E8710A;
+  --color-priority-urgent-text: #ffffff;
+
+  --color-priority-eod-bg: #FBBC05;
+  --color-priority-eod-text: #000000;
+
+  --color-priority-routine-bg: #F1EFE8;
+  --color-priority-routine-text: #5F5E5A;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: #1e1e2e;
+  color: #cdd6f4;
+  font-family: system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
