@@ -56,10 +56,10 @@ export async function getPersonProjects(personId) {
 
 // ─── Create ───────────────────────────────────────────────────────────────────
 
-export async function createPerson({ first_name, last_name }) {
+export async function createPerson({ first_name, last_name, ...rest }) {
   const { data, error } = await supabase
     .from('people')
-    .insert({ first_name, last_name, status: 'inbox' })
+    .insert({ first_name, last_name, status: 'inbox', ...rest })
     .select()
     .single()
   if (error) throw error

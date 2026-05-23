@@ -152,7 +152,7 @@ export async function getDailyStats() {
   const today = new Date().toISOString().split('T')[0]
 
   const [inProgress, nextActions, waiting, dueToday, stalled] = await Promise.all([
-    supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('status', 'next_action'),
+    supabase.from('projects').select('id', { count: 'exact', head: true }).eq('status', 'in_progress'),
     supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('status', 'next_action'),
     supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('status', 'waiting'),
     supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('due_date', today),
