@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useDaily } from '../hooks/useDaily'
 import { useTasks } from '../hooks/useTasks'
 import { useProjects } from '../hooks/useProjects'
@@ -51,6 +52,7 @@ function Divider() {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Daily() {
+  const navigate = useNavigate()
   const { note, habitHistory, stats, loading, error, toggleHabit, addNote, updateTopOfMind, refreshStats } = useDaily()
 
   // Quick capture hooks (separate from the section hooks so modals don't re-render sections)
@@ -183,7 +185,7 @@ export default function Daily() {
               key={to}
               variant="action"
               size="sm"
-              onClick={() => window.location.href = to}
+              onClick={() => navigate(to)}
             >
               {label}
             </Button>
