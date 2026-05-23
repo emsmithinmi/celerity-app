@@ -24,6 +24,11 @@ jobs:
         run: npm ci
 
       - name: Build
+        # VITE_ vars are baked into the JS bundle at build time.
+        # The Supabase anon key is intentionally public (RLS enforces security).
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: npm run build
 
       - name: Deploy to Cloudflare Pages
