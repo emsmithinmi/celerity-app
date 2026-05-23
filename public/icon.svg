@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="#1e1e2e"/>
+
+  <!-- Outer ring accent -->
+  <circle cx="256" cy="256" r="200" fill="none" stroke="#313244" stroke-width="8"/>
+
+  <!-- Checkmark circle -->
+  <circle cx="256" cy="256" r="160" fill="#181825"/>
+
+  <!-- GTD checkmark — three task lines with a check on the first -->
+  <!-- Line 1 (done — with check) -->
+  <rect x="176" y="192" width="120" height="14" rx="7" fill="#45475a"/>
+  <circle cx="155" cy="199" r="14" fill="#0F9D58"/>
+  <polyline points="148,199 153,205 164,193" fill="none" stroke="#000" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Line 2 (next action — blue dot) -->
+  <rect x="176" y="249" width="140" height="14" rx="7" fill="#585b70"/>
+  <circle cx="155" cy="256" r="14" fill="#89b4fa"/>
+  <polyline points="148,256 153,262 164,250" fill="none" stroke="#000" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Line 3 (queued — empty) -->
+  <rect x="176" y="306" width="100" height="14" rx="7" fill="#45475a"/>
+  <circle cx="155" cy="313" r="14" fill="none" stroke="#585b70" stroke-width="3"/>
+</svg>
