@@ -83,6 +83,15 @@ export async function activatePerson(id) {
   return updatePerson(id, { status: 'active' })
 }
 
+export async function deletePerson(id) {
+  // Remove junction table links first, then delete the person
+  await supabase.from('task_people').delete().eq('person_id', id)
+  await supabase.from('project_people').delete().eq('person_id', id)
+  await supabase.from('people_comments').delete().eq('person_id', id)
+  const { error } = await supabase.from('people').delete().eq('id', id)
+  if (error) throw error
+}
+
 // ─── Comments ─────────────────────────────────────────────────────────────────
 
 export async function addPersonComment(personId, body) {

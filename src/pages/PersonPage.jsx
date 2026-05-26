@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { Trash2 } from 'lucide-react'
 import {
-  getPerson, updatePerson, activatePerson,
+  getPerson, updatePerson, activatePerson, deletePerson,
   getPersonTasks, getPersonProjects,
 } from '../lib/api/people'
 import Button from '../components/ui/Button'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
 import { StatusPill } from '../components/ui'
 import PersonComments from '../components/people/PersonComments'
 import { PEOPLE_STATUSES } from '../lib/constants'
@@ -13,6 +15,21 @@ const inputCls  = 'w-full px-3 py-2 rounded-lg text-sm border outline-none bg-tr
 const inputStyle = { borderColor: '#313244', color: '#cdd6f4' }
 
 const CONTACT_TYPES = ['colleague', 'friend', 'family', 'client', 'vendor', 'mentor', 'other']
+
+function TrashBtn({ onClick, title = 'Remove contact' }) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className="flex items-center justify-center rounded-md transition-colors duration-150"
+      style={{ width: 30, height: 30, backgroundColor: '#DB4437', color: '#fff' }}
+      onMouseEnter={e => e.currentTarget.style.backgroundColor = '#c53929'}
+      onMouseLeave={e => e.currentTarget.style.backgroundColor = '#DB4437'}
+    >
+      <Trash2 size={14} />
+    </button>
+  )
+}
 
 function ReadField({ label, value, fallback = '—' }) {
   return (
@@ -38,8 +55,10 @@ export default function PersonPage() {
   const [loading,  setLoading]  = useState(true)
   const [editing,  setEditing]  = useState(false)
   const [draft,    setDraft]    = useState(null)
-  const [saving,    setSaving]    = useState(false)
-  const [saveError, setSaveError] = useState(null)
+  const [saving,      setSaving]      = useState(false)
+  const [saveError,   setSaveError]   = useState(null)
+  const [showDelete,  setShowDelete]  = useState(false)
+  const [deleting,    setDeleting]    = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -104,6 +123,16 @@ export default function PersonPage() {
   const handleActivate = async () => {
     const updated = await activatePerson(person.id)
     setPerson(prev => ({ ...prev, ...updated }))
+  }
+
+  const handleDelete = async () => {
+    setDeleting(true)
+    try {
+      await deletePerson(person.id)
+      navigate('/people')
+    } finally {
+      setDeleting(false)
+    }
   }
 
   const d = editing ? draft : person
@@ -338,25 +367,35 @@ export default function PersonPage() {
           </div>
         </section>
 
-        {/* Actions */}
-        {(person.status === 'inbox' || person.status === 'stale' || person.is_stale) && (
-          <section className="pb-6">
-            <h2 className="text-base font-semibold mb-3" style={{ color: '#cdd6f4' }}>What's Next?</h2>
-            <div className="flex flex-wrap gap-2">
-              {(person.status === 'inbox' || person.status === 'stale' || person.is_stale) && (
-                <Button variant="success" size="sm" onClick={handleActivate}>
-                  {person.status === 'inbox' ? 'Activate Contact' : 'Reactivate Contact'}
-                </Button>
-              )}
-              {person.email && (
-                <Button variant="secondary" size="sm" onClick={() => window.open(`mailto:${person.email}`)}>
-                  Send Email
-                </Button>
-              )}
-            </div>
-          </section>
-        )}
+        {/* What's Next */}
+        <section className="pb-6">
+          <h2 className="text-base font-semibold mb-3" style={{ color: '#cdd6f4' }}>What's Next?</h2>
+          <div className="flex flex-wrap gap-2">
+            {(person.status === 'inbox' || person.status === 'stale' || person.is_stale) && (
+              <Button variant="success" size="sm" onClick={handleActivate}>
+                {person.status === 'inbox' ? 'Activate Contact' : 'Reactivate Contact'}
+              </Button>
+            )}
+            {person.email && (
+              <Button variant="secondary" size="sm" onClick={() => window.open(`mailto:${person.email}`)}>
+                Send Email
+              </Button>
+            )}
+            <TrashBtn onClick={() => setShowDelete(true)} title="Remove contact" />
+          </div>
+        </section>
       </div>
+
+      <ConfirmDialog
+        open={showDelete}
+        onClose={() => { if (!deleting) setShowDelete(false) }}
+        onConfirm={handleDelete}
+        title="Remove this contact?"
+        message="This permanently deletes the contact and all their comments. Their linked tasks and projects are not deleted."
+        confirmLabel="Remove"
+        variant="danger"
+        loading={deleting}
+      />
     </div>
   )
 }

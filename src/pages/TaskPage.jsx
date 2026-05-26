@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { Trash2 } from 'lucide-react'
 import {
   getTask, updateTask, completeTask, didIt,
   moveToNextAction, moveToQueued, moveToWaiting,
@@ -24,6 +25,21 @@ function isClarified(task) {
 
 const inputCls = 'w-full px-3 py-2 rounded-lg text-sm border outline-none bg-transparent'
 const inputStyle = { borderColor: '#313244', color: '#cdd6f4' }
+
+function TrashBtn({ onClick, title = 'Scrap it' }) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className="flex items-center justify-center rounded-md transition-colors duration-150"
+      style={{ width: 30, height: 30, backgroundColor: '#DB4437', color: '#fff' }}
+      onMouseEnter={e => e.currentTarget.style.backgroundColor = '#c53929'}
+      onMouseLeave={e => e.currentTarget.style.backgroundColor = '#DB4437'}
+    >
+      <Trash2 size={14} />
+    </button>
+  )
+}
 
 function ReadField({ label, value, fallback = '—' }) {
   return (
@@ -414,7 +430,7 @@ export default function TaskPage() {
                 {task.status === 'inbox' && (
                   <>
                     <Button variant="danger"  size="sm" onClick={() => setShowDidIt(true)}>{TASK_ACTIONS.did_it}</Button>
-                    <Button variant="ghost"   size="sm" onClick={() => setShowDiscard(true)}>{TASK_ACTIONS.discard}</Button>
+                    <TrashBtn onClick={() => setShowDiscard(true)} />
                     {clarified && (
                       <>
                         <Button variant="success"   size="sm" onClick={handleClarifyRoute}>{TASK_ACTIONS.next_action}</Button>

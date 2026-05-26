@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { Trash2 } from 'lucide-react'
 import {
   getProject, updateProject, startPlanning, startProject,
   completeProject, archiveProject, highlightProject, scrapeProject,
@@ -13,6 +14,21 @@ import HighlightModal from '../components/tasks/HighlightModal'
 import ProjectComments from '../components/projects/ProjectComments'
 import ProjectTaskList from '../components/projects/ProjectTaskList'
 import { PRIORITIES, PROJECT_ACTIONS } from '../lib/constants'
+
+function TrashBtn({ onClick, title = 'Scrap it' }) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className="flex items-center justify-center rounded-md transition-colors duration-150"
+      style={{ width: 30, height: 30, backgroundColor: '#DB4437', color: '#fff' }}
+      onMouseEnter={e => e.currentTarget.style.backgroundColor = '#c53929'}
+      onMouseLeave={e => e.currentTarget.style.backgroundColor = '#DB4437'}
+    >
+      <Trash2 size={14} />
+    </button>
+  )
+}
 
 const PLAN_REQUIRED = ['area', 'description', 'start_date', 'end_date']
 function isClarified(project) {
@@ -358,9 +374,7 @@ export default function ProjectPage() {
                     <Button variant="primary" size="sm" onClick={handleStartPlanning} disabled={!clarified}>
                       {PROJECT_ACTIONS.start_planning}
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => setShowDiscard(true)}>
-                      {PROJECT_ACTIONS.discard}
-                    </Button>
+                    <TrashBtn onClick={() => setShowDiscard(true)} />
                   </>
                 )}
                 {project.status === 'planning' && (
@@ -369,7 +383,7 @@ export default function ProjectPage() {
                       {PROJECT_ACTIONS.start}
                     </Button>
                     <Button variant="secondary" size="sm" onClick={handleComplete}>{PROJECT_ACTIONS.complete}</Button>
-                    <Button variant="ghost" size="sm" onClick={() => setShowDiscard(true)}>{PROJECT_ACTIONS.discard}</Button>
+                    <TrashBtn onClick={() => setShowDiscard(true)} />
                   </>
                 )}
                 {project.status === 'in_progress' && (
@@ -377,7 +391,7 @@ export default function ProjectPage() {
                     <Button variant="success" size="sm" onClick={handleComplete} disabled={completing}>
                       {completing ? 'Completing…' : PROJECT_ACTIONS.complete}
                     </Button>
-                    <Button variant="danger" size="sm" onClick={() => setShowDiscard(true)}>Scrap it</Button>
+                    <TrashBtn onClick={() => setShowDiscard(true)} />
                   </>
                 )}
                 {(project.status === 'stalled' || project.status === 'waiting') && (
@@ -387,7 +401,7 @@ export default function ProjectPage() {
                         ? 'Move a task to Next Actions to un-stall this project.'
                         : 'Clear blockers on waiting tasks to resume.'}
                     </p>
-                    <Button variant="danger" size="sm" onClick={() => setShowDiscard(true)}>Scrap it</Button>
+                    <TrashBtn onClick={() => setShowDiscard(true)} />
                   </>
                 )}
               </div>
