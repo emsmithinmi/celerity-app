@@ -6,8 +6,8 @@ import { useProjects } from '../hooks/useProjects'
 import { createPerson } from '../lib/api/people'
 import { updateChallenge } from '../lib/api/daily'
 
+import DailyQuote     from '../components/daily/DailyQuote'
 import StatCards      from '../components/daily/StatCards'
-import QuoteBlock     from '../components/daily/QuoteBlock'
 import TopOfMind      from '../components/daily/TopOfMind'
 import AgendaSection  from '../components/daily/AgendaSection'
 import ProjectsSection from '../components/daily/ProjectsSection'
@@ -35,7 +35,7 @@ function DateHeader() {
   const now = new Date()
   return (
     <div className="text-center py-4">
-      <p className="text-4xl font-bold tracking-widest uppercase" style={{ color: '#FB9039' }}>
+      <p className="text-4xl font-normal tracking-widest uppercase" style={{ color: '#FB9039' }}>
         {DAYS[now.getDay()]}
       </p>
       <div className="my-3 h-px mx-auto w-20" style={{ backgroundColor: '#313244' }} />
@@ -98,6 +98,7 @@ export default function Daily() {
 
         {/* Date */}
         <DateHeader />
+        <DailyQuote />
         <Divider />
 
         {/* Quick action bar */}
@@ -122,14 +123,6 @@ export default function Daily() {
         {/* Stat cards */}
         <StatCards stats={stats} />
         <Divider />
-
-        {/* Quote */}
-        {note?.quote && (
-          <>
-            <QuoteBlock quote={note.quote} author={note.quote_author} />
-            <Divider />
-          </>
-        )}
 
         {/* Top of Mind */}
         <TopOfMind
