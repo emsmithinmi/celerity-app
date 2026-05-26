@@ -9,6 +9,8 @@ import { checkProjectStalled } from '../lib/api/projects'
 import Button from '../components/ui/Button'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import { StatusPill, PriorityBadge, EnergyBadge } from '../components/ui'
+import DurationInput from '../components/tasks/DurationInput'
+import { formatDuration } from '../components/ui/DurationDisplay'
 import WaitingModal from '../components/tasks/WaitingModal'
 import HighlightModal from '../components/tasks/HighlightModal'
 import RouteModal from '../components/tasks/RouteModal'
@@ -279,18 +281,11 @@ export default function TaskPage() {
                 {/* Duration */}
                 {editing ? (
                   <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Duration (min)</label>
-                    <input
-                      type="number"
-                      value={d.duration ?? ''}
-                      onChange={e => change('duration', e.target.value ? Number(e.target.value) : null)}
-                      className={inputCls}
-                      style={inputStyle}
-                      placeholder="Minutes"
-                    />
+                    <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Duration</label>
+                    <DurationInput value={d.duration} onChange={v => change('duration', v)} />
                   </div>
                 ) : (
-                  <ReadField label="Duration" value={task.duration ? `${task.duration} min` : null} />
+                  <ReadField label="Duration" value={task.duration ? formatDuration(task.duration) : null} />
                 )}
 
                 {/* Area */}
