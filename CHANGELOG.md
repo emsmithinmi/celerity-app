@@ -10,6 +10,25 @@ _Nothing pending — all changes committed and deployed._
 
 ---
 
+## 2026-05-26 (evening)
+
+### Added
+- **Extended People profile** — Person pages now have rich contact information:
+  - **Identity**: Professional Title (Dr., Mr., etc.), First/Last/Preferred Name, Relationship (Wife, Son, Colleague…), Contact Type, Company, Occupation
+  - **Contact Details**: Personal Email, Work Email, Personal Phone, Work Phone, Birthday
+  - **Addresses**: structured Home address (street, city, state, zip) and Work address
+  - **Social Media**: dynamic list of platform + handle/URL entries (supports Twitter/X, LinkedIn, GitHub, etc.)
+  - **Notes**: freeform notes field
+- DB migration: added `social_media` (jsonb), `is_stale` (boolean), `notes` (text), `address_work_street/city/state/zip` columns
+
+### Changed
+- **Person detail page** fully rewritten into grouped sections (Identity, Contact Details, Addresses, Social Media, Notes)
+- **"Last Contact"** removed from UI (column kept in DB for data safety)
+- `PersonRow` subtitle now shows relationship, occupation, or company instead of last-contact date
+- `updatePerson` in `people.js` strips legacy field names (`phone`, `email`, `last_contact_at`) to prevent DB errors
+
+---
+
 ## 2026-05-26
 
 ### Added

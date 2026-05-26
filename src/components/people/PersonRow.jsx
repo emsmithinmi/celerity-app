@@ -7,12 +7,11 @@ export default function PersonRow({ person, onClick }) {
 
   const initials = `${person.first_name?.[0] ?? ''}${person.last_name?.[0] ?? ''}`.toUpperCase()
 
-  const today         = new Date().toISOString().split('T')[0]
-  const lastContactDate = person.last_contact_at
-    ? new Date(person.last_contact_at + 'T00:00:00').toLocaleDateString('en-US', {
-        month: 'short', day: 'numeric',
-      })
-    : null
+  // Build subtitle: relationship and/or company
+  const subtitle = [
+    person.contact_type && person.contact_type.charAt(0).toUpperCase() + person.contact_type.slice(1),
+    person.relationship || person.occupation || person.company,
+  ].filter(Boolean).join(' · ')
 
   return (
     <div
@@ -28,28 +27,22 @@ export default function PersonRow({ person, onClick }) {
         {initials}
       </div>
 
-      {/* Name + company */}
+      {/* Name + subtitle */}
       <div className="flex-1 min-w-0">
         <p className="text-sm truncate" style={{
           color: person.status === 'stale' ? '#6c7086' : '#cdd6f4',
         }}>
           {displayName}
         </p>
-        {person.company && (
+        {subtitle && (
           <p className="text-xs truncate mt-0.5" style={{ color: '#6c7086' }}>
-            {person.contact_type && <span className="capitalize">{person.contact_type} · </span>}
-            {person.company}
+            {subtitle}
           </p>
         )}
       </div>
 
-      {/* Meta */}
-      <div className="flex items-center gap-2 shrink-0">
-        {lastContactDate && (
-          <span className="text-xs" style={{ color: '#6c7086' }}>
-            Last: {lastContactDate}
-          </span>
-        )}
+      {/* Status pill */}
+      <div className="shrink-0">
         <StatusPill status={person.status} type="people" />
       </div>
     </div>

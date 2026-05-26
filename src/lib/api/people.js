@@ -69,9 +69,11 @@ export async function createPerson({ first_name, last_name, ...rest }) {
 // ─── Update ───────────────────────────────────────────────────────────────────
 
 export async function updatePerson(id, updates) {
+  // Strip any legacy field names that no longer exist in the DB
+  const { phone, email, last_contact_at, ...safeUpdates } = updates
   const { data, error } = await supabase
     .from('people')
-    .update({ ...updates, updated_at: new Date().toISOString() })
+    .update({ ...safeUpdates, updated_at: new Date().toISOString() })
     .eq('id', id)
     .select()
     .single()
