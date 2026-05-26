@@ -11,6 +11,10 @@ const NAV_ITEMS = [
   { to: '/reviews',  label: 'Reviews',  icon: '🔍' },
 ]
 
+const BOTTOM_NAV = [
+  { to: '/settings', label: 'Settings', icon: '⚙️' },
+]
+
 export default function Layout() {
   const { user, signOut } = useAuth()
   const [collapsed, setCollapsed] = useState(false)
@@ -78,6 +82,33 @@ export default function Layout() {
             </NavLink>
           ))}
         </nav>
+
+        {/* Bottom nav (Settings, etc.) */}
+        <div
+          className="border-t pb-1"
+          style={{ borderColor: '#313244', padding: collapsed ? '8px 8px 4px' : '8px 12px 4px' }}
+        >
+          {BOTTOM_NAV.map(({ to, label, icon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              title={collapsed ? label : undefined}
+              className={({ isActive }) =>
+                `flex items-center rounded-lg text-sm transition-colors ${
+                  collapsed ? 'justify-center' : 'gap-3'
+                } ${isActive ? 'font-medium' : 'hover:opacity-80'}`
+              }
+              style={({ isActive }) => ({
+                backgroundColor: isActive ? '#313244' : 'transparent',
+                color: isActive ? '#cdd6f4' : '#6c7086',
+                padding: collapsed ? '8px' : '8px 12px',
+              })}
+            >
+              <span>{icon}</span>
+              {!collapsed && <span>{label}</span>}
+            </NavLink>
+          ))}
+        </div>
 
         {/* User / Sign out */}
         <div

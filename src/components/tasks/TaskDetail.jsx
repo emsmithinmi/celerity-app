@@ -15,7 +15,8 @@ import TaskComments   from './TaskComments'
 import WaitingModal   from './WaitingModal'
 import HighlightModal from './HighlightModal'
 import RouteModal     from './RouteModal'
-import { PRIORITIES, ENERGY_LEVELS, TASK_ACTIONS } from '../../lib/constants'
+import { PRIORITIES, TASK_ACTIONS } from '../../lib/constants'
+import { useEnergyLevels } from '../../contexts/EnergyLevelsContext'
 
 // ─── Field helpers ────────────────────────────────────────────────────────────
 const CLARIFY_REQUIRED = ['description', 'priority', 'duration', 'energy_level', 'area']
@@ -40,6 +41,7 @@ const inputStyle = { borderColor: '#313244', color: '#cdd6f4' }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function TaskDetail({ task: initialTask, open, onClose, onRefresh }) {
+  const { levels, levelMap } = useEnergyLevels()
   const [task,    setTask]    = useState(initialTask)
   const [tab,     setTab]     = useState('details')  // details | comments
   const [saving,  setSaving]  = useState(false)
@@ -275,7 +277,7 @@ export default function TaskDetail({ task: initialTask, open, onClose, onRefresh
                   style={inputStyle}
                 >
                   <option value="">Select…</option>
-                  {ENERGY_LEVELS.map(e => (
+                  {levels.map(e => (
                     <option key={e.value} value={e.value}>{e.label}</option>
                   ))}
                 </select>

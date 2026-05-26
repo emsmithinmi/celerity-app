@@ -16,7 +16,8 @@ import WaitingModal from '../components/tasks/WaitingModal'
 import HighlightModal from '../components/tasks/HighlightModal'
 import RouteModal from '../components/tasks/RouteModal'
 import TaskComments from '../components/tasks/TaskComments'
-import { PRIORITIES, ENERGY_LEVELS, TASK_ACTIONS } from '../lib/constants'
+import { PRIORITIES, TASK_ACTIONS } from '../lib/constants'
+import { useEnergyLevels } from '../contexts/EnergyLevelsContext'
 
 const CLARIFY_REQUIRED = ['description', 'priority', 'duration', 'energy_level', 'area']
 function isClarified(task) {
@@ -68,6 +69,7 @@ function ReadField({ label, value, fallback = '—' }) {
 export default function TaskPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { levels, levelMap } = useEnergyLevels()
 
   const [task,    setTask]    = useState(null)
   const [loading, setLoading] = useState(true)
@@ -300,11 +302,11 @@ export default function TaskPage() {
                     <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Energy Level</label>
                     <select value={d.energy_level ?? ''} onChange={e => change('energy_level', e.target.value)} className={inputCls} style={inputStyle}>
                       <option value="">Select…</option>
-                      {ENERGY_LEVELS.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
+                      {levels.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
                     </select>
                   </div>
                 ) : (
-                  <ReadField label="Energy Level" value={ENERGY_LEVELS.find(e => e.value === task.energy_level)?.label} />
+                  <ReadField label="Energy Level" value={levelMap[task.energy_level]?.label} />
                 )}
               </div>
 
