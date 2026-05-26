@@ -94,7 +94,7 @@ export default function Daily() {
   return (
     <>
       {/* ── Scrollable page content ── */}
-      <div className="px-6 py-4 space-y-6 pb-24">
+      <div className="px-10 py-4 space-y-6 pb-24">
 
         {/* Date */}
         <DateHeader />
@@ -102,7 +102,7 @@ export default function Daily() {
         <Divider />
 
         {/* Quick action bar */}
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap justify-center">
           {[
             { label: 'New Task',    key: 'task'    },
             { label: 'New Project', key: 'project' },
@@ -169,7 +169,7 @@ export default function Daily() {
         <Divider />
 
         {/* Review buttons */}
-        <div className="flex gap-3 flex-wrap pb-4">
+        <div className="flex gap-3 flex-wrap justify-center pb-4">
           {[
             { label: '📋 Daily Review',   to: '/reviews/daily'   },
             { label: '📅 Weekly Review',  to: '/reviews/weekly'  },
