@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
-  ensureTodayNote,
+  ensureNoteForDate,
   getHabitHistory,
   getDailyStats,
   toggleHabit,
@@ -9,23 +9,23 @@ import {
   updateTopOfMind,
 } from '../lib/api/daily'
 
-export function useDaily() {
-  const [note, setNote]               = useState(null)
+export function useDaily(date) {
+  const [note, setNote]                 = useState(null)
   const [habitHistory, setHabitHistory] = useState([])
-  const [stats, setStats]             = useState({ inProgress: 0, nextActions: 0, waiting: 0, dueToday: 0, stalled: 0 })
-  const [loading, setLoading]         = useState(true)
-  const [error, setError]             = useState(null)
+  const [stats, setStats]               = useState({ inProgress: 0, nextActions: 0, waiting: 0, dueToday: 0, stalled: 0 })
+  const [loading, setLoading]           = useState(true)
+  const [error, setError]               = useState(null)
 
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const [todayNote, history, dailyStats] = await Promise.all([
-        ensureTodayNote(),
+      const [dayNote, history, dailyStats] = await Promise.all([
+        ensureNoteForDate(date),
         getHabitHistory(7),
         getDailyStats(),
       ])
-      setNote(todayNote)
+      setNote(dayNote)
       setHabitHistory(history)
       setStats(dailyStats)
     } catch (err) {
@@ -33,7 +33,7 @@ export function useDaily() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [date])
 
   useEffect(() => { load() }, [load])
 
@@ -47,7 +47,7 @@ export function useDaily() {
       const history = await getHabitHistory(7)
       setHabitHistory(history)
     } catch {
-      // Revert optimistic update on error
+      // Revert on error
       setNote(prev => ({ ...prev, [habitKey]: !value }))
     }
   }

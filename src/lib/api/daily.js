@@ -29,15 +29,14 @@ export async function getRecentNotes(limit = 30) {
 
 // ─── Create / Ensure Today ────────────────────────────────────────────────────
 
-export async function ensureTodayNote() {
-  const today = new Date().toISOString().split('T')[0]
-  const existing = await getNoteByDate(today)
+export async function ensureNoteForDate(date) {
+  const existing = await getNoteByDate(date)
   if (existing) return existing
 
   const { data, error } = await supabase
     .from('daily_notes')
     .insert({
-      date: today,
+      date,
       top_of_mind: [],
       agenda: [],
       notes: [],
@@ -53,6 +52,11 @@ export async function ensureTodayNote() {
     .single()
   if (error) throw error
   return data
+}
+
+// Convenience wrapper kept for any callers outside the Daily page
+export async function ensureTodayNote() {
+  return ensureNoteForDate(new Date().toISOString().split('T')[0])
 }
 
 // ─── Habits ───────────────────────────────────────────────────────────────────

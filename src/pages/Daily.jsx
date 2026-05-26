@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useDaily } from '../hooks/useDaily'
 import { useTasks } from '../hooks/useTasks'
 import { useProjects } from '../hooks/useProjects'
@@ -27,21 +28,79 @@ import {
 import { useTasks as useTasksCapture } from '../hooks/useTasks'
 import { useProjects as useProjectsCapture } from '../hooks/useProjects'
 
-// ─── Date header helpers ──────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 const DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
 
-function DateHeader() {
-  const now = new Date()
+function todayStr() {
+  return new Date().toISOString().split('T')[0]
+}
+
+function shiftDate(dateStr, days) {
+  // Use noon local time to avoid daylight-saving edge cases
+  const d = new Date(dateStr + 'T12:00:00')
+  d.setDate(d.getDate() + days)
+  return d.toISOString().split('T')[0]
+}
+
+// ─── Date header with navigation ─────────────────────────────────────────────
+function DateHeader({ dateStr, isToday, onPrev, onNext, onToday }) {
+  const d = new Date(dateStr + 'T12:00:00')
+
   return (
-    <div className="text-center py-4">
-      <p className="text-4xl font-normal tracking-widest uppercase" style={{ color: '#FB9039' }}>
-        {DAYS[now.getDay()]}
-      </p>
-      <div className="my-3 h-px mx-auto w-20" style={{ backgroundColor: '#313244' }} />
+    <div className="text-center py-4 relative">
+      {/* Navigation row */}
+      <div className="flex items-center justify-center gap-4 mb-4">
+        <button
+          onClick={onPrev}
+          className="flex items-center justify-center rounded-lg transition-colors"
+          style={{ width: 32, height: 32, color: '#6c7086', backgroundColor: '#313244' }}
+          onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#45475a'; e.currentTarget.style.color = '#cdd6f4' }}
+          onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#313244'; e.currentTarget.style.color = '#6c7086' }}
+          title="Previous day"
+        >
+          <ChevronLeft size={18} />
+        </button>
+
+        {/* Day name */}
+        <p className="text-4xl font-normal tracking-widest uppercase w-64 text-center" style={{ color: '#FB9039' }}>
+          {DAYS[d.getDay()]}
+        </p>
+
+        <button
+          onClick={onNext}
+          className="flex items-center justify-center rounded-lg transition-colors"
+          style={{ width: 32, height: 32, color: '#6c7086', backgroundColor: '#313244' }}
+          onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#45475a'; e.currentTarget.style.color = '#cdd6f4' }}
+          onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#313244'; e.currentTarget.style.color = '#6c7086' }}
+          title="Next day"
+        >
+          <ChevronRight size={18} />
+        </button>
+      </div>
+
+      {/* Divider line */}
+      <div className="my-2 h-px mx-auto w-20" style={{ backgroundColor: '#313244' }} />
+
+      {/* Full date */}
       <h1 className="text-5xl font-bold" style={{ color: '#cdd6f4' }}>
-        {MONTHS[now.getMonth()]} {now.getDate()}, {now.getFullYear()}
+        {MONTHS[d.getMonth()]} {d.getDate()}, {d.getFullYear()}
       </h1>
+
+      {/* "Today" pill — only visible when browsing another day */}
+      {!isToday && (
+        <div className="flex justify-center mt-4">
+          <button
+            onClick={onToday}
+            className="px-3 py-1 rounded-full text-xs font-medium transition-colors"
+            style={{ backgroundColor: '#FB9039', color: '#1e1e2e' }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e07820'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#FB9039'}
+          >
+            ↩ Back to Today
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -54,21 +113,29 @@ function Divider() {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Daily() {
   const navigate = useNavigate()
-  const { note, habitHistory, stats, loading, error, toggleHabit, addNote, editNote, deleteNote, updateTopOfMind, refreshStats } = useDaily()
 
-  // Quick capture hooks (separate from the section hooks so modals don't re-render sections)
+  // ── Date navigation ──
+  const [selectedDate, setSelectedDate] = useState(todayStr)
+  const isToday = selectedDate === todayStr()
+  const goBack    = () => setSelectedDate(d => shiftDate(d, -1))
+  const goForward = () => setSelectedDate(d => shiftDate(d, +1))
+  const goToday   = () => setSelectedDate(todayStr())
+
+  // ── Data for selected date ──
+  const { note, habitHistory, stats, loading, error, toggleHabit, addNote, editNote, deleteNote, updateTopOfMind, refreshStats } = useDaily(selectedDate)
+
+  // Quick capture hooks (separate so modals don't re-render sections)
   const { createTask }    = useTasksCapture({})
   const { createProject } = useProjectsCapture({})
 
-  // Agenda data
-  const today = new Date().toISOString().split('T')[0]
-  const { tasks: scheduledTasks }  = useTasks({ status: 'scheduled' })
-  const { projects: startToday }   = useProjects({ start_date: today })
-  const { projects: endToday }     = useProjects({ end_date: today })
-  const projectDates = [...(startToday ?? []), ...(endToday ?? [])]
+  // Agenda data — scoped to selected date
+  const { tasks: scheduledTasks }   = useTasks({ status: 'scheduled' })
+  const { projects: startOnDate }   = useProjects({ start_date: selectedDate })
+  const { projects: endOnDate }     = useProjects({ end_date: selectedDate })
+  const projectDates = [...(startOnDate ?? []), ...(endOnDate ?? [])]
 
   // Modal state
-  const [modal, setModal] = useState(null) // 'task' | 'project' | 'person' | 'note'
+  const [modal, setModal] = useState(null)
 
   const handleChallengeUpdate = async (updated) => {
     if (!note) return
@@ -78,7 +145,7 @@ export default function Daily() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p className="text-sm" style={{ color: '#6c7086' }}>Loading your day…</p>
+        <p className="text-sm" style={{ color: '#6c7086' }}>Loading…</p>
       </div>
     )
   }
@@ -96,9 +163,15 @@ export default function Daily() {
       {/* ── Scrollable page content ── */}
       <div className="px-10 py-4 space-y-6 pb-24">
 
-        {/* Date */}
-        <DateHeader />
-        <DailyQuote />
+        {/* Date + nav */}
+        <DateHeader
+          dateStr={selectedDate}
+          isToday={isToday}
+          onPrev={goBack}
+          onNext={goForward}
+          onToday={goToday}
+        />
+        <DailyQuote dateStr={selectedDate} />
         <Divider />
 
         {/* Quick action bar */}

@@ -81,15 +81,15 @@ const QUOTES = [
   { text: "The secret to doing good research is always to be a little underemployed. You waste years by not being able to waste hours.", author: "Amos Tversky" },
 ]
 
-function getDayOfYear() {
-  const now = new Date()
+function getDayOfYear(dateStr) {
+  const now = dateStr ? new Date(dateStr + 'T12:00:00') : new Date()
   const start = new Date(now.getFullYear(), 0, 0)
   const diff = now - start
   return Math.floor(diff / (1000 * 60 * 60 * 24))
 }
 
-export default function DailyQuote() {
-  const { text, author } = QUOTES[getDayOfYear() % QUOTES.length]
+export default function DailyQuote({ dateStr }) {
+  const { text, author } = QUOTES[getDayOfYear(dateStr) % QUOTES.length]
 
   return (
     <div className="text-center px-6 py-2">
