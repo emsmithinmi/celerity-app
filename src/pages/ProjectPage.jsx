@@ -39,7 +39,8 @@ export default function ProjectPage() {
   const [loading,   setLoading]   = useState(true)
   const [editing,   setEditing]   = useState(false)
   const [draft,     setDraft]     = useState(null)
-  const [saving,    setSaving]    = useState(false)
+  const [saving,     setSaving]     = useState(false)
+  const [saveError,  setSaveError]  = useState(null)
   const [completing, setCompleting] = useState(false)
 
   const [showHighlight, setShowHighlight] = useState(false)
@@ -84,19 +85,26 @@ export default function ProjectPage() {
 
   const handleSave = async () => {
     setSaving(true)
-    const updated = await updateProject(project.id, {
-      title:       draft.title,
-      area:        draft.area,
-      description: draft.description,
-      priority:    draft.priority,
-      start_date:  draft.start_date  || null,
-      end_date:    draft.end_date    || null,
-      waiting_for: draft.waiting_for || null,
-    })
-    setProject(prev => ({ ...prev, ...updated }))
-    setEditing(false)
-    setDraft(null)
-    setSaving(false)
+    setSaveError(null)
+    try {
+      const updated = await updateProject(project.id, {
+        title:       draft.title,
+        area:        draft.area,
+        description: draft.description,
+        priority:    draft.priority,
+        start_date:  draft.start_date  || null,
+        end_date:    draft.end_date    || null,
+        waiting_for: draft.waiting_for || null,
+      })
+      setProject(prev => ({ ...prev, ...updated }))
+      setEditing(false)
+      setDraft(null)
+    } catch (err) {
+      console.error('Save failed:', err)
+      setSaveError(err.message ?? 'Save failed — check console for details')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleStartPlanning = async () => {
@@ -215,6 +223,12 @@ export default function ProjectPage() {
                 </div>
               )}
             </div>
+
+            {saveError && (
+              <div className="rounded-lg px-3 py-2 mb-3 text-sm" style={{ backgroundColor: '#2d1e1e', border: '1px solid #DB4437', color: '#f28b82' }}>
+                ⚠ {saveError}
+              </div>
+            )}
 
             <div className="rounded-xl border p-4 space-y-4" style={{ backgroundColor: '#181825', borderColor: '#313244' }}>
               {/* Title */}

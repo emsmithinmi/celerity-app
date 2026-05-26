@@ -38,9 +38,10 @@ export default function TaskPage() {
 
   const [task,    setTask]    = useState(null)
   const [loading, setLoading] = useState(true)
-  const [editing, setEditing] = useState(false)
-  const [draft,   setDraft]   = useState(null)
-  const [saving,  setSaving]  = useState(false)
+  const [editing,   setEditing]   = useState(false)
+  const [draft,     setDraft]     = useState(null)
+  const [saving,    setSaving]    = useState(false)
+  const [saveError, setSaveError] = useState(null)
 
   const [showWaiting,   setShowWaiting]   = useState(false)
   const [showHighlight, setShowHighlight] = useState(false)
@@ -82,20 +83,27 @@ export default function TaskPage() {
 
   const handleSave = async () => {
     setSaving(true)
-    const updated = await updateTask(task.id, {
-      title:        draft.title,
-      description:  draft.description,
-      priority:     draft.priority,
-      duration:     draft.duration,
-      energy_level: draft.energy_level,
-      area:         draft.area,
-      due_date:     draft.due_date || null,
-      notes:        draft.notes,
-    })
-    setTask(prev => ({ ...prev, ...updated }))
-    setEditing(false)
-    setDraft(null)
-    setSaving(false)
+    setSaveError(null)
+    try {
+      const updated = await updateTask(task.id, {
+        title:        draft.title,
+        description:  draft.description,
+        priority:     draft.priority,
+        duration:     draft.duration,
+        energy_level: draft.energy_level,
+        area:         draft.area,
+        due_date:     draft.due_date || null,
+        notes:        draft.notes,
+      })
+      setTask(prev => ({ ...prev, ...updated }))
+      setEditing(false)
+      setDraft(null)
+    } catch (err) {
+      console.error('Save failed:', err)
+      setSaveError(err.message ?? 'Save failed — check console for details')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleComplete = async () => {
@@ -209,6 +217,12 @@ export default function TaskPage() {
                 </div>
               )}
             </div>
+
+            {saveError && (
+              <div className="rounded-lg px-3 py-2 mb-3 text-sm" style={{ backgroundColor: '#2d1e1e', borderColor: '#DB4437', border: '1px solid', color: '#f28b82' }}>
+                ⚠ {saveError}
+              </div>
+            )}
 
             <div
               className="rounded-xl border p-4 space-y-4"

@@ -38,7 +38,8 @@ export default function PersonPage() {
   const [loading,  setLoading]  = useState(true)
   const [editing,  setEditing]  = useState(false)
   const [draft,    setDraft]    = useState(null)
-  const [saving,   setSaving]   = useState(false)
+  const [saving,    setSaving]    = useState(false)
+  const [saveError, setSaveError] = useState(null)
 
   const load = async () => {
     setLoading(true)
@@ -76,21 +77,28 @@ export default function PersonPage() {
 
   const handleSave = async () => {
     setSaving(true)
-    const updated = await updatePerson(person.id, {
-      first_name:      draft.first_name,
-      last_name:       draft.last_name,
-      preferred_name:  draft.preferred_name || null,
-      contact_type:    draft.contact_type   || null,
-      company:         draft.company        || null,
-      email:           draft.email          || null,
-      phone:           draft.phone          || null,
-      last_contact_at: draft.last_contact_at || null,
-      notes:           draft.notes          || null,
-    })
-    setPerson(prev => ({ ...prev, ...updated }))
-    setEditing(false)
-    setDraft(null)
-    setSaving(false)
+    setSaveError(null)
+    try {
+      const updated = await updatePerson(person.id, {
+        first_name:      draft.first_name,
+        last_name:       draft.last_name,
+        preferred_name:  draft.preferred_name || null,
+        contact_type:    draft.contact_type   || null,
+        company:         draft.company        || null,
+        email:           draft.email          || null,
+        phone:           draft.phone          || null,
+        last_contact_at: draft.last_contact_at || null,
+        notes:           draft.notes          || null,
+      })
+      setPerson(prev => ({ ...prev, ...updated }))
+      setEditing(false)
+      setDraft(null)
+    } catch (err) {
+      console.error('Save failed:', err)
+      setSaveError(err.message ?? 'Save failed — check console for details')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleActivate = async () => {
