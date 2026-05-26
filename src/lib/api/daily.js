@@ -120,6 +120,17 @@ export async function addNoteEntry(noteId, body) {
   return data
 }
 
+export async function updateNotesArray(noteId, notes) {
+  const { data, error } = await supabase
+    .from('daily_notes')
+    .update({ notes, updated_at: new Date().toISOString() })
+    .eq('id', noteId)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
 // ─── Agenda ───────────────────────────────────────────────────────────────────
 
 export async function updateAgenda(noteId, agendaItems) {

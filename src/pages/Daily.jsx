@@ -54,7 +54,7 @@ function Divider() {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Daily() {
   const navigate = useNavigate()
-  const { note, habitHistory, stats, loading, error, toggleHabit, addNote, updateTopOfMind, refreshStats } = useDaily()
+  const { note, habitHistory, stats, loading, error, toggleHabit, addNote, editNote, deleteNote, updateTopOfMind, refreshStats } = useDaily()
 
   // Quick capture hooks (separate from the section hooks so modals don't re-render sections)
   const { createTask }    = useTasksCapture({})
@@ -150,6 +150,8 @@ export default function Daily() {
         <NotesSection
           notes={note?.notes ?? []}
           onAdd={addNote}
+          onEdit={editNote}
+          onDelete={deleteNote}
         />
         <Divider />
 

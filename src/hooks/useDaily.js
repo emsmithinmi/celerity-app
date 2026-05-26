@@ -5,6 +5,7 @@ import {
   getDailyStats,
   toggleHabit,
   addNoteEntry,
+  updateNotesArray,
   updateTopOfMind,
 } from '../lib/api/daily'
 
@@ -57,6 +58,22 @@ export function useDaily() {
     setNote(updated)
   }
 
+  const handleEditNote = async (timestamp, newBody) => {
+    if (!note) return
+    const updatedNotes = (note.notes ?? []).map(n =>
+      n.timestamp === timestamp ? { ...n, body: newBody } : n
+    )
+    const updated = await updateNotesArray(note.id, updatedNotes)
+    setNote(updated)
+  }
+
+  const handleDeleteNote = async (timestamp) => {
+    if (!note) return
+    const updatedNotes = (note.notes ?? []).filter(n => n.timestamp !== timestamp)
+    const updated = await updateNotesArray(note.id, updatedNotes)
+    setNote(updated)
+  }
+
   const handleUpdateTopOfMind = async (items) => {
     if (!note) return
     const updated = await updateTopOfMind(note.id, items)
@@ -78,6 +95,8 @@ export function useDaily() {
     refreshStats,
     toggleHabit: handleToggleHabit,
     addNote: handleAddNote,
+    editNote: handleEditNote,
+    deleteNote: handleDeleteNote,
     updateTopOfMind: handleUpdateTopOfMind,
   }
 }
