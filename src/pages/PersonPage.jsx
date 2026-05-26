@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Trash2 } from 'lucide-react'
+import { Trash2, Pencil } from 'lucide-react'
 import {
   getPerson, updatePerson, activatePerson, deletePerson,
   getPersonTasks, getPersonProjects,
@@ -15,6 +15,21 @@ const inputCls  = 'w-full px-3 py-2 rounded-lg text-sm border outline-none bg-tr
 const inputStyle = { borderColor: '#313244', color: '#cdd6f4' }
 
 const CONTACT_TYPES = ['colleague', 'friend', 'family', 'client', 'vendor', 'mentor', 'other']
+
+function PencilBtn({ onClick, title = 'Edit' }) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className="flex items-center justify-center rounded-md transition-colors duration-150"
+      style={{ width: 30, height: 30, backgroundColor: 'transparent', color: '#6c7086' }}
+      onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#313244'; e.currentTarget.style.color = '#cdd6f4' }}
+      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#6c7086' }}
+    >
+      <Pencil size={14} />
+    </button>
+  )
+}
 
 function TrashBtn({ onClick, title = 'Remove contact' }) {
   return (
@@ -187,7 +202,7 @@ export default function PersonPage() {
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-base font-semibold" style={{ color: '#cdd6f4' }}>Contact Info</h2>
             {!editing ? (
-              <Button variant="ghost" size="sm" onClick={startEdit}>Edit</Button>
+              <PencilBtn onClick={startEdit} />
             ) : (
               <div className="flex gap-2">
                 <Button variant="ghost" size="sm" onClick={cancelEdit}>Cancel</Button>

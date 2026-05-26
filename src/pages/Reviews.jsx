@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { Pencil } from 'lucide-react'
 import { ensureReview, updateReviewContent, completeReview, updateSuggestions } from '../lib/api/reviews'
 import { useTasks }    from '../hooks/useTasks'
 import { useProjects } from '../hooks/useProjects'
@@ -111,7 +112,16 @@ function SuggestionCard({ suggestion, onAccept, onSkip, onEdit }) {
               <Button size="sm" variant="success" onClick={onAccept}>✓ Accept</Button>
             )}
             {suggestion.status !== 'accepted' && (
-              <Button size="sm" variant="secondary" onClick={() => setEditing(true)}>✎ Edit</Button>
+              <button
+                onClick={() => setEditing(true)}
+                title="Edit suggestion"
+                className="flex items-center justify-center rounded-md transition-colors duration-150"
+                style={{ width: 30, height: 30, backgroundColor: 'transparent', color: '#6c7086' }}
+                onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#313244'; e.currentTarget.style.color = '#cdd6f4' }}
+                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#6c7086' }}
+              >
+                <Pencil size={14} />
+              </button>
             )}
             <Button size="sm" variant="ghost" onClick={onSkip}>✕ Skip</Button>
             {suggestion.status === 'accepted' && (
