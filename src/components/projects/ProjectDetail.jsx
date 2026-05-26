@@ -13,7 +13,9 @@ import { StatusPill, PriorityBadge } from '../ui'
 import HighlightModal  from '../tasks/HighlightModal'
 import ProjectComments from './ProjectComments'
 import ProjectTaskList from './ProjectTaskList'
-import { PRIORITIES, PROJECT_ACTIONS } from '../../lib/constants'
+import { PROJECT_ACTIONS } from '../../lib/constants'
+import { usePriorities } from '../../contexts/PrioritiesContext'
+import { useAreas }      from '../../contexts/AreasContext'
 
 // ─── Required fields for each gate ────────────────────────────────────────────
 const PLAN_REQUIRED = ['area', 'description', 'start_date', 'end_date']
@@ -38,6 +40,8 @@ const inputStyle = { borderColor: '#313244', color: '#cdd6f4' }
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function ProjectDetail({ project: initialProject, open, onClose, onRefresh }) {
+  const { priorities } = usePriorities()
+  const { areas }      = useAreas()
   const [project, setProject]         = useState(initialProject)
   const [tab,     setTab]             = useState('details')
   const [saving,  setSaving]          = useState(false)
@@ -255,17 +259,20 @@ export default function ProjectDetail({ project: initialProject, open, onClose, 
                 <select value={project.priority ?? ''} onChange={e => change('priority', e.target.value)}
                   className={inputCls} style={inputStyle}>
                   <option value="">Select…</option>
-                  {Object.entries(PRIORITIES).map(([k, v]) => (
-                    <option key={k} value={k}>{v.label}</option>
+                  {priorities.map(p => (
+                    <option key={p.value} value={p.value}>{p.label}</option>
                   ))}
                 </select>
               </FormField>
 
               <FormField label="Area" required>
-                <input type="text" value={project.area ?? ''}
+                <input list="pd-areas-list" value={project.area ?? ''}
                   onChange={e => change('area', e.target.value)}
-                  placeholder="e.g. Work, Personal"
+                  placeholder="Select or type…"
                   className={inputCls} style={inputStyle} />
+                <datalist id="pd-areas-list">
+                  {areas.map(a => <option key={a.id} value={a.value} />)}
+                </datalist>
               </FormField>
             </div>
 

@@ -13,7 +13,9 @@ import { StatusPill, PriorityBadge } from '../components/ui'
 import HighlightModal from '../components/tasks/HighlightModal'
 import ProjectComments from '../components/projects/ProjectComments'
 import ProjectTaskList from '../components/projects/ProjectTaskList'
-import { PRIORITIES, PROJECT_ACTIONS } from '../lib/constants'
+import { PROJECT_ACTIONS } from '../lib/constants'
+import { usePriorities } from '../contexts/PrioritiesContext'
+import { useAreas }      from '../contexts/AreasContext'
 
 function PencilBtn({ onClick, title = 'Edit' }) {
   return (
@@ -65,6 +67,8 @@ function ReadField({ label, value, fallback = '—' }) {
 export default function ProjectPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { priorities } = usePriorities()
+  const { areas }      = useAreas()
 
   const [project,   setProject]   = useState(null)
   const [loading,   setLoading]   = useState(true)
@@ -288,7 +292,7 @@ export default function ProjectPage() {
                     <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Priority</label>
                     <select value={d.priority ?? ''} onChange={e => change('priority', e.target.value)} className={inputCls} style={inputStyle}>
                       <option value="">Select…</option>
-                      {Object.entries(PRIORITIES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                      {priorities.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
                     </select>
                   </div>
                 ) : (
@@ -302,7 +306,10 @@ export default function ProjectPage() {
                 {editing ? (
                   <div>
                     <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Area</label>
-                    <input type="text" value={d.area ?? ''} onChange={e => change('area', e.target.value)} className={inputCls} style={inputStyle} placeholder="e.g. Work, Personal" />
+                    <input list="pp-areas-list" value={d.area ?? ''} onChange={e => change('area', e.target.value)} className={inputCls} style={inputStyle} placeholder="Select or type…" />
+                    <datalist id="pp-areas-list">
+                      {areas.map(a => <option key={a.id} value={a.value} />)}
+                    </datalist>
                   </div>
                 ) : (
                   <ReadField label="Area" value={project.area} />

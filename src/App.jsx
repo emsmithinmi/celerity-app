@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { EnergyLevelsProvider } from './contexts/EnergyLevelsContext'
+import { PrioritiesProvider }   from './contexts/PrioritiesContext'
+import { AreasProvider }        from './contexts/AreasContext'
 import ProtectedRoute from './components/layout/ProtectedRoute'
 import Layout from './components/layout/Layout'
 import Login from './pages/Login'
@@ -20,6 +22,8 @@ export default function App() {
   return (
     <AuthProvider>
       <EnergyLevelsProvider>
+      <PrioritiesProvider>
+      <AreasProvider>
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
@@ -40,6 +44,8 @@ export default function App() {
             </Route>
           </Routes>
         </BrowserRouter>
+      </AreasProvider>
+      </PrioritiesProvider>
       </EnergyLevelsProvider>
     </AuthProvider>
   )

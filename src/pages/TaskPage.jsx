@@ -16,8 +16,10 @@ import WaitingModal from '../components/tasks/WaitingModal'
 import HighlightModal from '../components/tasks/HighlightModal'
 import RouteModal from '../components/tasks/RouteModal'
 import TaskComments from '../components/tasks/TaskComments'
-import { PRIORITIES, TASK_ACTIONS } from '../lib/constants'
+import { TASK_ACTIONS } from '../lib/constants'
 import { useEnergyLevels } from '../contexts/EnergyLevelsContext'
+import { usePriorities }   from '../contexts/PrioritiesContext'
+import { useAreas }        from '../contexts/AreasContext'
 
 const CLARIFY_REQUIRED = ['description', 'priority', 'duration', 'energy_level', 'area']
 function isClarified(task) {
@@ -69,7 +71,9 @@ function ReadField({ label, value, fallback = '—' }) {
 export default function TaskPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { levels, levelMap } = useEnergyLevels()
+  const { levels, levelMap }    = useEnergyLevels()
+  const { priorities, priorityMap } = usePriorities()
+  const { areas }               = useAreas()
 
   const [task,    setTask]    = useState(null)
   const [loading, setLoading] = useState(true)
@@ -286,7 +290,7 @@ export default function TaskPage() {
                     <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Priority</label>
                     <select value={d.priority ?? ''} onChange={e => change('priority', e.target.value)} className={inputCls} style={inputStyle}>
                       <option value="">Select…</option>
-                      {Object.entries(PRIORITIES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                      {priorities.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
                     </select>
                   </div>
                 ) : (
@@ -326,13 +330,16 @@ export default function TaskPage() {
                   <div>
                     <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Area</label>
                     <input
-                      type="text"
+                      list="areas-list"
                       value={d.area ?? ''}
                       onChange={e => change('area', e.target.value)}
                       className={inputCls}
                       style={inputStyle}
-                      placeholder="e.g. Work, Personal"
+                      placeholder="Select or type…"
                     />
+                    <datalist id="areas-list">
+                      {areas.map(a => <option key={a.id} value={a.value} />)}
+                    </datalist>
                   </div>
                 ) : (
                   <ReadField label="Area" value={task.area} />

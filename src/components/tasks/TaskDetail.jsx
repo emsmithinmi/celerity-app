@@ -15,8 +15,10 @@ import TaskComments   from './TaskComments'
 import WaitingModal   from './WaitingModal'
 import HighlightModal from './HighlightModal'
 import RouteModal     from './RouteModal'
-import { PRIORITIES, TASK_ACTIONS } from '../../lib/constants'
+import { TASK_ACTIONS } from '../../lib/constants'
 import { useEnergyLevels } from '../../contexts/EnergyLevelsContext'
+import { usePriorities }   from '../../contexts/PrioritiesContext'
+import { useAreas }        from '../../contexts/AreasContext'
 
 // ─── Field helpers ────────────────────────────────────────────────────────────
 const CLARIFY_REQUIRED = ['description', 'priority', 'duration', 'energy_level', 'area']
@@ -41,7 +43,9 @@ const inputStyle = { borderColor: '#313244', color: '#cdd6f4' }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function TaskDetail({ task: initialTask, open, onClose, onRefresh }) {
-  const { levels, levelMap } = useEnergyLevels()
+  const { levels, levelMap }        = useEnergyLevels()
+  const { priorities, priorityMap } = usePriorities()
+  const { areas }                   = useAreas()
   const [task,    setTask]    = useState(initialTask)
   const [tab,     setTab]     = useState('details')  // details | comments
   const [saving,  setSaving]  = useState(false)
@@ -262,8 +266,8 @@ export default function TaskDetail({ task: initialTask, open, onClose, onRefresh
                   style={inputStyle}
                 >
                   <option value="">Select…</option>
-                  {Object.entries(PRIORITIES).map(([k, v]) => (
-                    <option key={k} value={k}>{v.label}</option>
+                  {priorities.map(p => (
+                    <option key={p.value} value={p.value}>{p.label}</option>
                   ))}
                 </select>
               </FormField>
@@ -292,13 +296,16 @@ export default function TaskDetail({ task: initialTask, open, onClose, onRefresh
             {/* Area */}
             <FormField label="Area" required>
               <input
-                type="text"
+                list="td-areas-list"
                 value={task.area ?? ''}
                 onChange={e => change('area', e.target.value)}
-                placeholder="e.g. Work, Personal, Health"
+                placeholder="Select or type…"
                 className={inputCls}
                 style={inputStyle}
               />
+              <datalist id="td-areas-list">
+                {areas.map(a => <option key={a.id} value={a.value} />)}
+              </datalist>
             </FormField>
 
             {/* Description */}
