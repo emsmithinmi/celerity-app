@@ -113,6 +113,37 @@ export async function archiveProject(id) {
   return updateProject(id, { archived_at: new Date().toISOString() })
 }
 
+export async function scrapeProject(id) {
+  // 1. Collect task IDs belonging to this project
+  const { data: projectTasks } = await supabase
+    .from('tasks')
+    .select('id')
+    .eq('project_id', id)
+
+  if (projectTasks?.length) {
+    const taskIds = projectTasks.map(t => t.id)
+
+    // 2. Delete task_people links for those tasks
+    await supabase.from('task_people').delete().in('task_id', taskIds)
+
+    // 3. Delete task comments for those tasks
+    await supabase.from('task_comments').delete().in('task_id', taskIds)
+
+    // 4. Delete the tasks themselves
+    await supabase.from('tasks').delete().in('id', taskIds)
+  }
+
+  // 5. Delete project_people links
+  await supabase.from('project_people').delete().eq('project_id', id)
+
+  // 6. Delete project comments
+  await supabase.from('project_comments').delete().eq('project_id', id)
+
+  // 7. Delete the project
+  const { error } = await supabase.from('projects').delete().eq('id', id)
+  if (error) throw error
+}
+
 export async function highlightProject(id, highlightNote) {
   return updateProject(id, {
     is_highlight: true,

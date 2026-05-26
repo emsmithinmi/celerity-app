@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   getProject, updateProject, startPlanning, startProject,
-  completeProject, archiveProject, highlightProject,
+  completeProject, archiveProject, highlightProject, scrapeProject,
 } from '../lib/api/projects'
 import { supabase } from '../lib/supabase'
 import { useTasks } from '../hooks/useTasks'
@@ -141,9 +141,16 @@ export default function ProjectPage() {
     navigate('/projects')
   }
 
+  const [scrapping, setScrapping] = useState(false)
+
   const handleDiscard = async () => {
-    const { error } = await supabase.from('projects').delete().eq('id', project.id)
-    if (!error) navigate('/projects')
+    setScrapping(true)
+    try {
+      await scrapeProject(project.id)
+      navigate('/projects')
+    } finally {
+      setScrapping(false)
+    }
   }
 
   const d = editing ? draft : project
@@ -367,16 +374,22 @@ export default function ProjectPage() {
                   </>
                 )}
                 {project.status === 'in_progress' && (
-                  <Button variant="success" size="sm" onClick={handleComplete} disabled={completing}>
-                    {completing ? 'Completing…' : PROJECT_ACTIONS.complete}
-                  </Button>
+                  <>
+                    <Button variant="success" size="sm" onClick={handleComplete} disabled={completing}>
+                      {completing ? 'Completing…' : PROJECT_ACTIONS.complete}
+                    </Button>
+                    <Button variant="danger" size="sm" onClick={() => setShowDiscard(true)}>Scrap it</Button>
+                  </>
                 )}
                 {(project.status === 'stalled' || project.status === 'waiting') && (
-                  <p className="text-sm" style={{ color: '#6c7086' }}>
-                    {project.status === 'stalled'
-                      ? 'Move a task to Next Actions to un-stall this project.'
-                      : 'Clear blockers on waiting tasks to resume.'}
-                  </p>
+                  <>
+                    <p className="text-sm" style={{ color: '#6c7086' }}>
+                      {project.status === 'stalled'
+                        ? 'Move a task to Next Actions to un-stall this project.'
+                        : 'Clear blockers on waiting tasks to resume.'}
+                    </p>
+                    <Button variant="danger" size="sm" onClick={() => setShowDiscard(true)}>Scrap it</Button>
+                  </>
                 )}
               </div>
             </section>
@@ -415,12 +428,13 @@ export default function ProjectPage() {
       />
       <ConfirmDialog
         open={showDiscard}
-        onClose={() => setShowDiscard(false)}
+        onClose={() => { if (!scrapping) setShowDiscard(false) }}
         onConfirm={handleDiscard}
         title="Scrap this project?"
-        message="This project will be permanently deleted."
+        message={`This permanently deletes the project and all ${taskCount} of its tasks. There is no undo.`}
         confirmLabel="Scrap It"
         variant="danger"
+        loading={scrapping}
       />
     </>
   )
