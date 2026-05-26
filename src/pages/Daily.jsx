@@ -193,15 +193,14 @@ export default function Daily() {
           ))}
         </div>
 
-        {/* Stat cards */}
-        <StatCards stats={stats} />
-        <Divider />
-
         {/* Top of Mind */}
         <TopOfMind
           items={note?.top_of_mind ?? []}
           onSave={updateTopOfMind}
         />
+
+        {/* Stat cards — sit under Top of Mind */}
+        <StatCards stats={stats} />
         <Divider />
 
         {/* Agenda */}

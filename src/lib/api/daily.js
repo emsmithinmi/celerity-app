@@ -163,22 +163,43 @@ export async function updateChallenge(noteId, challengeData) {
 
 // ─── Stats (for stat cards) ───────────────────────────────────────────────────
 
-export async function getDailyStats() {
-  const today = new Date().toISOString().split('T')[0]
+export async function getDailyStats(date) {
+  const d = date ?? new Date().toISOString().split('T')[0]
 
-  const [inProgress, nextActions, waiting, dueToday, stalled] = await Promise.all([
-    supabase.from('projects').select('id', { count: 'exact', head: true }).eq('status', 'in_progress'),
-    supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('status', 'next_action'),
-    supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('status', 'waiting'),
-    supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('due_date', today),
-    supabase.from('projects').select('id', { count: 'exact', head: true }).eq('status', 'stalled'),
+  const [inProgress, nextActions, waiting, stalled, dueTodayTasks, dueTodayProjects] = await Promise.all([
+    // Projects in progress
+    supabase.from('projects').select('id', { count: 'exact', head: true })
+      .eq('status', 'in_progress'),
+
+    // Next action tasks
+    supabase.from('tasks').select('id', { count: 'exact', head: true })
+      .eq('status', 'next_action'),
+
+    // Waiting tasks
+    supabase.from('tasks').select('id', { count: 'exact', head: true })
+      .eq('status', 'waiting'),
+
+    // Stalled projects
+    supabase.from('projects').select('id', { count: 'exact', head: true })
+      .eq('status', 'stalled'),
+
+    // Due today tasks: due on this date OR scheduled OR urgent/stat priority
+    // (excludes done tasks)
+    supabase.from('tasks').select('id', { count: 'exact', head: true })
+      .or(`due_date.eq.${d},status.eq.scheduled,priority.in.(urgent,stat)`)
+      .neq('status', 'done'),
+
+    // Projects ending today (not completed)
+    supabase.from('projects').select('id', { count: 'exact', head: true })
+      .eq('end_date', d)
+      .neq('status', 'completed'),
   ])
 
   return {
-    inProgress: inProgress.count ?? 0,
+    inProgress:  inProgress.count  ?? 0,
     nextActions: nextActions.count ?? 0,
-    waiting: waiting.count ?? 0,
-    dueToday: dueToday.count ?? 0,
-    stalled: stalled.count ?? 0,
+    waiting:     waiting.count     ?? 0,
+    stalled:     stalled.count     ?? 0,
+    dueToday:    (dueTodayTasks.count ?? 0) + (dueTodayProjects.count ?? 0),
   }
 }

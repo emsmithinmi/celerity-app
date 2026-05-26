@@ -1,9 +1,9 @@
 const CARDS = [
-  { key: 'inProgress',  label: 'In Progress'  },
-  { key: 'nextActions', label: 'Next Actions'  },
-  { key: 'waiting',     label: 'Waiting'       },
-  { key: 'dueToday',    label: 'Due Today'     },
-  { key: 'stalled',     label: 'Stalled'       },
+  { key: 'inProgress',  label: 'Projects in Progress' },
+  { key: 'nextActions', label: 'Next Actions'          },
+  { key: 'dueToday',    label: 'Due Today'             },
+  { key: 'waiting',     label: 'Tasks Waiting'         },
+  { key: 'stalled',     label: 'Stalled Projects'      },
 ]
 
 function StatCard({ label, value }) {

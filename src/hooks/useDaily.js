@@ -23,7 +23,7 @@ export function useDaily(date) {
       const [dayNote, history, dailyStats] = await Promise.all([
         ensureNoteForDate(date),
         getHabitHistory(7),
-        getDailyStats(),
+        getDailyStats(date),
       ])
       setNote(dayNote)
       setHabitHistory(history)
@@ -81,7 +81,7 @@ export function useDaily(date) {
   }
 
   const refreshStats = async () => {
-    const dailyStats = await getDailyStats()
+    const dailyStats = await getDailyStats(date)
     setStats(dailyStats)
   }
 
