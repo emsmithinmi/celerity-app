@@ -4,61 +4,74 @@ All notable changes to GTD Manager are recorded here.
 
 ---
 
-## [Unreleased] — 2026-05-26
+## [Unreleased]
 
-### Added
-- **Settings page** (`/settings`) with full Energy Levels manager — add, edit, delete, and re-color energy levels without touching code or running migrations
-- **EnergyLevelsContext** — energy levels fetched from the database once at app load and shared across the whole app via React context
-- Settings ⚙️ link in sidebar (above Sign out)
-
-### Changed
-- `EnergyBadge` now reads label, icon, and colors from the database instead of a hardcoded lookup object
-- Task energy level dropdowns (TaskPage, TaskDetail) now driven by the same database-backed context
+_Nothing pending — all changes committed and deployed._
 
 ---
 
 ## 2026-05-26
 
 ### Added
-- Daily notes can now be expanded (Show more / Show less), edited inline, and deleted — pencil and trash icons appear on each note entry
-- **Errand** energy level added to tasks (purple badge, 🛒 icon)
-- **Scrap it** button on Project pages — permanently deletes the project and all of its tasks (with cascade: junction tables → comments → tasks → project)
-- `deletePerson()` API function with full cascade (task_people, project_people, people_comments)
+- **Day navigation on the Daily page** — ‹ › chevrons around the day name let you browse any past or future date; a "↩ Back to Today" pill appears when you're not on today; navigating to a day without a note creates one automatically
+- **Settings page** (`/settings`) — manage Energy Levels, Priorities, and Areas directly in the app with no code changes or DB migrations needed
+  - **Energy Levels**: add/edit/delete, full color picker, live badge preview
+  - **Priorities**: add/edit/delete, badge color pickers, live preview; `tasks_priority_check` and `projects_priority_check` constraints dropped so new values can be added freely
+  - **Areas**: simple name list with add/rename/delete; shown as autocomplete suggestions (`<datalist>`) in task and project forms — free-text still allowed
+- Settings ⚙️ link added to sidebar above Sign out
+- `EnergyLevelsContext`, `PrioritiesContext`, `AreasContext` — each fetches from the DB once at app load and shares data app-wide via React context
+- Daily notes can now be **expanded** (Show more / Show less), **edited inline**, and **deleted** — pencil and trash icons on each note entry
+- **Errand** energy level added (purple badge, 🛒)
+- **Scrap it** button on Project pages — permanently deletes the project and all its tasks (cascade: junction tables → comments → tasks → project)
+- `deletePerson()` with full cascade (task_people, project_people, people_comments)
 
 ### Changed
-- All "Edit" text buttons replaced with a pencil icon (✏) across Task, Project, Person, and Review pages
-- Delete buttons standardised to a solid red background with a trash icon only — consistent across tasks, projects, and people
+- **Stat cards on Daily page**:
+  - Moved from above Top of Mind to directly below it
+  - Relabelled: Projects in Progress · Next Actions · Due Today · Tasks Waiting · Stalled Projects
+  - **Due Today** now includes: tasks with `due_date` on the viewed date, all scheduled tasks, urgent/STAT priority tasks (deduped, done excluded), and projects whose `end_date` falls on that day
+  - Cards reflect the currently viewed date when navigating between days
+- Stat chip numbers on **Tasks, Projects, and People** list pages changed to uniform white — removed per-status color coding
+- `EnergyBadge` and `PriorityBadge` now read label, icon, and colors from the database instead of hardcoded objects
+- Priority dropdowns in TaskPage, TaskDetail, ProjectPage, ProjectDetail now driven by `PrioritiesContext`
+- Area fields upgraded from plain text inputs to `<datalist>` (type freely or pick from managed list)
+- All "Edit" text buttons replaced with a pencil icon across Task, Project, Person, and Review pages
+- Delete buttons standardised to solid red with a trash icon only — consistent across tasks, projects, and people
 - "Actions" section renamed to **"What's Next?"** on Task, Project, and Person detail pages
+- Daily page: horizontal padding added; New buttons and Review buttons centred
+- Day-of-week text on Daily page: bold → normal weight (gold color and size unchanged)
+- Daily quote now reflects the day being viewed (not always today's quote)
+- `getDailyStats` accepts a date parameter; `refreshStats` in the hook uses the currently viewed date
 
 ### Fixed
-- React hooks order violation on ProjectPage (useState for `scrapping` was declared after early returns — moved to main hooks block)
+- React hooks order violation on ProjectPage (`scrapping` useState was declared after early returns)
 
 ---
 
 ## 2026-05-25
 
 ### Added
-- Auto-rotating **daily quote** displayed under the date header on the Daily page — seeded by day-of-year so it changes each day without any API calls (75 curated quotes)
+- Auto-rotating **daily quote** under the date header — seeded by day-of-year, changes each day, no API calls (75 curated quotes)
 - Inbox tab added to the task list on Project detail pages
 
 ### Changed
-- Daily page: added horizontal padding, centred the New buttons bar, centred the Review buttons bar
-- Day-of-week text on Daily page changed from bold to normal weight (keeps gold colour and size)
+- Daily page: horizontal padding, centred New buttons bar, centred Review buttons bar
+- Day-of-week text: bold → normal weight
 
 ### Fixed
-- `createTask` was silently dropping `project_id` — fixed so tasks created from a project are correctly linked
-- `TaskPage` save: `description` column was missing from the update payload; `duration` interval type mismatch corrected
-- Added `try/catch/finally` to all detail-page save handlers so loading state always resets even on error
+- `createTask` silently dropping `project_id` — tasks created from a project now correctly linked
+- `TaskPage` save: `description` missing from update payload; `duration` interval type mismatch corrected
+- `try/catch/finally` added to all detail-page save handlers so loading state always resets on error
 
 ---
 
 ## 2026-05-25 — Major UX Redesign
 
 ### Changed
-- **Tasks, Projects, People** pages: replaced modal-based detail views with full dedicated pages (`/tasks/:id`, `/projects/:id`, `/people/:id`)
-- Dashboard replaced by a stat-card strip on the Daily page
+- Tasks, Projects, People: replaced modal-based detail views with full dedicated pages (`/tasks/:id`, `/projects/:id`, `/people/:id`)
+- Dashboard replaced by stat-card strip on the Daily page
 - Sidebar is now collapsible (icon-only mode)
-- All list pages show a stat summary row and navigate on row click instead of opening a modal
+- All list pages show a stat summary row and navigate on row click
 
 ---
 
@@ -66,17 +79,17 @@ All notable changes to GTD Manager are recorded here.
 
 ### Added
 - Project scaffold: Vite + React 18 + Tailwind CSS v4 + Supabase + React Router v6
-- Magic link authentication with Supabase Auth and custom SMTP via Resend
+- Magic link authentication with custom SMTP via Resend
 - Core UI component library: Button, Modal, ConfirmDialog, StatusPill, PriorityBadge, EnergyBadge, DurationDisplay
 - **Daily page** — date header, top-of-mind, agenda, habit toggles, notes log, quick capture modals
-- **Tasks page** — tabbed by status (Inbox → Next Action → Queued → Waiting → Someday → Done), capture modal, full GTD lifecycle actions
-- **Projects page** — tabbed by status, capture modal, task list per project, comments, linked people
-- **People page** — contact lifecycle (Inbox → Active → Stale), stale banner, linked tasks/projects, comments
+- **Tasks page** — full GTD lifecycle (Inbox → Next Action → Queued → Waiting → Someday → Done)
+- **Projects page** — tabbed by status, task list, comments, linked people
+- **People page** — contact lifecycle (Inbox → Active → Stale), linked tasks/projects, comments
 - **Habits page** — calendar heatmap, streaks, percentage bars, time-frame selector
-- **Reviews page** — Daily / Weekly / Monthly structured review with autosave and suggestion cards
-- PWA support: service worker (Workbox generateSW), app manifest, installable on mobile
-- GitHub Actions deploy pipeline: push to `main` → `npm run build` → Cloudflare Pages via Wrangler
-- Supabase RLS policies on all tables (`USING (true)`, `GRANT ALL TO authenticated`)
+- **Reviews page** — Daily / Weekly / Monthly with autosave and suggestion cards
+- PWA: service worker (Workbox generateSW), app manifest, installable on mobile
+- GitHub Actions deploy: push to `main` → `npm run build` → Cloudflare Pages via Wrangler
+- Supabase RLS on all tables (`USING (true)`, `GRANT ALL TO authenticated`)
 
 ---
 
