@@ -12,13 +12,13 @@ const TABS = [
   { key: 'stale',  label: 'Stale'  },
 ]
 
-function StatChip({ label, count, color }) {
+function StatChip({ label, count }) {
   return (
     <div
       className="flex flex-col items-center px-4 py-3 rounded-xl border"
       style={{ backgroundColor: '#181825', borderColor: '#313244' }}
     >
-      <span className="text-2xl font-bold" style={{ color }}>{count}</span>
+      <span className="text-2xl font-bold" style={{ color: '#cdd6f4' }}>{count}</span>
       <span className="text-xs mt-0.5" style={{ color: '#6c7086' }}>{label}</span>
     </div>
   )
@@ -68,10 +68,10 @@ export default function People() {
       <div className="flex-1 overflow-y-auto">
         {/* Stat cards */}
         <div className="grid grid-cols-4 gap-3 px-6 pt-5 pb-4">
-          <StatChip label="Total"  count={stats.total}  color="#cdd6f4" />
-          <StatChip label="Active" count={stats.active} color="#0F9D58" />
-          <StatChip label="Inbox"  count={stats.inbox}  color="#FBBC05" />
-          <StatChip label="Stale"  count={stats.stale}  color="#DB4437" />
+          <StatChip label="Total"  count={stats.total}  />
+          <StatChip label="Active" count={stats.active} />
+          <StatChip label="Inbox"  count={stats.inbox}  />
+          <StatChip label="Stale"  count={stats.stale}  />
         </div>
 
         {/* Search */}
