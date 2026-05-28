@@ -94,6 +94,22 @@ export async function deletePerson(id) {
   if (error) throw error
 }
 
+// ─── Avatar ───────────────────────────────────────────────────────────────────
+
+export async function uploadPersonAvatar(personId, file) {
+  const ext = file.name.split('.').pop().toLowerCase()
+  const path = `people/${personId}/avatar.${ext}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('avatars')
+    .upload(path, file, { upsert: true, contentType: file.type })
+  if (uploadError) throw uploadError
+
+  const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
+
+  return updatePerson(personId, { avatar_url: publicUrl })
+}
+
 // ─── Comments ─────────────────────────────────────────────────────────────────
 
 export async function addPersonComment(personId, body) {

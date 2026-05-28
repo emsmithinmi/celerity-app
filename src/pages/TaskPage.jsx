@@ -16,6 +16,7 @@ import WaitingModal from '../components/tasks/WaitingModal'
 import HighlightModal from '../components/tasks/HighlightModal'
 import RouteModal from '../components/tasks/RouteModal'
 import TaskComments from '../components/tasks/TaskComments'
+import TaskChecklist from '../components/tasks/TaskChecklist'
 import { TASK_ACTIONS } from '../lib/constants'
 import { useEnergyLevels } from '../contexts/EnergyLevelsContext'
 import { usePriorities }   from '../contexts/PrioritiesContext'
@@ -434,6 +435,13 @@ export default function TaskPage() {
               )}
             </div>
           </section>
+
+          {/* Subtasks checklist */}
+          <TaskChecklist
+            taskId={task.id}
+            subtasks={task.subtasks ?? []}
+            onSubtasksChange={subtasks => setTask(prev => ({ ...prev, subtasks }))}
+          />
 
           {/* Comments section */}
           <section>

@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import AvatarCircle from '../ui/AvatarCircle'
+import { uploadUserAvatar } from '../../lib/api/user'
 
 const NAV_ITEMS = [
   { to: '/daily',    label: 'Daily',    icon: '📅' },
@@ -18,6 +20,19 @@ const BOTTOM_NAV = [
 export default function Layout() {
   const { user, signOut } = useAuth()
   const [collapsed, setCollapsed] = useState(false)
+  const [avatarUploading, setAvatarUploading] = useState(false)
+
+  const handleUserAvatarUpload = async (file) => {
+    if (!user) return
+    setAvatarUploading(true)
+    try {
+      await uploadUserAvatar(user.id, file)
+    } catch (err) {
+      console.error('Avatar upload failed:', err)
+    } finally {
+      setAvatarUploading(false)
+    }
+  }
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ backgroundColor: '#1e1e2e' }}>
@@ -115,14 +130,28 @@ export default function Layout() {
           className="border-t"
           style={{ borderColor: '#313244', padding: collapsed ? '12px 8px' : '12px 16px' }}
         >
-          {user && !collapsed && (
-            <p
-              className="text-xs truncate mb-2"
-              style={{ color: '#6c7086' }}
-              title={user.email}
+          {user && (
+            <div
+              className={`flex items-center mb-2 ${collapsed ? 'justify-center' : 'gap-2'}`}
             >
-              {user.email}
-            </p>
+              <AvatarCircle
+                src={user.user_metadata?.avatar_url}
+                name={user.email ?? ''}
+                size="sm"
+                canUpload
+                uploading={avatarUploading}
+                onFileSelect={handleUserAvatarUpload}
+              />
+              {!collapsed && (
+                <p
+                  className="text-xs truncate flex-1"
+                  style={{ color: '#6c7086' }}
+                  title={user.email}
+                >
+                  {user.email}
+                </p>
+              )}
+            </div>
           )}
           <button
             onClick={signOut}

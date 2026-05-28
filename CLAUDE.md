@@ -35,6 +35,7 @@ src/
       energyLevels.js    # CRUD for energy_levels table
       priorities.js      # CRUD for priorities table
       areas.js           # CRUD for areas table
+      user.js            # uploadUserAvatar — uploads to avatars bucket, saves URL in auth user_metadata
   contexts/
     AuthContext.jsx
     EnergyLevelsContext.jsx   # provides levels[], levelMap{}, reload()
@@ -65,6 +66,7 @@ src/
       TaskRow.jsx
       TaskDetail.jsx         # inline edit component (used inside TaskPage)
       TaskComments.jsx
+      TaskChecklist.jsx      # subtask checklist — JSONB steps scoped to the task, not real tasks
       DurationInput.jsx
       HighlightModal.jsx
       RouteModal.jsx
@@ -79,6 +81,7 @@ src/
       PersonDetail.jsx       # legacy component (may be unused)
       PersonComments.jsx
     ui/
+      AvatarCircle.jsx       # circular avatar: shows image or initials fallback; canUpload adds camera-hover + file input (sizes: sm/md/lg)
       Button.jsx
       Modal.jsx
       ConfirmDialog.jsx
@@ -114,9 +117,9 @@ All tables have RLS enabled with `USING (true) WITH CHECK (true)` + `GRANT ALL T
 
 | Table | Key columns |
 |-------|-------------|
-| `tasks` | id, title, status, priority, due_date, project_id, area, energy_level, waiting_for, archived_at |
+| `tasks` | id, title, status, priority, due_date, project_id, area, energy_level, waiting_for, archived_at, subtasks (jsonb `[{id,text,done}]`) |
 | `projects` | id, title, slug, status, priority, area, start_date, end_date, is_highlight, archived_at |
-| `people` | id, first_name, last_name, preferred_name, professional_title, relationship, contact_type, occupation, company, email_personal, email_work, phone_personal, phone_work, birthday, address_street, address_city, address_state, address_zip, address_work_street, address_work_city, address_work_state, address_work_zip, social_media (jsonb `[{platform,handle}]`), notes, is_stale, status |
+| `people` | id, first_name, last_name, preferred_name, professional_title, relationship, contact_type, occupation, company, email_personal, email_work, phone_personal, phone_work, birthday, address_street, address_city, address_state, address_zip, address_work_street, address_work_city, address_work_state, address_work_zip, social_media (jsonb `[{platform,handle}]`), notes, is_stale, status, avatar_url (text) |
 | `daily_notes` | id, date, top_of_mind[], notes jsonb, habit_morning_meds, habit_evening_meds, habit_journal, habit_meditation, habit_breathwork, habit_stretching, habit_health_tracking, code_challenge jsonb |
 | `reviews` | id, type, date, status, content jsonb, suggestions jsonb |
 | `energy_levels` | id, value, label, icon, bg_color, text_color, sort_order |
@@ -178,11 +181,11 @@ Three reference-data contexts are mounted at the App root level (outside Browser
 ## Pages — Current State
 - **Daily** — date nav (← → chevrons + "↩ Back to Today" pill), daily quote, quick capture bar, top-of-mind, stat cards (5 metrics), agenda, projects section, tasks section, notes log, habit toggles, daily challenge, review buttons
 - **Tasks** — tabbed by status, stat summary row, capture modal, click row → `/tasks/:id`
-- **TaskPage** — full detail: title, status, priority (from context), energy level (from context), area (datalist), due date, duration, waiting-for, description, comments, linked people, archive/delete
+- **TaskPage** — full detail: title, status, priority (from context), energy level (from context), area (datalist), due date, duration, waiting-for, description, subtask checklist (pencil-edit, check-off saves immediately), comments, linked people, archive/delete
 - **Projects** — tabbed by status, capture modal, click row → `/projects/:id`
 - **ProjectPage** — full detail: all fields, task list by status (incl. Inbox tab), comments, linked people, Scrap It (hard delete with cascade)
 - **People** — tabbed by status, click row → `/people/:id`
-- **PersonPage** — grouped sections: Identity (title, name, relationship, contact type, occupation, company), Contact Details (personal/work email+phone, birthday), Addresses (home + work structured), Social Media (dynamic platform+handle list), Notes; tasks, projects, comments, What's Next actions
+- **PersonPage** — avatar circle (72px, click-to-upload) above Identity fields; grouped sections: Identity (title, name, relationship, contact type, occupation, company), Contact Details (personal/work email+phone, birthday), Addresses (home + work structured), Social Media (dynamic platform+handle list), Notes; tasks, projects, comments, What's Next actions
 - **Habits** — calendar heatmap, streaks, % bars, time-frame selector
 - **Reviews** — Daily/Weekly/Monthly, autosave, suggestion cards, complete button
 - **Settings** — Energy Levels (full color picker + icon + badge preview), Priorities (color pickers + badge preview), Areas (name list); all DB-driven with add/edit/delete

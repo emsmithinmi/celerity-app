@@ -1,11 +1,9 @@
-import { StatusPill } from '../ui'
+import { StatusPill, AvatarCircle } from '../ui'
 
 export default function PersonRow({ person, onClick }) {
   const displayName = person.preferred_name
     ? `${person.preferred_name} ${person.last_name}`
     : `${person.first_name} ${person.last_name}`
-
-  const initials = `${person.first_name?.[0] ?? ''}${person.last_name?.[0] ?? ''}`.toUpperCase()
 
   // Build subtitle: relationship and/or company
   const subtitle = [
@@ -19,13 +17,7 @@ export default function PersonRow({ person, onClick }) {
       className="flex items-center gap-3 px-4 py-3 border-b last:border-b-0 cursor-pointer transition-opacity hover:opacity-90"
       style={{ borderColor: '#313244' }}
     >
-      {/* Avatar */}
-      <div
-        className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
-        style={{ backgroundColor: '#313244', color: '#89b4fa' }}
-      >
-        {initials}
-      </div>
+      <AvatarCircle src={person.avatar_url} name={displayName} size="sm" />
 
       {/* Name + subtitle */}
       <div className="flex-1 min-w-0">

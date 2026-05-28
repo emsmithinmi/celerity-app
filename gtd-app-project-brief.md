@@ -87,6 +87,8 @@ notes         text          nullable
 
 context       text\[\]        array of context tags
 
+subtasks      jsonb         array of {id, text, done} — local checklist steps, not tracked as real tasks
+
 created\_at    timestamptz   default now()
 
 updated\_at    timestamptz   default now()
@@ -154,6 +156,8 @@ address\_state     text    nullable
 address\_zip       text    nullable
 
 birthday          date    nullable
+
+avatar\_url        text    nullable
 
 created\_at        timestamptz
 
@@ -273,7 +277,7 @@ src/
 
 │   ├── ui/              \# Reusable: StatusPill, PriorityBadge, Button, Modal
 
-│   ├── tasks/           \# TaskCard, TaskDetail, TaskList, TaskForm
+│   ├── tasks/           \# TaskCard, TaskDetail, TaskList, TaskForm, TaskChecklist
 
 │   ├── projects/        \# ProjectCard, ProjectDetail, ProjectList, ProjectForm
 
@@ -419,3 +423,12 @@ This project demonstrates:
 ---
 
 *Document maintained alongside the project. Update phase checkboxes as work progresses.*  
+
+---
+
+## **Changelog**
+
+### 2026-05-28
+- **Avatar images** — Added `avatar_url` column to `people` table and a public `avatars` Supabase Storage bucket (5 MB limit, image types only; RLS allows authenticated upload/update/delete, public read). New `AvatarCircle` shared component renders a circle with an image or initials fallback in three sizes (sm 32px / md 48px / lg 72px); `canUpload` prop adds a camera-icon hover overlay and hidden file input. Person avatars appear in `PersonRow` (list view) and at the top of `PersonPage` (72px, always click-to-upload). User avatar appears in the sidebar footer (32px, click to upload); stored in Supabase Auth user metadata (`user_metadata.avatar_url`) so it persists across sessions.
+
+- **Task subtasks checklist** — Added a `subtasks` JSONB column (`[{id, text, done}]`) to the `tasks` table. New `TaskChecklist` component renders below the Details section on `TaskPage`. Checkboxes save immediately on click; a pencil button opens edit mode for adding, renaming, and removing steps. Steps are scoped to the task only — not treated as standalone tasks anywhere in the system.

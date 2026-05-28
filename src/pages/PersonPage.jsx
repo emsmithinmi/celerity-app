@@ -3,8 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Trash2, Pencil, Plus, X } from 'lucide-react'
 import {
   getPerson, updatePerson, activatePerson, deletePerson,
-  getPersonTasks, getPersonProjects,
+  getPersonTasks, getPersonProjects, uploadPersonAvatar,
 } from '../lib/api/people'
+import AvatarCircle from '../components/ui/AvatarCircle'
 import Button from '../components/ui/Button'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import { StatusPill } from '../components/ui'
@@ -92,8 +93,9 @@ export default function PersonPage() {
   const [draft,       setDraft]       = useState(null)
   const [saving,      setSaving]      = useState(false)
   const [saveError,   setSaveError]   = useState(null)
-  const [showDelete,  setShowDelete]  = useState(false)
-  const [deleting,    setDeleting]    = useState(false)
+  const [showDelete,      setShowDelete]      = useState(false)
+  const [deleting,        setDeleting]        = useState(false)
+  const [avatarUploading, setAvatarUploading] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -182,6 +184,18 @@ export default function PersonPage() {
     setPerson(prev => ({ ...prev, ...updated }))
   }
 
+  const handleAvatarUpload = async (file) => {
+    setAvatarUploading(true)
+    try {
+      const updated = await uploadPersonAvatar(person.id, file)
+      setPerson(prev => ({ ...prev, avatar_url: updated.avatar_url }))
+    } catch (err) {
+      console.error('Avatar upload failed:', err)
+    } finally {
+      setAvatarUploading(false)
+    }
+  }
+
   const handleDelete = async () => {
     setDeleting(true)
     try {
@@ -258,6 +272,25 @@ export default function PersonPage() {
           {saveError && (
             <p className="text-xs mb-2" style={{ color: '#DB4437' }}>{saveError}</p>
           )}
+
+          {/* Avatar */}
+          <div className="flex items-center gap-3 mb-4">
+            <AvatarCircle
+              src={person.avatar_url}
+              name={displayName(person)}
+              size="lg"
+              canUpload
+              uploading={avatarUploading}
+              onFileSelect={handleAvatarUpload}
+            />
+            <div>
+              <p className="text-sm font-medium" style={{ color: '#cdd6f4' }}>{displayName(person)}</p>
+              <p className="text-xs mt-0.5" style={{ color: '#6c7086' }}>
+                {avatarUploading ? 'Uploading…' : 'Click to change photo'}
+              </p>
+            </div>
+          </div>
+
           <SectionCard>
             {/* Title / First / Last / Preferred */}
             <div className="grid grid-cols-4 gap-3">

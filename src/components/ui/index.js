@@ -1,3 +1,4 @@
+export { default as AvatarCircle }    from './AvatarCircle'
 export { default as StatusPill }      from './StatusPill'
 export { default as PriorityBadge }   from './PriorityBadge'
 export { default as EnergyBadge }     from './EnergyBadge'
