@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
-import { getProjectComments, addProjectComment } from '../../lib/api/projects'
+import { X } from 'lucide-react'
+import { getProjectComments, addProjectComment, deleteProjectComment } from '../../lib/api/projects'
 import Button from '../ui/Button'
 
 export default function ProjectComments({ projectId }) {
-  const [comments, setComments] = useState([])
-  const [body,     setBody]     = useState('')
-  const [saving,   setSaving]   = useState(false)
-  const [loading,  setLoading]  = useState(true)
+  const [comments,   setComments]   = useState([])
+  const [body,       setBody]       = useState('')
+  const [saving,     setSaving]     = useState(false)
+  const [loading,    setLoading]    = useState(true)
+  const [deletingId, setDeletingId] = useState(null)
 
   useEffect(() => {
     if (!projectId) return
@@ -25,6 +27,16 @@ export default function ProjectComments({ projectId }) {
     setSaving(false)
   }
 
+  const handleDelete = async (id) => {
+    setDeletingId(id)
+    try {
+      await deleteProjectComment(id)
+      setComments(prev => prev.filter(c => c.id !== id))
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   return (
     <div className="space-y-3">
       {loading ? (
@@ -37,12 +49,25 @@ export default function ProjectComments({ projectId }) {
               className="rounded-lg px-3 py-2.5 border"
               style={{ backgroundColor: '#1e1e2e', borderColor: '#313244' }}
             >
-              <p className="text-xs mb-1" style={{ color: '#6c7086' }}>
-                {new Date(c.created_at).toLocaleDateString('en-US', {
-                  month: 'short', day: 'numeric', year: 'numeric',
-                  hour: '2-digit', minute: '2-digit',
-                })}
-              </p>
+              <div className="flex items-center justify-between mb-1">
+                <p className="text-xs" style={{ color: '#6c7086' }}>
+                  {new Date(c.created_at).toLocaleDateString('en-US', {
+                    month: 'short', day: 'numeric', year: 'numeric',
+                    hour: '2-digit', minute: '2-digit',
+                  })}
+                </p>
+                <button
+                  onClick={() => handleDelete(c.id)}
+                  disabled={deletingId === c.id}
+                  title="Delete comment"
+                  className="flex items-center justify-center rounded transition-colors disabled:opacity-40"
+                  style={{ color: '#45475a' }}
+                  onMouseEnter={e => { e.currentTarget.style.color = '#DB4437' }}
+                  onMouseLeave={e => { e.currentTarget.style.color = '#45475a' }}
+                >
+                  <X size={12} />
+                </button>
+              </div>
               <p className="text-sm whitespace-pre-wrap" style={{ color: '#cdd6f4' }}>{c.body}</p>
             </div>
           ))}

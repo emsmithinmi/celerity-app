@@ -389,23 +389,6 @@ export default function TaskPage() {
                 <ReadField label="Project" value={task.projects?.title} />
               </div>
 
-              {/* Notes */}
-              {editing ? (
-                <div>
-                  <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Notes</label>
-                  <textarea
-                    value={d.notes ?? ''}
-                    onChange={e => change('notes', e.target.value)}
-                    rows={2}
-                    className={`${inputCls} resize-none`}
-                    style={inputStyle}
-                    placeholder="Additional notes…"
-                  />
-                </div>
-              ) : task.notes ? (
-                <ReadField label="Notes" value={task.notes} />
-              ) : null}
-
               {/* Context tags */}
               {task.context?.length > 0 && (
                 <div>

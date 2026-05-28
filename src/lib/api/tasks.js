@@ -136,6 +136,11 @@ export async function addTaskComment(taskId, body) {
   return data
 }
 
+export async function deleteTaskComment(commentId) {
+  const { error } = await supabase.from('task_comments').delete().eq('id', commentId)
+  if (error) throw error
+}
+
 // ─── People Links ─────────────────────────────────────────────────────────────
 
 export async function linkPersonToTask(taskId, personId) {

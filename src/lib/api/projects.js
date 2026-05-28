@@ -190,6 +190,11 @@ export async function addProjectComment(projectId, body) {
   return data
 }
 
+export async function deleteProjectComment(commentId) {
+  const { error } = await supabase.from('project_comments').delete().eq('id', commentId)
+  if (error) throw error
+}
+
 // ─── People Links ─────────────────────────────────────────────────────────────
 
 export async function linkPersonToProject(projectId, personId) {

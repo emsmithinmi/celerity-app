@@ -121,3 +121,8 @@ export async function addPersonComment(personId, body) {
   if (error) throw error
   return data
 }
+
+export async function deletePersonComment(commentId) {
+  const { error } = await supabase.from('people_comments').delete().eq('id', commentId)
+  if (error) throw error
+}
