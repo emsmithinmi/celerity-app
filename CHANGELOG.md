@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to GTD Manager are recorded here.
+All notable changes to Celerity are recorded here.
 
 ---
 

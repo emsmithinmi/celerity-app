@@ -1,4 +1,4 @@
-# **Project Management App — Take 2**
+# **Celerity**
 
 ### **Project Brief & Technical Specification**
 
@@ -8,7 +8,7 @@
 
 ## **Overview**
 
-A personal GTD (Getting Things Done) productivity web application built as a Progressive Web App (PWA), replacing an Obsidian-based system. The app manages Tasks, Projects, People, and Daily Notes with a fully custom UI, real-time database sync, and a planned AI review layer.
+Celerity is a personal GTD (Getting Things Done) productivity web application built as a Progressive Web App (PWA), replacing an Obsidian-based system. The app manages Tasks, Projects, People, and Daily Notes with a fully custom UI, real-time database sync, and a planned AI review layer.
 
 This project serves dual purpose: a daily-use personal productivity tool and a portfolio piece demonstrating full-stack web development skills.
 
@@ -416,8 +416,9 @@ This project demonstrates:
 - **Cloud deployment**: CI/CD pipeline via GitHub → Cloudflare Pages  
 - **Future-proofed architecture**: Self-hostable, AI-extensible, migration-friendly
 
-**Live URL**: TBD (Cloudflare Pages)  
-**GitHub Repo**: TBD  
+**App Name**: Celerity  
+**Live URL**: https://gtd-manager.pages.dev  
+**GitHub Repo**: https://github.com/emsmithinmi/Project-manager  
 **Stack**: React · Vite · Tailwind · Supabase · PostgreSQL · Cloudflare Pages
 
 ---

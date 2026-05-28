@@ -1,7 +1,7 @@
-# GTD Manager — Project Context
+# Celerity — Project Context
 
 ## What This Is
-A personal GTD (Getting Things Done) productivity PWA built with React + Vite + Supabase.
+Celerity — a personal GTD (Getting Things Done) productivity PWA built with React + Vite + Supabase.
 Single user app (emailemsmith@gmail.com). No multi-tenancy needed — RLS policies use `USING (true)`.
 
 ## Stack

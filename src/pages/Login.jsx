@@ -39,11 +39,8 @@ export default function Login() {
         {/* Logo / Title */}
         <div className="text-center mb-8">
           <h1 className="text-2xl font-semibold mb-1" style={{ color: '#cdd6f4' }}>
-            GTD
+            Celerity
           </h1>
-          <p className="text-sm" style={{ color: '#6c7086' }}>
-            Getting Things Done
-          </p>
         </div>
 
         {sent ? (

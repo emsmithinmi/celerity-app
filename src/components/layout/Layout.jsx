@@ -57,8 +57,7 @@ export default function Layout() {
         >
           {!collapsed && (
             <div>
-              <h1 className="text-lg font-semibold" style={{ color: '#cdd6f4' }}>GTD</h1>
-              <p className="text-xs mt-0.5" style={{ color: '#6c7086' }}>Getting Things Done</p>
+              <h1 className="text-lg font-semibold" style={{ color: '#cdd6f4' }}>Celerity</h1>
             </div>
           )}
           <button

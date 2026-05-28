@@ -11,9 +11,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg', 'favicon.svg'],
       manifest: {
-        name: 'GTD Manager',
-        short_name: 'GTD',
-        description: 'Personal GTD productivity manager — tasks, projects, people, daily reviews.',
+        name: 'Celerity',
+        short_name: 'Celerity',
+        description: 'Celerity — personal productivity manager for tasks, projects, people, and daily reviews.',
         theme_color: '#1e1e2e',
         background_color: '#1e1e2e',
         display: 'standalone',

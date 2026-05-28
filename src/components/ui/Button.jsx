@@ -5,7 +5,7 @@
  *   ghost     — transparent, low-key
  *   danger    — red destructive actions
  *   success   — green positive actions
- *   action    — used for GTD workflow action buttons (wider, more prominent)
+ *   action    — used for workflow action buttons (wider, more prominent)
  *
  * Sizes: sm | md (default) | lg
  */
