@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Pencil } from 'lucide-react'
 import { ensureReview, updateReviewContent, completeReview, updateSuggestions } from '../lib/api/reviews'
+import { runDailyReview } from '../lib/ai/skills/dailyReview'
+import { useAIConfig } from '../hooks/useAI'
 import { useTasks }    from '../hooks/useTasks'
 import { useProjects } from '../hooks/useProjects'
 import { getHabitHistory } from '../lib/api/daily'
@@ -238,7 +240,7 @@ function ProjectSnapshot({ projects, label }) {
 
 // ─── DAILY REVIEW ─────────────────────────────────────────────────────────────
 
-function DailyReview({ review, onContentChange, suggestions, onSuggestionChange }) {
+function DailyReview({ review, onContentChange, suggestions, onSuggestionChange, onAiGenerate, aiLoading, aiResult, aiConfigured }) {
   const c = review.content ?? {}
 
   const { tasks: nextActions } = useTasks({ status: 'next_action' })
@@ -340,8 +342,41 @@ function DailyReview({ review, onContentChange, suggestions, onSuggestionChange 
         </div>
       </ReviewSection>
 
+      {/* AI Generate section — only shows when AI is configured */}
+      <ReviewSection title="🤖 AI Daily Review">
+        {!aiConfigured ? (
+          <p className="text-sm" style={{ color: '#6c7086' }}>
+            Add an AI provider in{' '}
+            <a href="/settings" className="underline" style={{ color: '#89b4fa' }}>Settings</a>{' '}
+            to enable AI-powered daily review generation.
+          </p>
+        ) : aiResult ? (
+          <div className="space-y-2">
+            <p className="text-xs" style={{ color: '#a6e3a1' }}>
+              ✓ Generated for {aiResult.tomorrowStr} — Top of Mind, Agenda, and Challenge are set. Review the suggestions below.
+            </p>
+            <Button size="sm" variant="secondary" onClick={onAiGenerate} disabled={aiLoading}>
+              Regenerate
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-sm" style={{ color: '#6c7086' }}>
+              Claude reads your projects, tasks, and last 30 days of notes to set up tomorrow —
+              Top of Mind, Agenda, Challenge, and observations.
+            </p>
+            <Button size="sm" variant="action" onClick={onAiGenerate} disabled={aiLoading}>
+              {aiLoading
+                ? <span className="flex items-center gap-2"><span className="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />Generating…</span>
+                : 'Generate with AI'
+              }
+            </Button>
+          </div>
+        )}
+      </ReviewSection>
+
       {suggestions.length > 0 && (
-        <ReviewSection title="🤖 AI Suggestions">
+        <ReviewSection title="💡 Suggestions">
           <div className="space-y-3">
             {suggestions.map((s, i) => (
               <SuggestionCard
@@ -614,6 +649,10 @@ export default function Reviews() {
   const [saving,      setSaving]      = useState(false)
   const [completed,   setCompleted]   = useState(false)
   const [suggestions, setSuggestions] = useState([])
+  const [aiLoading,   setAiLoading]   = useState(false)
+  const [aiResult,    setAiResult]    = useState(null)
+  const [aiError,     setAiError]     = useState(null)
+  const { configured: aiConfigured }  = useAIConfig()
 
   // Autosave timer
   const saveTimer = useRef(null)
@@ -649,6 +688,22 @@ export default function Reviews() {
   const handleSuggestionChange = async (updated) => {
     setSuggestions(updated)
     if (review?.id) await updateSuggestions(review.id, updated)
+  }
+
+  const handleAiGenerate = async () => {
+    if (!review?.id) return
+    setAiLoading(true)
+    setAiError(null)
+    try {
+      await updateReviewContent(review.id, review.content)
+      const res = await runDailyReview(review.id, review.content ?? {})
+      setSuggestions(res.suggestions)
+      setAiResult(res)
+    } catch (err) {
+      setAiError(err.message)
+    } finally {
+      setAiLoading(false)
+    }
   }
 
   const handleComplete = async () => {
@@ -731,12 +786,23 @@ export default function Reviews() {
             {review && (
               <>
                 {activeType === 'daily' && (
-                  <DailyReview
-                    review={review}
-                    onContentChange={handleContentChange}
-                    suggestions={suggestions}
-                    onSuggestionChange={handleSuggestionChange}
-                  />
+                  <>
+                    {aiError && (
+                      <div className="rounded-lg border px-4 py-3 text-sm" style={{ backgroundColor: '#3a1e1e', borderColor: '#f38ba8', color: '#f38ba8' }}>
+                        AI error: {aiError}
+                      </div>
+                    )}
+                    <DailyReview
+                      review={review}
+                      onContentChange={handleContentChange}
+                      suggestions={suggestions}
+                      onSuggestionChange={handleSuggestionChange}
+                      onAiGenerate={handleAiGenerate}
+                      aiLoading={aiLoading}
+                      aiResult={aiResult}
+                      aiConfigured={aiConfigured}
+                    />
+                  </>
                 )}
                 {activeType === 'weekly' && (
                   <WeeklyReview

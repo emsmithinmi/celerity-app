@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Pencil, Trash2, Plus, GripVertical } from 'lucide-react'
 import Button from '../components/ui/Button'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
@@ -8,6 +8,8 @@ import { useAreas }        from '../contexts/AreasContext'
 import { createEnergyLevel, updateEnergyLevel, deleteEnergyLevel } from '../lib/api/energyLevels'
 import { createPriority,   updatePriority,   deletePriority   } from '../lib/api/priorities'
 import { createArea,       updateArea,       deleteArea       } from '../lib/api/areas'
+import { getAIConfig, saveAIConfig, getProviderPreset, PROVIDERS, PROVIDER_PRESETS } from '../lib/ai/config'
+import { testConnection } from '../lib/ai/client'
 
 // ─── Inline editable row ──────────────────────────────────────────────────────
 function EnergyRow({ level, onSaved, onDelete }) {
@@ -611,6 +613,148 @@ function useLocalList(contextList, reloadFn) {
   return { displayed, onSaved, onDeleted, onAdded }
 }
 
+// ─── AI Settings ─────────────────────────────────────────────────────────────
+
+const INPUT_STYLE = {
+  backgroundColor: '#1e1e2e',
+  borderColor: '#313244',
+  color: '#cdd6f4',
+}
+
+function AISettings() {
+  const [provider, setProvider] = useState('')
+  const [model,    setModel]    = useState('')
+  const [baseUrl,  setBaseUrl]  = useState('')
+  const [apiKey,   setApiKey]   = useState('')
+  const [saving,   setSaving]   = useState(false)
+  const [saved,    setSaved]    = useState(false)
+  const [testing,  setTesting]  = useState(false)
+  const [testStatus, setTestStatus] = useState(null) // 'ok' | 'fail' | null
+  const [loading,  setLoading]  = useState(true)
+
+  useEffect(() => {
+    getAIConfig().then(cfg => {
+      if (cfg.provider) setProvider(cfg.provider)
+      if (cfg.model)    setModel(cfg.model)
+      if (cfg.baseUrl)  setBaseUrl(cfg.baseUrl)
+      if (cfg.apiKey)   setApiKey(cfg.apiKey)
+      setLoading(false)
+    })
+  }, [])
+
+  const handleProviderChange = (p) => {
+    setProvider(p)
+    setTestStatus(null)
+    const preset = getProviderPreset(p)
+    setBaseUrl(preset.baseUrl)
+    setModel(preset.model)
+  }
+
+  const handleSave = async () => {
+    setSaving(true)
+    setSaved(false)
+    try {
+      await saveAIConfig({ provider, model, baseUrl, apiKey })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleTest = async () => {
+    setTesting(true)
+    setTestStatus(null)
+    try {
+      const ok = await testConnection()
+      setTestStatus(ok ? 'ok' : 'fail')
+    } catch {
+      setTestStatus('fail')
+    } finally {
+      setTesting(false)
+    }
+  }
+
+  if (loading) return <p className="text-sm" style={{ color: '#6c7086' }}>Loading…</p>
+
+  return (
+    <div className="space-y-4">
+      {/* Provider */}
+      <div>
+        <label className="block text-xs font-medium mb-1.5" style={{ color: '#6c7086' }}>Provider</label>
+        <select
+          value={provider}
+          onChange={e => handleProviderChange(e.target.value)}
+          className="w-full px-3 py-2 rounded-lg text-sm border outline-none"
+          style={INPUT_STYLE}
+        >
+          <option value="">— Select a provider —</option>
+          {PROVIDERS.map(p => (
+            <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Base URL */}
+      <div>
+        <label className="block text-xs font-medium mb-1.5" style={{ color: '#6c7086' }}>Base URL</label>
+        <input
+          type="text"
+          value={baseUrl}
+          onChange={e => setBaseUrl(e.target.value)}
+          placeholder="https://api.openai.com/v1"
+          className="w-full px-3 py-2 rounded-lg text-sm border outline-none font-mono"
+          style={INPUT_STYLE}
+        />
+      </div>
+
+      {/* Model */}
+      <div>
+        <label className="block text-xs font-medium mb-1.5" style={{ color: '#6c7086' }}>Model</label>
+        <input
+          type="text"
+          value={model}
+          onChange={e => setModel(e.target.value)}
+          placeholder="gpt-4o"
+          className="w-full px-3 py-2 rounded-lg text-sm border outline-none font-mono"
+          style={INPUT_STYLE}
+        />
+      </div>
+
+      {/* API Key */}
+      <div>
+        <label className="block text-xs font-medium mb-1.5" style={{ color: '#6c7086' }}>API Key</label>
+        <input
+          type="password"
+          value={apiKey}
+          onChange={e => { setApiKey(e.target.value); setTestStatus(null) }}
+          placeholder="sk-…"
+          className="w-full px-3 py-2 rounded-lg text-sm border outline-none font-mono"
+          style={INPUT_STYLE}
+        />
+        <p className="text-xs mt-1" style={{ color: '#6c7086' }}>
+          Stored in your Supabase account — never in the source bundle.
+        </p>
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-3 pt-1">
+        <Button size="sm" variant="primary" onClick={handleSave} disabled={saving || !provider || !apiKey}>
+          {saving ? 'Saving…' : 'Save'}
+        </Button>
+        <Button size="sm" variant="secondary" onClick={handleTest} disabled={testing || !apiKey}>
+          {testing ? 'Testing…' : 'Test Connection'}
+        </Button>
+        {saved && <span className="text-xs" style={{ color: '#a6e3a1' }}>✓ Saved</span>}
+        {testStatus === 'ok'   && <span className="text-xs" style={{ color: '#a6e3a1' }}>✓ Connected</span>}
+        {testStatus === 'fail' && <span className="text-xs" style={{ color: '#f38ba8' }}>✕ Failed — check your key and model</span>}
+      </div>
+    </div>
+  )
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
 export default function Settings() {
   const { levels,     loading: elLoading,   reload: reloadEL }   = useEnergyLevels()
   const { priorities, loading: priLoading,  reload: reloadPri }  = usePriorities()
@@ -667,6 +811,17 @@ export default function Settings() {
             <AddAreaForm onAdded={ar.onAdded} nextSortOrder={(ar.displayed[ar.displayed.length - 1]?.sort_order ?? 0) + 10} />
           </div>
         )}
+      </section>
+
+      {/* ── AI ── */}
+      <section>
+        <div className="mb-4">
+          <h2 className="text-base font-semibold" style={{ color: '#cdd6f4' }}>AI Assistant</h2>
+          <p className="text-sm mt-0.5" style={{ color: '#6c7086' }}>
+            Connect any OpenAI-compatible provider — or Anthropic directly. Your key is stored in your account, not in the app bundle.
+          </p>
+        </div>
+        <AISettings />
       </section>
     </div>
   )
