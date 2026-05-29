@@ -26,6 +26,14 @@ src/
   lib/
     supabase.js
     constants.js
+    ai/
+      config.js            # read/write AI provider config from Supabase user_metadata
+      client.js            # brand-agnostic callAI() — routes all calls through Supabase Edge Function proxy
+      adapters/
+        openai.js          # OpenAI-compatible adapter (unused directly — proxy handles it)
+        anthropic.js       # Anthropic adapter (unused directly — proxy handles it)
+      skills/
+        dailyReview.js     # Daily review skill: context builder, prompt, parser, writes tomorrow's note
     api/
       tasks.js
       projects.js
@@ -46,6 +54,7 @@ src/
     useProjects.js
     usePeople.js
     useDaily.js              # accepts date param; returns note, stats, habitHistory
+    useAI.js                 # useAIConfig(), useSkill(), useAITest() hooks
   components/
     layout/
       Layout.jsx             # collapsible sidebar, nav links, settings link
@@ -120,8 +129,8 @@ All tables have RLS enabled with `USING (true) WITH CHECK (true)` + `GRANT ALL T
 | `tasks` | id, title, status, priority, due_date, project_id, area, energy_level, waiting_for, archived_at, subtasks (jsonb `[{id,text,done}]`) |
 | `projects` | id, title, slug, status, priority, area, start_date, end_date, is_highlight, archived_at |
 | `people` | id, first_name, last_name, preferred_name, professional_title, relationship, contact_type, occupation, company, email_personal, email_work, phone_personal, phone_work, birthday, address_street, address_city, address_state, address_zip, address_work_street, address_work_city, address_work_state, address_work_zip, social_media (jsonb `[{platform,handle}]`), notes, is_stale, status, avatar_url (text) |
-| `daily_notes` | id, date, top_of_mind[], notes jsonb, habit_morning_meds, habit_evening_meds, habit_journal, habit_meditation, habit_breathwork, habit_stretching, habit_health_tracking, code_challenge jsonb |
-| `reviews` | id, type, date, status, content jsonb, suggestions jsonb |
+| `daily_notes` | id, date, top_of_mind[], agenda jsonb, notes jsonb, habit_morning_meds, habit_evening_meds, habit_journal, habit_meditation, habit_breathwork, habit_stretching, habit_health_tracking, code_challenge jsonb, quote text, quote_author text |
+| `reviews` | id, type, date, status, content jsonb, suggestions jsonb, insights jsonb, summary text, updated_at |
 | `energy_levels` | id, value, label, icon, bg_color, text_color, sort_order |
 | `priorities` | id, value, label, bg_color, text_color, sort_order |
 | `areas` | id, name, sort_order |
@@ -187,11 +196,28 @@ Three reference-data contexts are mounted at the App root level (outside Browser
 - **People** — tabbed by status, click row → `/people/:id`
 - **PersonPage** — avatar circle (72px, click-to-upload) above Identity fields; grouped sections: Identity (title, name, relationship, contact type, occupation, company), Contact Details (personal/work email+phone, birthday), Addresses (home + work structured), Social Media (dynamic platform+handle list), Notes; tasks, projects, comments, What's Next actions
 - **Habits** — calendar heatmap, streaks, % bars, time-frame selector
-- **Reviews** — Daily/Weekly/Monthly, autosave, suggestion cards, complete button
-- **Settings** — Energy Levels (full color picker + icon + badge preview), Priorities (color pickers + badge preview), Areas (name list); all DB-driven with add/edit/delete
+- **Reviews** — Daily/Weekly/Monthly, autosave, suggestion cards, complete button. Daily Review has "Generate with AI" button that runs the daily review skill.
+- **Settings** — Energy Levels (full color picker + icon + badge preview), Priorities (color pickers + badge preview), Areas (name list); all DB-driven with add/edit/delete. AI Assistant section: provider dropdown (Anthropic/OpenAI/Gemini/Groq/Mistral/Ollama/Custom), base URL, model, API key, Save + Test Connection.
+
+## AI Layer — Current State
+- **Architecture:** brand-agnostic. All calls route through `supabase/functions/ai-proxy` Edge Function to avoid CORS. Client sends `{ provider, apiKey, model, messages }` to the proxy.
+- **Config storage:** provider, model, baseUrl, apiKey stored in Supabase `auth.users.raw_user_meta_data`. Never in source bundle.
+- **Providers supported:** Anthropic (x-api-key header), all OpenAI-compatible (Bearer token).
+- **Daily Review skill** (`src/lib/ai/skills/dailyReview.js`):
+  - Pulls: all active projects, active tasks, last 30 daily notes (memory), inbox count, habit state, user's typed review notes
+  - Generates: top_of_mind[], agenda[], code_challenge, quote, suggestions[]
+  - Writes to: tomorrow's `daily_notes` row (top_of_mind, agenda, code_challenge), today's `reviews` row (suggestions)
+- **Edge Function:** `supabase/functions/ai-proxy/index.ts` — deployed to Supabase, handles CORS, proxies to provider.
+- **Supabase schema fixes applied this session:** added `content`, `status`, `updated_at` to `reviews`; added `archived_at`, `waiting_for` to `tasks`; added `archived_at` to `projects`.
+
+## Next Session — Review Workflow
+Focus: improve the Daily Review workflow end-to-end.
+- Review UX when review is already marked complete (currently collapses content)
+- Make AI suggestions actionable — accept a suggestion should optionally write to DB (e.g. create the suggested task, update the project)
+- Weekly and Monthly review AI skills
+- Consider: should the AI Generate button be on the Daily page itself, not just in Reviews?
 
 ## Future Phases
-- **AI layer** — next up
 - Google Calendar integration
 - Obsidian migration script
 - Per-user RLS scoping (if ever multi-user)
