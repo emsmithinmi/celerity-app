@@ -36,4 +36,4 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: 2e21f19b71235b0620cfdb8c91bf4156
-          command: pages deploy dist --project-name gtd-manager --commit-dirty=true
+          command: pages deploy dist --project-name celerity-app --commit-dirty=true

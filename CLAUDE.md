@@ -14,11 +14,11 @@ Single user app (emailemsmith@gmail.com). No multi-tenancy needed — RLS polici
 
 ## Key URLs
 - **Live app:** https://gtd-manager.pages.dev
-- **GitHub repo:** https://github.com/emsmithinmi/Project-manager
+- **GitHub repo:** https://github.com/emsmithinmi/celerity-app
 - **Supabase project:** https://supabase.com/dashboard/project/egxbhglczkslnskxorlf
 - **Supabase project ID:** `egxbhglczkslnskxorlf`
 - **Cloudflare account ID:** `2e21f19b71235b0620cfdb8c91bf4156`
-- **Cloudflare Pages project:** `gtd-manager`
+- **Cloudflare Pages project:** `celerity-app` (domain: gtd-manager.pages.dev — permanent, tied to original project name)
 
 ## Project Structure
 ```
@@ -216,6 +216,13 @@ Focus: improve the Daily Review workflow end-to-end.
 - Make AI suggestions actionable — accept a suggestion should optionally write to DB (e.g. create the suggested task, update the project)
 - Weekly and Monthly review AI skills
 - Consider: should the AI Generate button be on the Daily page itself, not just in Reviews?
+
+## Project Rename — Completed (2026-05-29)
+The project was officially renamed to **Celerity App**. All references updated:
+- Local folder: `C:\Claudes Laptop Folder\Code\Celerity-app`
+- GitHub repo: `https://github.com/emsmithinmi/celerity-app`
+- Cloudflare Pages project: `celerity-app`
+- Live URL remains `https://gtd-manager.pages.dev` (Cloudflare `.pages.dev` subdomains are permanent and tied to the original project name — not worth recreating the project just for the URL)
 
 ## Future Phases
 - Google Calendar integration
