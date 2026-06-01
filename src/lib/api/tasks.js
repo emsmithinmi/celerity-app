@@ -12,6 +12,8 @@ export async function getTasks(filters = {}) {
   if (filters.project_id) query = query.eq('project_id', filters.project_id)
   if (filters.priority) query = query.eq('priority', filters.priority)
   if (filters.area) query = query.eq('area', filters.area)
+  if (filters.due_date) query = query.eq('due_date', filters.due_date)
+  if (filters.not_status) query = query.neq('status', filters.not_status)
 
   const { data, error } = await query
   if (error) throw error

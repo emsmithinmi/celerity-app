@@ -128,11 +128,9 @@ export default function Daily() {
   const { createTask }    = useTasksCapture({})
   const { createProject } = useProjectsCapture({})
 
-  // Agenda data — scoped to selected date
-  const { tasks: scheduledTasks }   = useTasks({ status: 'scheduled' })
-  const { projects: startOnDate }   = useProjects({ start_date: selectedDate })
-  const { projects: endOnDate }     = useProjects({ end_date: selectedDate })
-  const projectDates = [...(startOnDate ?? []), ...(endOnDate ?? [])]
+  // Agenda data — tasks due on this day (any status except done), projects ending on this day
+  const { tasks: dueTasks }       = useTasks({ due_date: selectedDate, not_status: 'done' })
+  const { projects: endOnDate }   = useProjects({ end_date: selectedDate })
 
   // Modal state
   const [modal, setModal] = useState(null)
@@ -206,8 +204,8 @@ export default function Daily() {
         {/* Agenda */}
         <AgendaSection
           storedAgenda={note?.agenda ?? []}
-          scheduledTasks={scheduledTasks}
-          projectDates={projectDates}
+          dueTasks={dueTasks}
+          endingProjects={endOnDate}
         />
         <Divider />
 
