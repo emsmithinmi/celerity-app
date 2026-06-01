@@ -53,14 +53,15 @@ export default function HabitsSection({ note, habitHistory = [], onToggle }) {
     return Math.round((completed / last7.length) * 100)
   }
 
-  const completedToday = HABITS.filter(h => note[h.key]).length
+  const displayHabits  = HABITS.filter(h => h.key !== 'habit_code_challenge')
+  const completedToday = displayHabits.filter(h => note[h.key]).length
 
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-base font-semibold" style={{ color: '#cdd6f4' }}>Habits</h3>
         <span className="text-xs" style={{ color: '#6c7086' }}>
-          {completedToday} of {HABITS.length} completed today
+          {completedToday} of {displayHabits.length} completed today
         </span>
       </div>
 
@@ -68,7 +69,7 @@ export default function HabitsSection({ note, habitHistory = [], onToggle }) {
         className="rounded-xl border overflow-hidden"
         style={{ backgroundColor: '#181825', borderColor: '#313244' }}
       >
-        {HABITS.map(habit => (
+        {displayHabits.map(habit => (
           <HabitRow
             key={habit.key}
             habit={habit}
