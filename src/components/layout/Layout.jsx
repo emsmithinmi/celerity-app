@@ -168,11 +168,17 @@ export default function Layout() {
             className="border-t"
             style={{ borderColor: 'var(--border)', padding: expanded ? '12px 16px' : '12px 8px' }}
           >
-            {expanded && (
-              <p className="text-xs font-semibold mb-2 px-1" style={{ color: 'var(--text-secondary)' }}>
-                Focus Flow
-              </p>
-            )}
+            <div
+              className="flex items-center mb-2"
+              style={{ gap: '8px', justifyContent: expanded ? 'flex-start' : 'center', paddingLeft: expanded ? '4px' : 0 }}
+            >
+              <img src="/icon.svg" alt="Focus Flow" style={{ width: 24, height: 24, borderRadius: 6, flexShrink: 0 }} />
+              {expanded && (
+                <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                  Focus Flow
+                </span>
+              )}
+            </div>
             <button
               onClick={signOut}
               className="w-full rounded-md text-xs transition-colors hover:opacity-80"
