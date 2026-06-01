@@ -112,8 +112,10 @@ export default function Layout() {
             )}
             <button
               onClick={toggleLock}
-              className="flex items-center justify-center rounded-lg transition-colors hover:opacity-80 shrink-0"
-              style={{ color: 'var(--btn-muted-text)', backgroundColor: 'var(--btn-muted-bg)', width: '28px', height: '28px' }}
+              className="flex items-center justify-center rounded-lg transition-colors shrink-0"
+              style={{ color: 'var(--text-secondary)', backgroundColor: 'transparent', width: '28px', height: '28px' }}
+              onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
               title={locked ? 'Unpin sidebar' : 'Pin sidebar open'}
             >
               {locked ? <Pin size={13} /> : <PinOff size={13} />}
