@@ -1,4 +1,4 @@
-import { supabase } from '../../supabase'
+﻿import { supabase } from '../../supabase'
 import { callAI } from '../client'
 import { ensureNoteForDate, updateTopOfMind, updateAgenda, updateChallenge } from '../../api/daily'
 import { updateSuggestions } from '../../api/reviews'
@@ -66,7 +66,7 @@ export async function buildReflectContext() {
 
 // ─── Generate Opening Questions ───────────────────────────────────────────────
 
-const QUESTIONS_SYSTEM = `You are a personal productivity coach for a GTD system called Celerity.
+const QUESTIONS_SYSTEM = `You are a personal productivity coach for a GTD system called Focus Flow.
 Generate 4-5 personalized interview questions for the user's daily review.
 Use their actual project names, task titles, and patterns from their notes.
 Be direct and specific — reference what you actually see in their data.
@@ -131,7 +131,7 @@ export async function generateReflectQuestions(ctx) {
 
 // ─── Generate Final Plan ──────────────────────────────────────────────────────
 
-const PLAN_SYSTEM = `You are a personal productivity assistant for a GTD system called Celerity.
+const PLAN_SYSTEM = `You are a personal productivity assistant for a GTD system called Focus Flow.
 The user has just completed a daily review interview. Use their answers, their task/project data, and their notes history to generate tomorrow's plan.
 Be specific — reference actual project and task names.
 Respond with valid JSON only — no markdown, no preamble.`

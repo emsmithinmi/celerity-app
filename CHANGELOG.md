@@ -6,6 +6,9 @@ All notable changes to Celerity are recorded here.
 
 ## [Unreleased]
 
+### Changed
+- **App renamed to Focus Flow** — all UI labels, AI prompts, PWA manifest, page title, and package name updated. GitHub repo and Cloudflare URL unchanged (celerity-app / gtd-manager.pages.dev).
+
 ### Added
 - **AI-picked daily quotes** — 400-quote curated pool across 6 weighted categories (Stoicism 20%, Science 20%, Comedians 20%, Movies 15%, Software humor 15%, Motivational 10%). Daily review AI picks tomorrow's quote contextually from a weighted 30-candidate shortlist, avoiding repeats from the last 30 days. Quote persists in `daily_notes` so it survives refreshes.
 - **Skip quote button** — hover the quote on the Daily page to reveal a skip button. Picks a random replacement from the pool and writes it to the DB instantly. No reload needed.

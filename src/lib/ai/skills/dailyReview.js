@@ -1,4 +1,4 @@
-import { supabase } from '../../supabase'
+﻿import { supabase } from '../../supabase'
 import { callAI } from '../client'
 import { ensureNoteForDate, updateTopOfMind, updateAgenda, updateChallenge, updateQuote } from '../../api/daily'
 import { updateSuggestions } from '../../api/reviews'
@@ -99,7 +99,7 @@ async function buildContext(reviewContent = {}) {
 
 // ─── System Prompt ────────────────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are a personal productivity assistant for a GTD system called Celerity.
+const SYSTEM_PROMPT = `You are a personal productivity assistant for a GTD system called Focus Flow.
 Your job is to help the user close out their day and set up for tomorrow.
 
 You have access to their projects, tasks, and the last 30 days of daily notes (their "memory").

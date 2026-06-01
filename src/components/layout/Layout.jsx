@@ -170,7 +170,7 @@ export default function Layout() {
           >
             {expanded && (
               <p className="text-xs font-semibold mb-2 px-1" style={{ color: 'var(--text-secondary)' }}>
-                Celerity
+                Focus Flow
               </p>
             )}
             <button

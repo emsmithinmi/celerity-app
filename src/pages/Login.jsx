@@ -39,7 +39,7 @@ export default function Login() {
         {/* Logo / Title */}
         <div className="text-center mb-8">
           <h1 className="text-2xl font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
-            Celerity
+            Focus Flow
           </h1>
         </div>
 

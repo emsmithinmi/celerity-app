@@ -1,7 +1,7 @@
-# Celerity — Project Context
+﻿# Focus Flow — Project Context
 
 ## What This Is
-Celerity — a personal GTD (Getting Things Done) productivity PWA built with React + Vite + Supabase.
+Focus Flow — a personal GTD (Getting Things Done) productivity PWA built with React + Vite + Supabase.
 Single user app (emailemsmith@gmail.com). No multi-tenancy needed — RLS policies use `USING (true)`.
 
 ## Stack
@@ -249,7 +249,7 @@ The theme switcher (Catppuccin / GitHub Dark) currently only re-themes the sideb
 - Consider a theme preview in Settings → Appearance
 
 ## Project Rename — Completed (2026-05-29)
-The project was officially renamed to **Celerity App**. All references updated:
+The project was officially renamed to **Focus Flow**. All references updated:
 - Local folder: `C:\Claudes Laptop Folder\Code\Celerity-app`
 - GitHub repo: `https://github.com/emsmithinmi/celerity-app`
 - Cloudflare Pages project: `celerity-app`

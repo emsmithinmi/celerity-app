@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+﻿import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
@@ -11,9 +11,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg', 'favicon.svg'],
       manifest: {
-        name: 'Celerity',
-        short_name: 'Celerity',
-        description: 'Celerity — personal productivity manager for tasks, projects, people, and daily reviews.',
+        name: 'Focus Flow',
+        short_name: 'Focus Flow',
+        description: 'Focus Flow — personal productivity manager for tasks, projects, people, and daily reviews.',
         theme_color: '#1e1e2e',
         background_color: '#1e1e2e',
         display: 'standalone',
