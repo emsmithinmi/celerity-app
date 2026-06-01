@@ -91,8 +91,8 @@ export default function Layout() {
               transition: 'padding 200ms ease',
             }}
           >
-            {user && (
-              <div className={`flex items-center min-w-0 ${expanded ? 'flex-1 gap-2' : ''}`}>
+            {expanded && user && (
+              <div className="flex items-center min-w-0 flex-1 gap-2">
                 <AvatarCircle
                   src={user.user_metadata?.avatar_url}
                   name={user.email ?? ''}
@@ -101,15 +101,13 @@ export default function Layout() {
                   uploading={avatarUploading}
                   onFileSelect={handleUserAvatarUpload}
                 />
-                {expanded && (
-                  <p
-                    className="text-xs truncate flex-1"
-                    style={{ color: 'var(--text-secondary)' }}
-                    title={user.email}
-                  >
-                    {user.email}
-                  </p>
-                )}
+                <p
+                  className="text-xs truncate flex-1"
+                  style={{ color: 'var(--text-secondary)' }}
+                  title={user.email}
+                >
+                  {user.email}
+                </p>
               </div>
             )}
             <button
