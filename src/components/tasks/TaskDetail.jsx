@@ -303,6 +303,7 @@ export default function TaskDetail({ task: initialTask, open, onClose, onRefresh
               <select value={task.area ?? ''} onChange={e => change('area', e.target.value)} className={inputCls} style={inputStyle}>
                 <option value="">Select…</option>
                 {areas.map(a => <option key={a.id} value={a.name}>{a.name}</option>)}
+                {task.area && !areas.find(a => a.name === task.area) && <option value={task.area}>{task.area}</option>}
               </select>
             </FormField>
 
