@@ -10,6 +10,25 @@ _Nothing pending — all changes committed and deployed._
 
 ---
 
+## 2026-06-01 — Review Overhaul (Phase 1)
+
+### Changed
+- **Reviews page fully rebuilt** — replaced the scroll-and-fill form layout with a guided 3-step flow:
+  - **Step 1 — Capture**: four capture buttons (Task, Project, Note, Person) that open existing quick-capture modals in sequence; captured items shown as a running list in the session
+  - **Step 2 — Clarify**: five sections surfacing what needs attention — Inbox Tasks, Inbox Projects, Inbox People, Stalled Projects (in_progress with no active tasks), Overdue Tasks; each item has ✓ (done/activate) and 🗑 (scrap) actions plus a link to its full detail page; ✓ on a task sets status to `done`, on a project sets `completed`, on a person sets `active`
+  - **Step 3 — Reflect**: AI-powered conversational interview in bubble-chat style (iMessage feel); AI reads tasks, projects, habits, and last 30 days of notes before asking the first question; questions are personalized to actual project/task names; collapsible reference cards for Next Actions and In Progress Projects; scratchpad note field; Generate button produces tomorrow's Top of Mind, Agenda, and Challenge; suggestion cards appear after Complete Review is clicked
+- Weekly and Monthly review tabs preserved but show a coming-soon placeholder — they follow next
+- Step progress bar replaces the old type tabs for daily review; back-navigation supported between steps
+
+### Added
+- `src/lib/ai/skills/reflectReview.js` — new AI skill with three exported functions:
+  - `buildReflectContext()` — pulls projects, tasks, inbox, notes, habits, stalled/overdue data
+  - `generateReflectQuestions(ctx)` — calls AI to produce 4-5 personalized interview questions based on live data
+  - `generateReflectPlan(ctx, conversation, scratchpad)` — generates tomorrow's plan using the full interview conversation as context
+  - `writeReflectResults(reviewId, result)` — writes top_of_mind, agenda, challenge to tomorrow's daily note; saves suggestions to the review record
+
+---
+
 ## 2026-05-26 (evening)
 
 ### Added

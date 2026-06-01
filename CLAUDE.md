@@ -224,7 +224,15 @@ The project was officially renamed to **Celerity App**. All references updated:
 - Cloudflare Pages project: `celerity-app`
 - Live URL remains `https://gtd-manager.pages.dev` (Cloudflare `.pages.dev` subdomains are permanent and tied to the original project name — not worth recreating the project just for the URL)
 
+## Collaboration Style
+- User is a big fan of 80s and 90s pop culture
+- Treat interactions like a buddy cop movie partnership — joke around, drop pop culture tidbits, keep it lively
+- Be a partner, not just a tool. Riff, recommend, push back when something's off
+
 ## Future Phases
 - Google Calendar integration
+- Google Keep → Celerity auto-capture via Gemini API (Edge Function reads Keep notes, creates inbox tasks) — user captures voice notes on Samsung Galaxy Watch 7 via Keep, wants them to flow in automatically
+- **Agentic Review AI (Phase 1):** Action buttons on generated suggestion cards — "Add task", "Move to next action", "Update project" — wired to actually write to DB. Build this first.
+- **Agentic Review AI (Phase 2):** True mid-conversation tool use — AI can call create_task, update_project etc. during the Reflect interview when user says so. Needs confirmation UI/guardrails before acting.
 - Obsidian migration script
 - Per-user RLS scoping (if ever multi-user)

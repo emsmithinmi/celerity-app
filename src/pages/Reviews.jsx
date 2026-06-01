@@ -1,59 +1,142 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { Pencil } from 'lucide-react'
 import { ensureReview, updateReviewContent, completeReview, updateSuggestions } from '../lib/api/reviews'
-import { runDailyReview } from '../lib/ai/skills/dailyReview'
+import { buildReflectContext, generateReflectQuestions, generateReflectPlan, writeReflectResults } from '../lib/ai/skills/reflectReview'
 import { useAIConfig } from '../hooks/useAI'
-import { useTasks }    from '../hooks/useTasks'
-import { useProjects } from '../hooks/useProjects'
-import { getHabitHistory } from '../lib/api/daily'
-import { HABITS, CHALLENGE_TOPICS } from '../lib/constants'
-import { StatusPill } from '../components/ui'
+import { createTask, updateTask } from '../lib/api/tasks'
+import { createProject, updateProject } from '../lib/api/projects'
+import { createPerson, updatePerson } from '../lib/api/people'
+import { supabase } from '../lib/supabase'
+import {
+  CaptureTaskModal,
+  CaptureProjectModal,
+  CapturePersonModal,
+  QuickNoteModal,
+} from '../components/daily/QuickCaptureModals'
 import Button from '../components/ui/Button'
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Shared styles ────────────────────────────────────────────────────────────
 
-const REVIEW_TYPES = [
-  { key: 'daily',   label: '📋 Daily'   },
-  { key: 'weekly',  label: '📅 Weekly'  },
-  { key: 'monthly', label: '📆 Monthly' },
-]
+const S = {
+  card:     { backgroundColor: '#181825', borderColor: '#313244' },
+  input:    { backgroundColor: '#1e1e2e', borderColor: '#313244', color: '#cdd6f4' },
+  muted:    { color: '#6c7086' },
+  text:     { color: '#cdd6f4' },
+  blue:     { color: '#89b4fa' },
+  green:    { color: '#a6e3a1' },
+  red:      { color: '#f38ba8' },
+  yellow:   { color: '#f9e2af' },
+  purple:   { color: '#cba6f7' },
+}
 
-// ─── Shared sub-components ────────────────────────────────────────────────────
+// ─── Step progress bar ────────────────────────────────────────────────────────
 
-function ReviewSection({ title, children }) {
+const STEPS = ['Capture', 'Clarify', 'Reflect']
+
+function StepBar({ current, onNavigate }) {
   return (
-    <div className="rounded-xl border p-5 space-y-3" style={{ backgroundColor: '#181825', borderColor: '#313244' }}>
-      <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: '#89b4fa' }}>
-        {title}
-      </h3>
-      {children}
+    <div className="flex items-center px-6 border-b shrink-0" style={{ borderColor: '#313244' }}>
+      {STEPS.map((label, i) => {
+        const done   = i < current
+        const active = i === current
+        return (
+          <button
+            key={label}
+            onClick={() => onNavigate(i)}
+            className="flex items-center gap-2 px-4 py-3 text-xs font-medium border-b-2 transition-colors whitespace-nowrap"
+            style={{
+              borderColor: active ? '#89b4fa' : done ? '#a6e3a1' : 'transparent',
+              color: active ? '#89b4fa' : done ? '#a6e3a1' : '#6c7086',
+              background: 'transparent',
+            }}
+          >
+            <span
+              className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
+              style={{
+                backgroundColor: active ? '#89b4fa' : done ? '#a6e3a1' : '#313244',
+                color: active || done ? '#1e1e2e' : '#6c7086',
+              }}
+            >
+              {done ? '✓' : i + 1}
+            </span>
+            {label}
+          </button>
+        )
+      })}
     </div>
   )
 }
 
-const textareaStyle = {
-  backgroundColor: '#1e1e2e',
-  borderColor: '#313244',
-  color: '#cdd6f4',
-}
+// ─── Clarify row ──────────────────────────────────────────────────────────────
 
-function ReviewTextarea({ value, onChange, placeholder, rows = 4 }) {
+function ClarifyRow({ item, linkTo, onDone, onScrap, meta }) {
+  const [state, setState] = useState('pending')
+
+  const handleDone = async () => {
+    setState('done')
+    await onDone(item)
+  }
+  const handleScrap = async () => {
+    setState('scrapped')
+    await onScrap(item)
+  }
+
   return (
-    <textarea
-      value={value}
-      onChange={e => onChange(e.target.value)}
-      placeholder={placeholder}
-      rows={rows}
-      className="w-full px-3 py-2 rounded-lg text-sm border outline-none resize-none"
-      style={textareaStyle}
-      onFocus={e => e.target.style.borderColor = '#89b4fa'}
-      onBlur={e => e.target.style.borderColor = '#313244'}
-    />
+    <div
+      className="flex items-center gap-2 px-3 py-2.5 rounded-lg border mb-1.5 transition-all"
+      style={{
+        backgroundColor: '#1e1e2e',
+        borderColor: state === 'done' ? '#a6e3a133' : state === 'scrapped' ? '#f38ba833' : '#313244',
+        opacity: state !== 'pending' ? 0.45 : 1,
+      }}
+    >
+      <Link
+        to={linkTo}
+        className="flex-1 text-sm truncate hover:underline"
+        style={{ color: state !== 'pending' ? '#6c7086' : '#cdd6f4', textDecoration: state !== 'pending' ? 'line-through' : 'none' }}
+      >
+        {item.title ?? `${item.first_name} ${item.last_name}`}
+      </Link>
+      {meta && <span className="text-xs shrink-0" style={S.muted}>{meta}</span>}
+      {state === 'pending' && (
+        <div className="flex gap-1.5 shrink-0">
+          <button
+            onClick={handleDone}
+            title="Done"
+            className="w-7 h-7 rounded-md flex items-center justify-center text-sm transition-colors"
+            style={{ backgroundColor: '#1a3a2a', color: '#a6e3a1' }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#a6e3a1'; e.currentTarget.style.color = '#1e1e2e' }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#1a3a2a'; e.currentTarget.style.color = '#a6e3a1' }}
+          >✓</button>
+          <button
+            onClick={handleScrap}
+            title="Scrap"
+            className="w-7 h-7 rounded-md flex items-center justify-center text-sm transition-colors"
+            style={{ backgroundColor: '#3a1e1e', color: '#f38ba8' }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#f38ba8'; e.currentTarget.style.color = '#1e1e2e' }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#3a1e1e'; e.currentTarget.style.color = '#f38ba8' }}
+          >🗑</button>
+        </div>
+      )}
+    </div>
   )
 }
 
-// ─── Suggestion card ─────────────────────────────────────────────────────────
+function ClarifySection({ title, titleColor = '#89b4fa', items, renderRow, emptyText }) {
+  if (!items.length) return null
+  return (
+    <div className="rounded-xl border p-4 mb-3" style={S.card}>
+      <h3 className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: titleColor }}>{title}</h3>
+      {items.length === 0
+        ? <p className="text-sm" style={S.muted}>{emptyText}</p>
+        : items.map(renderRow)
+      }
+    </div>
+  )
+}
+
+// ─── Suggestion card ──────────────────────────────────────────────────────────
 
 function SuggestionCard({ suggestion, onAccept, onSkip, onEdit }) {
   const [editing, setEditing] = useState(false)
@@ -67,46 +150,35 @@ function SuggestionCard({ suggestion, onAccept, onSkip, onEdit }) {
     insight:        { bg: '#2a1e3a', border: '#f5c2e7', text: '#f5c2e7' },
   }
   const colors = TYPE_COLORS[suggestion.type] ?? TYPE_COLORS.insight
-
   if (suggestion.status === 'skipped') return null
 
   return (
-    <div
-      className="rounded-lg border p-4 space-y-3"
-      style={{ backgroundColor: colors.bg, borderColor: colors.border }}
-    >
-      {/* Type badge + content */}
+    <div className="rounded-lg border p-4 space-y-3" style={{ backgroundColor: colors.bg, borderColor: colors.border }}>
       <div className="flex items-start gap-2">
         <span
           className="text-xs px-2 py-0.5 rounded shrink-0 mt-0.5"
           style={{ backgroundColor: colors.border + '33', color: colors.text, border: `1px solid ${colors.border}` }}
         >
-          {suggestion.type?.replace('_', ' ') ?? 'suggestion'}
+          {suggestion.type?.replace(/_/g, ' ') ?? 'suggestion'}
         </span>
         {editing ? (
           <textarea
             value={edited}
             onChange={e => setEdited(e.target.value)}
             rows={3}
-            className="flex-1 px-2 py-1 rounded text-sm border outline-none resize-none"
-            style={textareaStyle}
             autoFocus
+            className="flex-1 px-2 py-1 rounded text-sm border outline-none resize-none"
+            style={S.input}
           />
         ) : (
-          <p className="text-sm flex-1" style={{ color: '#cdd6f4' }}>{suggestion.content}</p>
+          <p className="text-sm flex-1" style={S.text}>{suggestion.content}</p>
         )}
       </div>
-
-      {/* Actions */}
       <div className="flex gap-2">
         {editing ? (
           <>
-            <Button size="sm" variant="success" onClick={() => { onEdit(edited); setEditing(false) }}>
-              Accept Edit
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
-              Cancel
-            </Button>
+            <Button size="sm" variant="success" onClick={() => { onEdit(edited); setEditing(false) }}>Accept Edit</Button>
+            <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>Cancel</Button>
           </>
         ) : (
           <>
@@ -116,18 +188,18 @@ function SuggestionCard({ suggestion, onAccept, onSkip, onEdit }) {
             {suggestion.status !== 'accepted' && (
               <button
                 onClick={() => setEditing(true)}
-                title="Edit suggestion"
-                className="flex items-center justify-center rounded-md transition-colors duration-150"
-                style={{ width: 30, height: 30, backgroundColor: 'transparent', color: '#6c7086' }}
+                title="Edit"
+                className="w-7 h-7 flex items-center justify-center rounded-md transition-colors"
+                style={{ color: '#6c7086' }}
                 onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#313244'; e.currentTarget.style.color = '#cdd6f4' }}
                 onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#6c7086' }}
               >
-                <Pencil size={14} />
+                <Pencil size={13} />
               </button>
             )}
             <Button size="sm" variant="ghost" onClick={onSkip}>✕ Skip</Button>
             {suggestion.status === 'accepted' && (
-              <span className="text-xs self-center" style={{ color: '#a6e3a1' }}>✓ Accepted</span>
+              <span className="text-xs self-center" style={S.green}>✓ Accepted</span>
             )}
           </>
         )}
@@ -136,500 +208,584 @@ function SuggestionCard({ suggestion, onAccept, onSkip, onEdit }) {
   )
 }
 
-// ─── Tomorrow Top-of-Mind editor ──────────────────────────────────────────────
+// ─── Chat bubble ──────────────────────────────────────────────────────────────
 
-function TomorrowTopOfMind({ items = [], onChange }) {
-  const [newItem, setNewItem] = useState('')
-
-  const add = () => {
-    if (!newItem.trim()) return
-    onChange([...items, newItem.trim()])
-    setNewItem('')
-  }
-  const remove = (i) => onChange(items.filter((_, idx) => idx !== i))
-
+function Bubble({ role, children }) {
+  const isAI = role === 'ai'
   return (
-    <div className="space-y-2">
-      {items.map((item, i) => (
-        <div key={i} className="flex items-center gap-2">
-          <span className="text-sm flex-1" style={{ color: '#cdd6f4' }}>• {item}</span>
-          <button onClick={() => remove(i)} className="text-xs" style={{ color: '#6c7086' }}>✕</button>
+    <div className={`flex ${isAI ? 'justify-start' : 'justify-end'}`}>
+      <div
+        className="max-w-[82%] px-4 py-3 text-sm leading-relaxed"
+        style={{
+          backgroundColor: isAI ? '#313244' : '#89b4fa',
+          color: isAI ? '#cdd6f4' : '#1e1e2e',
+          borderRadius: isAI ? '16px 16px 16px 4px' : '16px 16px 4px 16px',
+          fontWeight: isAI ? 400 : 500,
+        }}
+        dangerouslySetInnerHTML={{ __html: children }}
+      />
+    </div>
+  )
+}
+
+function TypingIndicator() {
+  return (
+    <div className="flex justify-start">
+      <div className="px-4 py-3 rounded-2xl rounded-bl-sm" style={{ backgroundColor: '#313244' }}>
+        <div className="flex gap-1">
+          {[0, 1, 2].map(i => (
+            <span
+              key={i}
+              className="w-2 h-2 rounded-full"
+              style={{
+                backgroundColor: '#6c7086',
+                display: 'inline-block',
+                animation: `bounce 1.2s ${i * 0.2}s infinite`,
+              }}
+            />
+          ))}
         </div>
-      ))}
-      <div className="flex gap-2 mt-1">
-        <input
-          type="text"
-          value={newItem}
-          onChange={e => setNewItem(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && add()}
-          placeholder="Add item… (Enter)"
-          className="flex-1 px-3 py-2 rounded-lg text-sm border outline-none"
-          style={textareaStyle}
-          onFocus={e => e.target.style.borderColor = '#89b4fa'}
-          onBlur={e => e.target.style.borderColor = '#313244'}
-        />
-        <Button size="sm" variant="secondary" onClick={add}>Add</Button>
       </div>
     </div>
   )
 }
 
-// ─── Habit week summary (for daily/weekly review) ─────────────────────────────
+// ─── Reference card (collapsible) ────────────────────────────────────────────
 
-function HabitWeekSummary({ history }) {
-  const last7 = history.slice(-7)
+function RefCard({ title, count, children }) {
+  const [open, setOpen] = useState(true)
   return (
-    <div className="space-y-2">
-      {HABITS.map(h => {
-        const count = last7.filter(d => d[h.key]).length
-        const pct   = last7.length ? Math.round((count / last7.length) * 100) : 0
-        const color = pct >= 70 ? '#0F9D58' : pct >= 40 ? '#FBBC05' : '#DB4437'
-        return (
-          <div key={h.key} className="flex items-center gap-3">
-            <span className="text-base shrink-0">{h.icon}</span>
-            <span className="text-sm w-28 shrink-0" style={{ color: '#cdd6f4' }}>{h.label}</span>
-            <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: '#313244' }}>
-              <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
-            </div>
-            <span className="text-xs w-8 text-right shrink-0" style={{ color: '#6c7086' }}>{pct}%</span>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-// ─── Task snapshot (for review context) ──────────────────────────────────────
-
-function TaskSnapshot({ tasks, label }) {
-  if (!tasks.length) return <p className="text-sm" style={{ color: '#6c7086' }}>No {label} tasks.</p>
-  return (
-    <div className="space-y-1.5">
-      {tasks.slice(0, 8).map(t => (
-        <div key={t.id} className="flex items-center gap-2">
-          <StatusPill status={t.status} type="task" />
-          <span className="text-sm truncate" style={{ color: '#cdd6f4' }}>{t.title}</span>
-        </div>
-      ))}
-      {tasks.length > 8 && (
-        <p className="text-xs" style={{ color: '#6c7086' }}>+{tasks.length - 8} more</p>
-      )}
-    </div>
-  )
-}
-
-// ─── Project snapshot ────────────────────────────────────────────────────────
-
-function ProjectSnapshot({ projects, label }) {
-  if (!projects.length) return <p className="text-sm" style={{ color: '#6c7086' }}>No {label} projects.</p>
-  return (
-    <div className="space-y-1.5">
-      {projects.slice(0, 6).map(p => (
-        <div key={p.id} className="flex items-center gap-2">
-          <StatusPill status={p.status} type="project" />
-          <span className="text-sm truncate flex-1" style={{ color: '#cdd6f4' }}>{p.title}</span>
-          {p.area && <span className="text-xs shrink-0" style={{ color: '#6c7086' }}>{p.area}</span>}
-        </div>
-      ))}
-      {projects.length > 6 && (
-        <p className="text-xs" style={{ color: '#6c7086' }}>+{projects.length - 6} more</p>
-      )}
-    </div>
-  )
-}
-
-// ─── DAILY REVIEW ─────────────────────────────────────────────────────────────
-
-function DailyReview({ review, onContentChange, suggestions, onSuggestionChange, onAiGenerate, aiLoading, aiResult, aiConfigured }) {
-  const c = review.content ?? {}
-
-  const { tasks: nextActions } = useTasks({ status: 'next_action' })
-  const { tasks: doneTasks }   = useTasks({ status: 'done'        })
-  const { projects: inProgress } = useProjects({ status: 'in_progress' })
-  const { projects: stalled }    = useProjects({ status: 'stalled'     })
-  const [habitHistory, setHabitHistory] = useState([])
-
-  useEffect(() => { getHabitHistory(7).then(setHabitHistory) }, [])
-
-  const set = (key, val) => onContentChange({ ...c, [key]: val })
-
-  return (
-    <div className="space-y-4">
-      <ReviewSection title="🏆 Today's Wins">
-        <ReviewTextarea
-          value={c.wins ?? ''}
-          onChange={v => set('wins', v)}
-          placeholder="What did you accomplish today? What moved forward?"
-        />
-      </ReviewSection>
-
-      <ReviewSection title="🪞 Reflections">
-        <ReviewTextarea
-          value={c.reflections ?? ''}
-          onChange={v => set('reflections', v)}
-          placeholder="What worked well? What was difficult? What would you do differently?"
-        />
-      </ReviewSection>
-
-      <ReviewSection title="⚡ Next Actions">
-        <TaskSnapshot tasks={nextActions} label="next action" />
-        <ReviewTextarea
-          value={c.tasks_notes ?? ''}
-          onChange={v => set('tasks_notes', v)}
-          placeholder="Any tasks to clear, move, or prioritize?"
-          rows={2}
-        />
-      </ReviewSection>
-
-      <ReviewSection title="📁 Projects">
-        <div className="space-y-3">
-          <div>
-            <p className="text-xs mb-2" style={{ color: '#6c7086' }}>In Progress</p>
-            <ProjectSnapshot projects={inProgress} label="in progress" />
-          </div>
-          {stalled.length > 0 && (
-            <div>
-              <p className="text-xs mb-2" style={{ color: '#cba6f7' }}>⚠ Stalled</p>
-              <ProjectSnapshot projects={stalled} label="stalled" />
-            </div>
+    <div className="rounded-xl border mb-3 overflow-hidden" style={S.card}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-4 py-3 text-xs font-semibold transition-colors"
+        style={{ color: '#6c7086', background: 'transparent' }}
+      >
+        <span>
+          {title}
+          {count != null && (
+            <span className="ml-2 px-1.5 py-0.5 rounded text-xs" style={{ backgroundColor: '#313244', color: '#89b4fa' }}>{count}</span>
           )}
+        </span>
+        <span style={{ transform: open ? 'none' : 'rotate(-90deg)', transition: 'transform 0.2s' }}>▾</span>
+      </button>
+      {open && <div className="px-4 pb-3">{children}</div>}
+    </div>
+  )
+}
+
+// ─── STEP 1: CAPTURE ──────────────────────────────────────────────────────────
+
+function CaptureStep({ onNext, todayNoteId }) {
+  const [modal,     setModal]     = useState(null)
+  const [captured,  setCaptured]  = useState([])
+
+  const addCaptured = (type, title) => setCaptured(prev => [...prev, { type, title }])
+
+  const handleCreateTask = async (title) => {
+    await createTask({ title, status: 'inbox' })
+    addCaptured('task', title)
+  }
+  const handleCreateProject = async (title) => {
+    await createProject({ title })
+    addCaptured('project', title)
+  }
+  const handleCreatePerson = async ({ first_name, last_name }) => {
+    await createPerson({ first_name, last_name })
+    addCaptured('person', `${first_name} ${last_name}`)
+  }
+  const handleAddNote = async (body) => {
+    if (todayNoteId) {
+      await supabase.rpc('append_daily_note', { note_id: todayNoteId, body }).catch(() => {
+        supabase.from('daily_notes').select('notes').eq('id', todayNoteId).single().then(({ data }) => {
+          const notes = data?.notes ?? []
+          supabase.from('daily_notes').update({ notes: [...notes, { id: crypto.randomUUID(), body, created_at: new Date().toISOString() }] }).eq('id', todayNoteId)
+        })
+      })
+    }
+    addCaptured('note', body.slice(0, 60))
+  }
+
+  const icons = { task: '✅', project: '📁', note: '📝', person: '👤' }
+
+  return (
+    <div className="max-w-2xl mx-auto px-6 py-6 space-y-4">
+      <div className="mb-6">
+        <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={S.muted}>Step 1 of 3</p>
+        <h2 className="text-2xl font-semibold mb-2" style={S.text}>What's on your mind?</h2>
+        <p className="text-sm" style={S.muted}>Get everything out of your head. Don't filter, don't organize — just capture.</p>
+      </div>
+
+      {/* Capture buttons */}
+      <div className="grid grid-cols-2 gap-3">
+        {[
+          { type: 'task',    icon: '✅', label: 'Task',    sub: 'Something to do'       },
+          { type: 'project', icon: '📁', label: 'Project', sub: 'Multi-step outcome'    },
+          { type: 'note',    icon: '📝', label: 'Note',    sub: 'Something to remember' },
+          { type: 'person',  icon: '👤', label: 'Person',  sub: 'Someone to track'      },
+        ].map(({ type, icon, label, sub }) => (
+          <button
+            key={type}
+            onClick={() => setModal(type)}
+            className="rounded-xl border p-4 text-left transition-all"
+            style={{ backgroundColor: '#313244', borderColor: '#45475a' }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#89b4fa'; e.currentTarget.style.backgroundColor = '#3d3f52' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#45475a'; e.currentTarget.style.backgroundColor = '#313244' }}
+          >
+            <div className="text-xl mb-1">{icon}</div>
+            <div className="text-sm font-medium" style={S.text}>{label}</div>
+            <div className="text-xs mt-0.5" style={S.muted}>{sub}</div>
+          </button>
+        ))}
+      </div>
+
+      {/* Captured this session */}
+      {captured.length > 0 && (
+        <div className="space-y-1.5 mt-2">
+          {captured.map((item, i) => (
+            <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg border text-sm" style={{ backgroundColor: '#1a3a2a', borderColor: '#a6e3a133', color: '#a6e3a1' }}>
+              <span>{icons[item.type]}</span>
+              <span className="flex-1 truncate">{item.title}</span>
+              <span className="text-xs uppercase" style={S.muted}>{item.type}</span>
+            </div>
+          ))}
         </div>
-        <ReviewTextarea
-          value={c.projects_notes ?? ''}
-          onChange={v => set('projects_notes', v)}
-          placeholder="Any project updates or notes?"
-          rows={2}
-        />
-      </ReviewSection>
+      )}
 
-      <ReviewSection title="🧘 Habit Check">
-        <HabitWeekSummary history={habitHistory} />
-      </ReviewSection>
+      <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: '#313244' }}>
+        <span className="text-sm" style={S.muted}>{captured.length > 0 ? `${captured.length} item${captured.length !== 1 ? 's' : ''} captured` : 'Capture anything on your mind'}</span>
+        <Button variant="primary" onClick={onNext}>Done Capturing →</Button>
+      </div>
 
-      <ReviewSection title="🌅 Tomorrow Setup">
-        <div className="space-y-4">
-          <div>
-            <p className="text-xs mb-2 font-medium" style={{ color: '#6c7086' }}>Top of Mind for Tomorrow</p>
-            <TomorrowTopOfMind
-              items={c.tomorrow_top_of_mind ?? []}
-              onChange={v => set('tomorrow_top_of_mind', v)}
-            />
-          </div>
-          <div>
-            <p className="text-xs mb-2 font-medium" style={{ color: '#6c7086' }}>Coding Challenge Topic</p>
-            <div className="flex gap-2 flex-wrap">
-              {CHALLENGE_TOPICS.map(t => (
-                <button
-                  key={t}
-                  onClick={() => set('challenge_topic', t)}
-                  className="px-3 py-1.5 rounded-lg text-xs capitalize transition-colors"
-                  style={{
-                    backgroundColor: c.challenge_topic === t ? '#89b4fa' : '#313244',
-                    color: c.challenge_topic === t ? '#000' : '#cdd6f4',
-                  }}
-                >
-                  {t}
-                </button>
+      {/* Modals */}
+      <CaptureTaskModal    open={modal === 'task'}    onClose={() => setModal(null)} onCreate={handleCreateTask}    />
+      <CaptureProjectModal open={modal === 'project'} onClose={() => setModal(null)} onCreate={handleCreateProject} />
+      <CapturePersonModal  open={modal === 'person'}  onClose={() => setModal(null)} onCreate={handleCreatePerson}  />
+      <QuickNoteModal      open={modal === 'note'}    onClose={() => setModal(null)} onAdd={handleAddNote}          />
+    </div>
+  )
+}
+
+// ─── STEP 2: CLARIFY ──────────────────────────────────────────────────────────
+
+function ClarifyStep({ onNext, onBack }) {
+  const today = new Date().toISOString().split('T')[0]
+  const [inboxTasks,    setInboxTasks]    = useState([])
+  const [inboxProjects, setInboxProjects] = useState([])
+  const [inboxPeople,   setInboxPeople]   = useState([])
+  const [stalled,       setStalled]       = useState([])
+  const [overdue,       setOverdue]       = useState([])
+  const [loading,       setLoading]       = useState(true)
+
+  useEffect(() => {
+    async function load() {
+      const [tasksRes, projectsRes, peopleRes, activeTasksRes] = await Promise.all([
+        supabase.from('tasks').select('id, title, due_date').eq('status', 'inbox').is('archived_at', null).order('created_at', { ascending: false }),
+        supabase.from('projects').select('id, title').eq('status', 'inbox').is('archived_at', null).order('created_at', { ascending: false }),
+        supabase.from('people').select('id, first_name, last_name').eq('status', 'inbox').order('last_name', { ascending: true }),
+        supabase.from('tasks').select('id, project_id').in('status', ['next_action', 'waiting', 'scheduled', 'queued']).is('archived_at', null),
+      ])
+
+      const activeProjectIds = new Set((activeTasksRes.data ?? []).filter(t => t.project_id).map(t => t.project_id))
+
+      const stalledRes = await supabase
+        .from('projects')
+        .select('id, title')
+        .eq('status', 'in_progress')
+        .is('archived_at', null)
+
+      const overdueRes = await supabase
+        .from('tasks')
+        .select('id, title, due_date')
+        .in('status', ['next_action', 'waiting', 'scheduled', 'queued'])
+        .lt('due_date', today)
+        .is('archived_at', null)
+        .order('due_date', { ascending: true })
+
+      setInboxTasks(tasksRes.data ?? [])
+      setInboxProjects(projectsRes.data ?? [])
+      setInboxPeople(peopleRes.data ?? [])
+      setStalled((stalledRes.data ?? []).filter(p => !activeProjectIds.has(p.id)))
+      setOverdue(overdueRes.data ?? [])
+      setLoading(false)
+    }
+    load()
+  }, [today])
+
+  const daysDiff = (dateStr) => {
+    const diff = Math.floor((new Date(today) - new Date(dateStr)) / 86400000)
+    return diff === 1 ? '1d overdue' : `${diff}d overdue`
+  }
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-40">
+      <p className="text-sm" style={S.muted}>Loading…</p>
+    </div>
+  )
+
+  const allEmpty = !inboxTasks.length && !inboxProjects.length && !inboxPeople.length && !stalled.length && !overdue.length
+
+  return (
+    <div className="max-w-2xl mx-auto px-6 py-6">
+      <div className="mb-6">
+        <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={S.muted}>Step 2 of 3</p>
+        <h2 className="text-2xl font-semibold mb-2" style={S.text}>What does each item mean?</h2>
+        <p className="text-sm" style={S.muted}>Open each item to clarify it on its detail page. Mark done when sorted, scrap if it's noise.</p>
+      </div>
+
+      {allEmpty ? (
+        <div className="rounded-xl border p-8 text-center" style={S.card}>
+          <p className="text-2xl mb-2">🎉</p>
+          <p className="text-sm font-medium" style={S.green}>All clear — nothing to clarify.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {inboxTasks.length > 0 && (
+            <div className="rounded-xl border p-4" style={S.card}>
+              <h3 className="text-xs font-semibold uppercase tracking-wide mb-3" style={S.blue}>📥 Inbox Tasks</h3>
+              {inboxTasks.map(item => (
+                <ClarifyRow
+                  key={item.id}
+                  item={item}
+                  linkTo={`/tasks/${item.id}`}
+                  onDone={() => updateTask(item.id, { status: 'done' })}
+                  onScrap={() => updateTask(item.id, { archived_at: new Date().toISOString() })}
+                />
               ))}
             </div>
-          </div>
-          <ReviewTextarea
-            value={c.tomorrow_notes ?? ''}
-            onChange={v => set('tomorrow_notes', v)}
-            placeholder="Anything else to set up for tomorrow?"
-            rows={2}
-          />
-        </div>
-      </ReviewSection>
+          )}
 
-      {/* AI Generate section — only shows when AI is configured */}
-      <ReviewSection title="🤖 AI Daily Review">
-        {!aiConfigured ? (
-          <p className="text-sm" style={{ color: '#6c7086' }}>
-            Add an AI provider in{' '}
-            <a href="/settings" className="underline" style={{ color: '#89b4fa' }}>Settings</a>{' '}
-            to enable AI-powered daily review generation.
-          </p>
-        ) : aiResult ? (
-          <div className="space-y-2">
-            <p className="text-xs" style={{ color: '#a6e3a1' }}>
-              ✓ Generated for {aiResult.tomorrowStr} — Top of Mind, Agenda, and Challenge are set. Review the suggestions below.
-            </p>
-            <Button size="sm" variant="secondary" onClick={onAiGenerate} disabled={aiLoading}>
-              Regenerate
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <p className="text-sm" style={{ color: '#6c7086' }}>
-              Claude reads your projects, tasks, and last 30 days of notes to set up tomorrow —
-              Top of Mind, Agenda, Challenge, and observations.
-            </p>
-            <Button size="sm" variant="action" onClick={onAiGenerate} disabled={aiLoading}>
-              {aiLoading
-                ? <span className="flex items-center gap-2"><span className="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />Generating…</span>
-                : 'Generate with AI'
-              }
-            </Button>
-          </div>
-        )}
-      </ReviewSection>
-
-      {suggestions.length > 0 && (
-        <ReviewSection title="💡 Suggestions">
-          <div className="space-y-3">
-            {suggestions.map((s, i) => (
-              <SuggestionCard
-                key={s.id ?? i}
-                suggestion={s}
-                onAccept={() => onSuggestionChange(suggestions.map((x, j) => j === i ? { ...x, status: 'accepted' } : x))}
-                onSkip={() => onSuggestionChange(suggestions.map((x, j) => j === i ? { ...x, status: 'skipped'  } : x))}
-                onEdit={(edited) => onSuggestionChange(suggestions.map((x, j) => j === i ? { ...x, status: 'accepted', content: edited } : x))}
-              />
-            ))}
-          </div>
-        </ReviewSection>
-      )}
-    </div>
-  )
-}
-
-// ─── WEEKLY REVIEW ────────────────────────────────────────────────────────────
-
-function WeeklyReview({ review, onContentChange, suggestions, onSuggestionChange }) {
-  const c = review.content ?? {}
-
-  const { tasks: waiting } = useTasks({ status: 'waiting' })
-  const { tasks: someday } = useTasks({ status: 'someday' })
-  const { projects: all }  = useProjects({})
-  const [habitHistory, setHabitHistory] = useState([])
-
-  useEffect(() => { getHabitHistory(7).then(setHabitHistory) }, [])
-
-  const set = (key, val) => onContentChange({ ...c, [key]: val })
-
-  const inProgress = all.filter(p => p.status === 'in_progress' && !p.archived_at)
-  const completed  = all.filter(p => p.status === 'completed'   && !p.archived_at)
-  const stalled    = all.filter(p => p.status === 'stalled'     && !p.archived_at)
-
-  return (
-    <div className="space-y-4">
-      <ReviewSection title="🏆 Week's Wins">
-        <ReviewTextarea
-          value={c.wins ?? ''}
-          onChange={v => set('wins', v)}
-          placeholder="What were your biggest accomplishments this week?"
-        />
-      </ReviewSection>
-
-      <ReviewSection title="📁 Projects Overview">
-        <div className="space-y-3">
-          {completed.length > 0 && (
-            <div>
-              <p className="text-xs mb-2" style={{ color: '#a6e3a1' }}>✓ Completed This Week</p>
-              <ProjectSnapshot projects={completed} label="completed" />
+          {inboxProjects.length > 0 && (
+            <div className="rounded-xl border p-4" style={S.card}>
+              <h3 className="text-xs font-semibold uppercase tracking-wide mb-3" style={S.purple}>📥 Inbox Projects</h3>
+              {inboxProjects.map(item => (
+                <ClarifyRow
+                  key={item.id}
+                  item={item}
+                  linkTo={`/projects/${item.id}`}
+                  onDone={() => updateProject(item.id, { status: 'completed' })}
+                  onScrap={() => updateProject(item.id, { archived_at: new Date().toISOString() })}
+                />
+              ))}
             </div>
           )}
-          <div>
-            <p className="text-xs mb-2" style={{ color: '#89b4fa' }}>In Progress</p>
-            <ProjectSnapshot projects={inProgress} label="in progress" />
-          </div>
+
+          {inboxPeople.length > 0 && (
+            <div className="rounded-xl border p-4" style={S.card}>
+              <h3 className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#a6e3a1' }}>👤 Inbox People</h3>
+              {inboxPeople.map(item => (
+                <ClarifyRow
+                  key={item.id}
+                  item={item}
+                  linkTo={`/people/${item.id}`}
+                  onDone={() => updatePerson(item.id, { status: 'active' })}
+                  onScrap={() => updatePerson(item.id, { status: 'stale' })}
+                />
+              ))}
+            </div>
+          )}
+
           {stalled.length > 0 && (
-            <div>
-              <p className="text-xs mb-2" style={{ color: '#cba6f7' }}>⚠ Stalled</p>
-              <ProjectSnapshot projects={stalled} label="stalled" />
+            <div className="rounded-xl border p-4" style={S.card}>
+              <h3 className="text-xs font-semibold uppercase tracking-wide mb-1" style={S.yellow}>⚠️ Stalled Projects</h3>
+              <p className="text-xs mb-3" style={S.muted}>In progress with no active tasks</p>
+              {stalled.map(item => (
+                <ClarifyRow
+                  key={item.id}
+                  item={item}
+                  linkTo={`/projects/${item.id}`}
+                  onDone={() => updateProject(item.id, { status: 'in_progress' })}
+                  onScrap={() => updateProject(item.id, { archived_at: new Date().toISOString() })}
+                />
+              ))}
+            </div>
+          )}
+
+          {overdue.length > 0 && (
+            <div className="rounded-xl border p-4" style={S.card}>
+              <h3 className="text-xs font-semibold uppercase tracking-wide mb-1" style={S.red}>🔴 Overdue Tasks</h3>
+              <p className="text-xs mb-3" style={S.muted}>Past due date, not completed</p>
+              {overdue.map(item => (
+                <ClarifyRow
+                  key={item.id}
+                  item={item}
+                  linkTo={`/tasks/${item.id}`}
+                  meta={daysDiff(item.due_date)}
+                  onDone={() => updateTask(item.id, { status: 'done' })}
+                  onScrap={() => updateTask(item.id, { archived_at: new Date().toISOString() })}
+                />
+              ))}
             </div>
           )}
         </div>
-        <ReviewTextarea
-          value={c.projects_notes ?? ''}
-          onChange={v => set('projects_notes', v)}
-          placeholder="What moved forward? What's blocked? What needs attention?"
-        />
-      </ReviewSection>
-
-      <ReviewSection title="⏳ Waiting & Someday">
-        <div className="space-y-3">
-          {waiting.length > 0 && (
-            <div>
-              <p className="text-xs mb-2" style={{ color: '#f38ba8' }}>Waiting</p>
-              <TaskSnapshot tasks={waiting} label="waiting" />
-            </div>
-          )}
-          {someday.length > 0 && (
-            <div>
-              <p className="text-xs mb-2" style={{ color: '#6c7086' }}>Someday / Maybe</p>
-              <TaskSnapshot tasks={someday} label="someday" />
-            </div>
-          )}
-        </div>
-        <ReviewTextarea
-          value={c.waiting_notes ?? ''}
-          onChange={v => set('waiting_notes', v)}
-          placeholder="Any waiting tasks to follow up on? Any someday items to activate?"
-          rows={2}
-        />
-      </ReviewSection>
-
-      <ReviewSection title="🧘 Habit Review (7 Days)">
-        <HabitWeekSummary history={habitHistory} />
-        <ReviewTextarea
-          value={c.habit_notes ?? ''}
-          onChange={v => set('habit_notes', v)}
-          placeholder="Any habit patterns to address next week?"
-          rows={2}
-        />
-      </ReviewSection>
-
-      <ReviewSection title="🎯 Next Week Goals">
-        <ReviewTextarea
-          value={c.next_week_goals ?? ''}
-          onChange={v => set('next_week_goals', v)}
-          placeholder="What are your top 3 priorities for next week? What projects to push forward?"
-        />
-      </ReviewSection>
-
-      <ReviewSection title="📝 Notes">
-        <ReviewTextarea
-          value={c.notes ?? ''}
-          onChange={v => set('notes', v)}
-          placeholder="Anything else on your mind?"
-          rows={2}
-        />
-      </ReviewSection>
-
-      {suggestions.length > 0 && (
-        <ReviewSection title="🤖 AI Suggestions">
-          <div className="space-y-3">
-            {suggestions.map((s, i) => (
-              <SuggestionCard
-                key={s.id ?? i}
-                suggestion={s}
-                onAccept={() => onSuggestionChange(suggestions.map((x, j) => j === i ? { ...x, status: 'accepted' } : x))}
-                onSkip={() => onSuggestionChange(suggestions.map((x, j) => j === i ? { ...x, status: 'skipped'  } : x))}
-                onEdit={(edited) => onSuggestionChange(suggestions.map((x, j) => j === i ? { ...x, status: 'accepted', content: edited } : x))}
-              />
-            ))}
-          </div>
-        </ReviewSection>
       )}
+
+      <div className="flex items-center justify-between pt-6 mt-4 border-t" style={{ borderColor: '#313244' }}>
+        <Button variant="ghost" onClick={onBack}>← Back</Button>
+        <Button variant="primary" onClick={onNext}>Done Clarifying →</Button>
+      </div>
     </div>
   )
 }
 
-// ─── MONTHLY REVIEW ───────────────────────────────────────────────────────────
+// ─── STEP 3: REFLECT ─────────────────────────────────────────────────────────
 
-function MonthlyReview({ review, onContentChange, suggestions, onSuggestionChange }) {
-  const c = review.content ?? {}
+function ReflectStep({ review, onComplete, onBack }) {
+  const { configured: aiConfigured } = useAIConfig()
+  const [ctx,          setCtx]          = useState(null)
+  const [questions,    setQuestions]    = useState([])
+  const [conversation, setConversation] = useState([])
+  const [qIndex,       setQIndex]       = useState(0)
+  const [typing,       setTyping]       = useState(false)
+  const [inputVal,     setInputVal]     = useState('')
+  const [inputActive,  setInputActive]  = useState(false)
+  const [scratchpad,   setScratchpad]   = useState('')
+  const [showScratch,  setShowScratch]  = useState(false)
+  const [generating,   setGenerating]   = useState(false)
+  const [suggestions,  setSuggestions]  = useState(review?.suggestions ?? [])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [completed,    setCompleted]    = useState(review?.status === 'completed')
+  const [nextActions,  setNextActions]  = useState([])
+  const [inProgress,   setInProgress]   = useState([])
+  const chatRef = useRef(null)
+  const inputRef = useRef(null)
 
-  const { projects: all } = useProjects({})
-  const [habitHistory, setHabitHistory] = useState([])
+  const scrollChat = () => setTimeout(() => chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: 'smooth' }), 50)
 
-  useEffect(() => { getHabitHistory(30).then(setHabitHistory) }, [])
+  const addBubble = useCallback((role, content) => {
+    setConversation(prev => [...prev, { role, content }])
+    scrollChat()
+  }, [])
 
-  const set = (key, val) => onContentChange({ ...c, [key]: val })
+  const askQuestion = useCallback((q) => {
+    setTyping(true)
+    setInputActive(false)
+    setTimeout(() => {
+      setTyping(false)
+      addBubble('ai', q)
+      setInputActive(true)
+      setTimeout(() => inputRef.current?.focus(), 50)
+    }, 1200)
+  }, [addBubble])
 
-  const completed  = all.filter(p => p.status === 'completed' && !p.archived_at)
-  const highlights = all.filter(p => p.is_highlight && !p.archived_at)
+  // Load context + reference lists on mount
+  useEffect(() => {
+    async function init() {
+      const [ctxData, nextRes, projRes] = await Promise.all([
+        buildReflectContext(),
+        supabase.from('tasks').select('id, title, due_date').eq('status', 'next_action').is('archived_at', null).limit(8),
+        supabase.from('projects').select('id, title, status').eq('status', 'in_progress').is('archived_at', null).limit(6),
+      ])
+      setCtx(ctxData)
+      setNextActions(nextRes.data ?? [])
+      setInProgress(projRes.data ?? [])
 
-  // Last 30 days habit summary
-  const getMonthPct = (habitKey) => {
-    if (!habitHistory.length) return 0
-    const completed = habitHistory.filter(d => d[habitKey]).length
-    return Math.round((completed / habitHistory.length) * 100)
+      if (review?.status === 'completed') return
+
+      setTyping(true)
+      setTimeout(async () => {
+        if (aiConfigured) {
+          try {
+            const qs = await generateReflectQuestions(ctxData)
+            setQuestions(qs)
+            setTyping(false)
+            addBubble('ai', qs[0])
+            setInputActive(true)
+            setTimeout(() => inputRef.current?.focus(), 50)
+          } catch {
+            setTyping(false)
+            addBubble('ai', "Let's talk about your day. What was your biggest win today?")
+            setInputActive(true)
+          }
+        } else {
+          setTyping(false)
+          addBubble('ai', "Set up an AI provider in <a href='/settings' style='color:#89b4fa;text-decoration:underline;'>Settings</a> to enable the AI interview. You can still complete the review below.")
+        }
+      }, 800)
+    }
+    init()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleSend = () => {
+    const val = inputVal.trim()
+    if (!val || !inputActive) return
+    addBubble('user', val)
+    setInputVal('')
+    setInputActive(false)
+
+    const nextIndex = qIndex + 1
+    setQIndex(nextIndex)
+
+    if (nextIndex < questions.length) {
+      askQuestion(questions[nextIndex])
+    } else {
+      setTyping(true)
+      setTimeout(() => {
+        setTyping(false)
+        addBubble('ai', "Got it. Anything else on your mind before I put tomorrow together? Drop it in the notes below, then hit Generate.")
+        setShowScratch(true)
+      }, 1200)
+    }
+  }
+
+  const handleGenerate = async () => {
+    if (!ctx || !review?.id) return
+    setGenerating(true)
+    try {
+      const result = await generateReflectPlan(ctx, conversation, scratchpad)
+      const { suggestions: newSuggestions } = await writeReflectResults(review.id, result)
+      setSuggestions(newSuggestions)
+      setTyping(true)
+      setTimeout(() => {
+        setTyping(false)
+        addBubble('ai', `✨ Tomorrow's plan is set for <strong>${new Date(new Date().toISOString().split('T')[0] + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</strong>. Top of mind, agenda, and challenge are written to your Daily page. Review the suggestions below when you complete.`)
+      }, 800)
+    } catch (err) {
+      addBubble('ai', `Something went wrong generating the plan: ${err.message}`)
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  const handleComplete = async () => {
+    if (!review?.id) return
+    await completeReview(review.id)
+    setCompleted(true)
+    setShowSuggestions(true)
+    onComplete()
+  }
+
+  const handleSuggestionChange = async (updated) => {
+    setSuggestions(updated)
+    if (review?.id) await updateSuggestions(review.id, updated)
   }
 
   return (
-    <div className="space-y-4">
-      <ReviewSection title="⭐ Month's Highlights">
-        {highlights.length > 0 && (
-          <div className="mb-3">
-            <p className="text-xs mb-2" style={{ color: '#f9e2af' }}>Highlighted Projects</p>
-            <ProjectSnapshot projects={highlights} label="highlighted" />
-          </div>
-        )}
-        <ReviewTextarea
-          value={c.highlights ?? ''}
-          onChange={v => set('highlights', v)}
-          placeholder="What were the biggest wins and moments worth remembering this month?"
-        />
-      </ReviewSection>
+    <div className="max-w-2xl mx-auto px-6 py-6">
+      <div className="mb-4">
+        <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={S.muted}>Step 3 of 3</p>
+        <h2 className="text-2xl font-semibold mb-2" style={S.text}>Let's talk about your day.</h2>
+        <p className="text-sm" style={S.muted}>
+          {aiConfigured
+            ? "The AI has read your tasks, projects, habits, and last 30 days of notes. Answer honestly — it's using everything."
+            : "Reflect on your day and complete your review."}
+        </p>
+      </div>
 
-      <ReviewSection title="✅ Completed Projects">
-        <ProjectSnapshot projects={completed} label="completed" />
-        <ReviewTextarea
-          value={c.completed_notes ?? ''}
-          onChange={v => set('completed_notes', v)}
-          placeholder="Any reflections on what you completed?"
-          rows={2}
-        />
-      </ReviewSection>
-
-      <ReviewSection title="🧘 Habit Month (30 Days)">
-        <div className="space-y-2">
-          {HABITS.map(h => {
-            const pct   = getMonthPct(h.key)
-            const color = pct >= 70 ? '#0F9D58' : pct >= 40 ? '#FBBC05' : '#DB4437'
-            return (
-              <div key={h.key} className="flex items-center gap-3">
-                <span className="text-base shrink-0">{h.icon}</span>
-                <span className="text-sm w-28 shrink-0" style={{ color: '#cdd6f4' }}>{h.label}</span>
-                <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: '#313244' }}>
-                  <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
-                </div>
-                <span className="text-xs w-8 text-right shrink-0" style={{ color: '#6c7086' }}>{pct}%</span>
-              </div>
-            )
-          })}
-        </div>
-        <ReviewTextarea
-          value={c.habit_notes ?? ''}
-          onChange={v => set('habit_notes', v)}
-          placeholder="Habit patterns this month? Any to start, stop, or adjust?"
-          rows={2}
-        />
-      </ReviewSection>
-
-      <ReviewSection title="🗂 Areas of Focus">
-        <ReviewTextarea
-          value={c.areas_focus ?? ''}
-          onChange={v => set('areas_focus', v)}
-          placeholder="Which areas of your life (work, health, personal, etc.) got attention? Which were neglected?"
-        />
-      </ReviewSection>
-
-      <ReviewSection title="🎯 Next Month Goals">
-        <ReviewTextarea
-          value={c.next_month_goals ?? ''}
-          onChange={v => set('next_month_goals', v)}
-          placeholder="What are your top priorities for next month? What projects to start or push?"
-        />
-      </ReviewSection>
-
-      <ReviewSection title="📝 Notes">
-        <ReviewTextarea
-          value={c.notes ?? ''}
-          onChange={v => set('notes', v)}
-          placeholder="Anything else — patterns, themes, or insights from this month."
-          rows={2}
-        />
-      </ReviewSection>
-
-      {suggestions.length > 0 && (
-        <ReviewSection title="🤖 AI Suggestions">
-          <div className="space-y-3">
-            {suggestions.map((s, i) => (
-              <SuggestionCard
-                key={s.id ?? i}
-                suggestion={s}
-                onAccept={() => onSuggestionChange(suggestions.map((x, j) => j === i ? { ...x, status: 'accepted' } : x))}
-                onSkip={() => onSuggestionChange(suggestions.map((x, j) => j === i ? { ...x, status: 'skipped'  } : x))}
-                onEdit={(edited) => onSuggestionChange(suggestions.map((x, j) => j === i ? { ...x, status: 'accepted', content: edited } : x))}
-              />
+      {/* Reference cards */}
+      {nextActions.length > 0 && (
+        <RefCard title="⚡ Next Actions" count={nextActions.length}>
+          <div className="space-y-1">
+            {nextActions.map(t => (
+              <Link key={t.id} to={`/tasks/${t.id}`} className="block text-sm py-1.5 border-b hover:underline" style={{ color: '#cdd6f4', borderColor: '#313244' }}>
+                {t.title}
+                {t.due_date && <span className="ml-2 text-xs" style={S.muted}>{t.due_date}</span>}
+              </Link>
             ))}
           </div>
-        </ReviewSection>
+        </RefCard>
       )}
+
+      {inProgress.length > 0 && (
+        <RefCard title="📁 Projects In Progress" count={inProgress.length}>
+          <div className="space-y-1">
+            {inProgress.map(p => (
+              <Link key={p.id} to={`/projects/${p.id}`} className="block text-sm py-1.5 border-b hover:underline" style={{ color: '#cdd6f4', borderColor: '#313244' }}>
+                {p.title}
+              </Link>
+            ))}
+          </div>
+        </RefCard>
+      )}
+
+      {/* Chat window */}
+      <div
+        ref={chatRef}
+        className="rounded-xl border p-4 space-y-3 overflow-y-auto"
+        style={{ ...S.card, minHeight: 120, maxHeight: 420 }}
+      >
+        <style>{`@keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }`}</style>
+        {conversation.map((msg, i) => (
+          <Bubble key={i} role={msg.role}>{msg.content}</Bubble>
+        ))}
+        {typing && <TypingIndicator />}
+      </div>
+
+      {/* Chat input */}
+      {inputActive && !completed && (
+        <div className="flex gap-2 mt-3">
+          <textarea
+            ref={inputRef}
+            value={inputVal}
+            onChange={e => setInputVal(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
+            placeholder="Type your answer… (Enter to send)"
+            rows={2}
+            className="flex-1 px-3 py-2 rounded-xl border text-sm outline-none resize-none"
+            style={{ ...S.input, transition: 'border-color 0.15s' }}
+            onFocus={e => e.target.style.borderColor = '#89b4fa'}
+            onBlur={e => e.target.style.borderColor = '#313244'}
+          />
+          <Button variant="primary" onClick={handleSend}>Send</Button>
+        </div>
+      )}
+
+      {/* Scratchpad */}
+      {showScratch && !completed && (
+        <div className="rounded-xl border p-4 mt-3" style={S.card}>
+          <h3 className="text-xs font-semibold uppercase tracking-wide mb-2" style={S.muted}>📝 Notes for Today</h3>
+          <textarea
+            value={scratchpad}
+            onChange={e => setScratchpad(e.target.value)}
+            placeholder="Brain dump anything that came up — it goes into the AI context."
+            rows={3}
+            className="w-full px-3 py-2 rounded-lg border text-sm outline-none resize-none"
+            style={{ ...S.input, transition: 'border-color 0.15s' }}
+            onFocus={e => e.target.style.borderColor = '#89b4fa'}
+            onBlur={e => e.target.style.borderColor = '#313244'}
+          />
+        </div>
+      )}
+
+      {/* Generate */}
+      {showScratch && !completed && !generating && suggestions.length === 0 && aiConfigured && (
+        <Button variant="action" size="md" onClick={handleGenerate} disabled={generating} className="w-full mt-3">
+          ✨ Generate Tomorrow's Plan
+        </Button>
+      )}
+      {generating && (
+        <div className="text-center py-3">
+          <p className="text-sm" style={S.muted}>Generating your plan…</p>
+        </div>
+      )}
+
+      {/* Suggestions — shown after complete */}
+      {showSuggestions && suggestions.length > 0 && (
+        <div className="mt-4 space-y-3">
+          <h3 className="text-xs font-semibold uppercase tracking-wide" style={S.blue}>💡 Suggestions</h3>
+          {suggestions.map((s, i) => (
+            <SuggestionCard
+              key={s.id ?? i}
+              suggestion={s}
+              onAccept={() => handleSuggestionChange(suggestions.map((x, j) => j === i ? { ...x, status: 'accepted' } : x))}
+              onSkip={() => handleSuggestionChange(suggestions.map((x, j) => j === i ? { ...x, status: 'skipped' } : x))}
+              onEdit={edited => handleSuggestionChange(suggestions.map((x, j) => j === i ? { ...x, status: 'accepted', content: edited } : x))}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Footer */}
+      <div className="flex items-center justify-between pt-6 mt-4 border-t" style={{ borderColor: '#313244' }}>
+        <Button variant="ghost" onClick={onBack}>← Back</Button>
+        {completed ? (
+          <span className="text-sm px-3 py-1 rounded-lg border" style={{ backgroundColor: '#1a3a2a', borderColor: '#a6e3a1', color: '#a6e3a1' }}>
+            ✓ Review Complete
+          </span>
+        ) : (
+          <Button variant="success" onClick={handleComplete}>Complete Review ✓</Button>
+        )}
+      </div>
     </div>
   )
 }
@@ -639,104 +795,46 @@ function MonthlyReview({ review, onContentChange, suggestions, onSuggestionChang
 export default function Reviews() {
   const { type: urlType } = useParams()
   const navigate = useNavigate()
-
-  const activeType = REVIEW_TYPES.find(r => r.key === urlType)?.key ?? 'daily'
-
   const today = new Date().toISOString().split('T')[0]
 
+  const activeType = ['daily', 'weekly', 'monthly'].includes(urlType) ? urlType : 'daily'
+
+  const [step,        setStep]        = useState(0)
   const [review,      setReview]      = useState(null)
   const [loading,     setLoading]     = useState(true)
-  const [saving,      setSaving]      = useState(false)
-  const [completed,   setCompleted]   = useState(false)
-  const [suggestions, setSuggestions] = useState([])
-  const [aiLoading,   setAiLoading]   = useState(false)
-  const [aiResult,    setAiResult]    = useState(null)
-  const [aiError,     setAiError]     = useState(null)
-  const { configured: aiConfigured }  = useAIConfig()
+  const [todayNoteId, setTodayNoteId] = useState(null)
 
-  // Autosave timer
-  const saveTimer = useRef(null)
-
-  const loadReview = useCallback(async () => {
+  useEffect(() => {
+    setStep(0)
     setLoading(true)
-    setCompleted(false)
-    try {
-      const r = await ensureReview(activeType, today)
+    Promise.all([
+      ensureReview(activeType, today),
+      supabase.from('daily_notes').select('id').eq('date', today).maybeSingle(),
+    ]).then(([r, noteRes]) => {
       setReview(r)
-      setSuggestions(r.suggestions ?? [])
-      setCompleted(r.status === 'completed')
-    } finally {
+      setTodayNoteId(noteRes.data?.id ?? null)
       setLoading(false)
-    }
+    })
   }, [activeType, today])
 
-  useEffect(() => { loadReview() }, [loadReview])
-
-  // Autosave content after 1.5s idle
-  const handleContentChange = (newContent) => {
-    setReview(prev => ({ ...prev, content: newContent }))
-    if (saveTimer.current) clearTimeout(saveTimer.current)
-    saveTimer.current = setTimeout(async () => {
-      if (review?.id) {
-        setSaving(true)
-        await updateReviewContent(review.id, newContent)
-        setSaving(false)
-      }
-    }, 1500)
-  }
-
-  const handleSuggestionChange = async (updated) => {
-    setSuggestions(updated)
-    if (review?.id) await updateSuggestions(review.id, updated)
-  }
-
-  const handleAiGenerate = async () => {
-    if (!review?.id) return
-    setAiLoading(true)
-    setAiError(null)
-    try {
-      await updateReviewContent(review.id, review.content)
-      const res = await runDailyReview(review.id, review.content ?? {})
-      setSuggestions(res.suggestions)
-      setAiResult(res)
-    } catch (err) {
-      setAiError(err.message)
-    } finally {
-      setAiLoading(false)
-    }
-  }
-
-  const handleComplete = async () => {
-    if (!review?.id) return
-    setSaving(true)
-    // Save current content first
-    await updateReviewContent(review.id, review.content)
-    await completeReview(review.id)
-    setSaving(false)
-    setCompleted(true)
-  }
+  const REVIEW_TYPES = [
+    { key: 'daily',   label: '📋 Daily'   },
+    { key: 'weekly',  label: '📅 Weekly'  },
+    { key: 'monthly', label: '📆 Monthly' },
+  ]
 
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div
-        className="flex items-center justify-between px-6 py-4 border-b shrink-0"
-        style={{ borderColor: '#313244' }}
-      >
-        <h1 className="text-xl font-semibold" style={{ color: '#cdd6f4' }}>Reviews</h1>
-        {saving && <span className="text-xs" style={{ color: '#6c7086' }}>Saving…</span>}
-        {!saving && review?.status === 'completed' && (
-          <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: '#1a3a2a', color: '#a6e3a1', border: '1px solid #a6e3a1' }}>
-            ✓ Completed
-          </span>
-        )}
+      <div className="flex items-center justify-between px-6 py-4 border-b shrink-0" style={{ borderColor: '#313244' }}>
+        <h1 className="text-xl font-semibold" style={S.text}>Reviews</h1>
+        <p className="text-sm" style={S.muted}>
+          {new Date(today + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+        </p>
       </div>
 
       {/* Type tabs */}
-      <div
-        className="flex gap-1 px-4 py-3 border-b shrink-0"
-        style={{ borderColor: '#313244' }}
-      >
+      <div className="flex gap-1 px-4 py-3 border-b shrink-0" style={{ borderColor: '#313244' }}>
         {REVIEW_TYPES.map(rt => (
           <button
             key={rt.key}
@@ -752,97 +850,28 @@ export default function Reviews() {
         ))}
       </div>
 
+      {/* Step bar — daily only */}
+      {activeType === 'daily' && (
+        <StepBar current={step} onNavigate={i => i < step && setStep(i)} />
+      )}
+
       {/* Body */}
       <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="flex items-center justify-center h-32">
-            <p className="text-sm" style={{ color: '#6c7086' }}>Loading…</p>
+            <p className="text-sm" style={S.muted}>Loading…</p>
           </div>
+        ) : activeType === 'daily' ? (
+          <>
+            {step === 0 && <CaptureStep onNext={() => setStep(1)} todayNoteId={todayNoteId} />}
+            {step === 1 && <ClarifyStep onNext={() => setStep(2)} onBack={() => setStep(0)} />}
+            {step === 2 && <ReflectStep review={review} onComplete={() => {}} onBack={() => setStep(1)} />}
+          </>
         ) : (
-          <div className="max-w-2xl mx-auto px-6 py-5 space-y-4">
-            {/* Date + status banner */}
-            <div className="flex items-center justify-between">
-              <p className="text-sm" style={{ color: '#6c7086' }}>
-                {new Date(today + 'T00:00:00').toLocaleDateString('en-US', {
-                  weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
-                })}
-              </p>
-              {completed && (
-                <span className="text-xs" style={{ color: '#a6e3a1' }}>Review completed ✓</span>
-              )}
-            </div>
-
-            {/* Completed overlay message */}
-            {completed && (
-              <div
-                className="rounded-xl border px-4 py-3 text-sm"
-                style={{ backgroundColor: '#1a3a2a', borderColor: '#a6e3a1', color: '#a6e3a1' }}
-              >
-                ✓ This review is marked complete. You can still edit it below.
-              </div>
-            )}
-
-            {/* Review content */}
-            {review && (
-              <>
-                {activeType === 'daily' && (
-                  <>
-                    {aiError && (
-                      <div className="rounded-lg border px-4 py-3 text-sm" style={{ backgroundColor: '#3a1e1e', borderColor: '#f38ba8', color: '#f38ba8' }}>
-                        AI error: {aiError}
-                      </div>
-                    )}
-                    <DailyReview
-                      review={review}
-                      onContentChange={handleContentChange}
-                      suggestions={suggestions}
-                      onSuggestionChange={handleSuggestionChange}
-                      onAiGenerate={handleAiGenerate}
-                      aiLoading={aiLoading}
-                      aiResult={aiResult}
-                      aiConfigured={aiConfigured}
-                    />
-                  </>
-                )}
-                {activeType === 'weekly' && (
-                  <WeeklyReview
-                    review={review}
-                    onContentChange={handleContentChange}
-                    suggestions={suggestions}
-                    onSuggestionChange={handleSuggestionChange}
-                  />
-                )}
-                {activeType === 'monthly' && (
-                  <MonthlyReview
-                    review={review}
-                    onContentChange={handleContentChange}
-                    suggestions={suggestions}
-                    onSuggestionChange={handleSuggestionChange}
-                  />
-                )}
-              </>
-            )}
-
-            {/* Complete button */}
-            {!completed && (
-              <div className="pt-2 pb-8">
-                <Button
-                  variant="success"
-                  size="md"
-                  onClick={handleComplete}
-                  disabled={saving}
-                >
-                  {saving ? 'Saving…' : `Complete ${REVIEW_TYPES.find(r => r.key === activeType)?.label.split(' ')[1]} Review ✓`}
-                </Button>
-              </div>
-            )}
-            {completed && (
-              <div className="pb-8">
-                <Button variant="secondary" size="sm" onClick={() => navigate('/daily')}>
-                  ← Back to Daily
-                </Button>
-              </div>
-            )}
+          <div className="max-w-2xl mx-auto px-6 py-12 text-center">
+            <p className="text-4xl mb-4">🚧</p>
+            <p className="text-sm font-medium mb-1" style={S.text}>{activeType.charAt(0).toUpperCase() + activeType.slice(1)} review coming soon.</p>
+            <p className="text-sm" style={S.muted}>The daily flow is taking shape first — weekly and monthly will follow the same pattern.</p>
           </div>
         )}
       </div>

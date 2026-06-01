@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "slides",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "slides", "--listen", "5500", "--no-clipboard"],
+      "port": 5500
+    }
+  ]
+}

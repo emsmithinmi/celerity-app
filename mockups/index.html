@@ -1,0 +1,1734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GTD — Page Mockups</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Lexend', system-ui, sans-serif;
+      background: #1e1e2e;
+      color: #cdd6f4;
+      height: 100vh;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Mockup switcher bar (not part of the real app) ── */
+    .mockup-bar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: #080E16;
+      border-bottom: 2px solid #45475a;
+      padding: 5px 12px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      z-index: 300;
+      flex-wrap: wrap;
+    }
+    .mockup-bar-label {
+      font-size: 10px;
+      color: #45475a;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-right: 6px;
+    }
+    .mbtn {
+      padding: 3px 9px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      border: 1px solid #313244;
+      background: transparent;
+      color: #6c7086;
+      transition: all 0.1s;
+    }
+    .mbtn:hover { color: #cdd6f4; border-color: #6c7086; }
+    .mbtn.active { background: #313244; color: #cdd6f4; font-weight: 600; }
+
+    /* ── App shell ── */
+    .shell {
+      display: flex;
+      height: 100vh;
+      padding-top: 31px;
+    }
+
+    /* ── Sidebar ── */
+    aside {
+      width: 224px;
+      min-width: 224px;
+      background: #181825;
+      border-right: 1px solid #313244;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+      transition: width 0.2s ease, min-width 0.2s ease;
+    }
+    aside.collapsed { width: 56px; min-width: 56px; }
+
+    .sidebar-logo {
+      padding: 14px 12px;
+      border-bottom: 1px solid #313244;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      min-height: 62px;
+    }
+    .sidebar-logo-text { flex: 1; overflow: hidden; }
+    .sidebar-logo-text h1 { font-size: 18px; font-weight: 600; color: #cdd6f4; white-space: nowrap; }
+    .sidebar-logo-text p  { font-size: 12px; color: #6c7086; margin-top: 2px; white-space: nowrap; }
+    aside.collapsed .sidebar-logo-text { display: none; }
+
+    .collapse-btn {
+      flex-shrink: 0;
+      width: 24px; height: 24px;
+      border-radius: 6px;
+      border: 1px solid #313244;
+      background: transparent;
+      color: #6c7086;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: color 0.1s, background 0.1s;
+    }
+    .collapse-btn:hover { background: #313244; color: #cdd6f4; }
+
+    nav { flex: 1; padding: 14px 8px; overflow-y: auto; overflow-x: hidden; }
+    .nl {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #6c7086;
+      cursor: pointer;
+      margin-bottom: 3px;
+      user-select: none;
+      transition: background 0.1s, color 0.1s;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .nl:hover { color: #cdd6f4; }
+    .nl.active { background: #313244; color: #cdd6f4; font-weight: 500; }
+    .nl-icon  { flex-shrink: 0; }
+    .nl-label { transition: opacity 0.15s; }
+    aside.collapsed .nl { justify-content: center; padding: 8px 0; }
+    aside.collapsed .nl-label { display: none; }
+
+    .sidebar-foot {
+      padding: 10px 8px;
+      border-top: 1px solid #313244;
+      overflow: hidden;
+    }
+    .sf-email { font-size: 11px; color: #6c7086; margin-bottom: 8px; padding: 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    aside.collapsed .sf-email { display: none; }
+    .signout {
+      width: 100%;
+      text-align: left;
+      font-size: 11px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      background: #313244;
+      color: #6c7086;
+      border: none;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    aside.collapsed .signout { text-align: center; padding: 6px 4px; }
+    .signout-text { }
+    .signout-icon { display: none; }
+    aside.collapsed .signout-text { display: none; }
+    aside.collapsed .signout-icon { display: inline; }
+
+    /* ── Pages ── */
+    main { flex: 1; overflow: hidden; position: relative; }
+    .page {
+      display: none;
+      height: 100%;
+      overflow-y: auto;
+      padding: 28px 32px 40px;
+    }
+    .page.on { display: block; }
+
+    /* ══════════════════════════════════════════
+       SHARED COMPONENTS
+    ══════════════════════════════════════════ */
+
+    /* Page header */
+    .ph {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 22px;
+    }
+    .ph h1 { font-size: 22px; font-weight: 600; }
+
+    /* Back link */
+    .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      color: #89b4fa;
+      font-size: 13px;
+      cursor: pointer;
+      margin-bottom: 18px;
+    }
+    .back:hover { opacity: 0.8; }
+
+    /* Stat cards */
+    .stats { display: flex; gap: 12px; margin-bottom: 22px; flex-wrap: wrap; }
+    .sc {
+      background: #181825;
+      border: 1px solid #313244;
+      border-radius: 10px;
+      padding: 14px 20px;
+      min-width: 105px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .sc:hover { border-color: #89b4fa; }
+    .sc-label { font-size: 10px; color: #6c7086; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+    .sc-val   { font-size: 28px; font-weight: 700; color: #cdd6f4; margin-top: 4px; line-height: 1; }
+
+    /* Search */
+    .search {
+      width: 100%;
+      background: #181825;
+      border: 1px solid #313244;
+      border-radius: 8px;
+      padding: 10px 16px;
+      color: #cdd6f4;
+      font-size: 14px;
+      outline: none;
+      margin-bottom: 14px;
+      transition: border-color 0.15s;
+    }
+    .search::placeholder { color: #45475a; }
+    .search:focus { border-color: #89b4fa; }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid #313244;
+      margin-bottom: 14px;
+      overflow-x: auto;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab {
+      padding: 8px 14px;
+      font-size: 13px;
+      color: #6c7086;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      white-space: nowrap;
+      transition: all 0.1s;
+    }
+    .tab:hover { color: #cdd6f4; }
+    .tab.active { color: #cdd6f4; border-bottom-color: #89b4fa; font-weight: 500; }
+
+    /* List panel */
+    .lp {
+      background: #181825;
+      border: 1px solid #313244;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .lr {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-bottom: 1px solid #313244;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    .lr:last-child { border-bottom: none; }
+    .lr:hover { background: #1e1e2e; }
+    .lr-main { flex: 1; min-width: 0; }
+    .lr-title { font-size: 14px; color: #cdd6f4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lr-sub   { font-size: 12px; color: #6c7086; margin-top: 2px; }
+    .lr-meta  { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+
+    /* Status pills */
+    .pill {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 999px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .p-inbox     { background: #FBBC05; color: #000; }
+    .p-next      { background: #0F9D58; color: #000; }
+    .p-queued    { background: #1967D2; color: #fff; }
+    .p-waiting   { background: #DB4437; color: #fff; }
+    .p-scheduled { background: #ADE8F4; color: #000; }
+    .p-someday   { background: #fff;    color: #000; border: 1px solid #ccc; }
+    .p-done      { background: #333;    color: #fff; }
+    .p-planning  { background: #fff;    color: #000; border: 1px solid #ccc; }
+    .p-inprog    { background: #1967D2; color: #fff; }
+    .p-stalled   { background: #FB9039; color: #fff; }
+    .p-complete  { background: #333;    color: #fff; }
+    .p-active    { background: #0F9D58; color: #000; }
+    .p-stale     { background: #DB4437; color: #fff; }
+
+    /* Priority badges */
+    .badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .b-stat    { background: #DB4437; color: #fff; }
+    .b-urgent  { background: #E8710A; color: #fff; }
+    .b-eod     { background: #FBBC05; color: #000; }
+    .b-routine { background: #F1EFE8; color: #5F5E5A; }
+
+    /* Buttons */
+    .btn {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.1s;
+      white-space: nowrap;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary   { background: #89b4fa; color: #1e1e2e; }
+    .btn-secondary { background: #313244; color: #cdd6f4; }
+    .btn-danger    { background: #DB4437; color: #fff; }
+    .btn-success   { background: #0F9D58; color: #000; }
+    .btn-purple    { background: #FB9039; color: #fff; }
+    .btn-sm { padding: 5px 10px; font-size: 12px; border-radius: 6px; }
+
+    /* Detail page */
+    .detail-header { margin-bottom: 18px; }
+    .badge-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .d-title   { font-size: 22px; font-weight: 600; line-height: 1.2; }
+    .d-sub     { font-size: 13px; color: #6c7086; margin-top: 6px; }
+
+    /* Action bar */
+    .action-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 13px 16px;
+      background: #181825;
+      border: 1px solid #313244;
+      border-radius: 10px;
+      margin-bottom: 18px;
+    }
+    .action-label {
+      font-size: 11px;
+      color: #6c7086;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-right: 4px;
+    }
+
+    /* Section cards */
+    .sec {
+      background: #181825;
+      border: 1px solid #313244;
+      border-radius: 10px;
+      margin-bottom: 13px;
+      overflow: hidden;
+    }
+    .sec-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      border-bottom: 1px solid #313244;
+    }
+    .sec-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #6c7086;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+    .sec-body { padding: 16px; }
+
+    /* Field grid */
+    .fg {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 16px;
+    }
+    .fl { font-size: 11px; color: #6c7086; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+    .fv { font-size: 14px; color: #cdd6f4; }
+    .fb { font-size: 14px; color: #cdd6f4; line-height: 1.65; }
+
+    /* Context tags */
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tag {
+      font-size: 12px;
+      padding: 2px 9px;
+      border-radius: 999px;
+      background: rgba(25,103,210,0.15);
+      color: #89b4fa;
+      border: 1px solid rgba(137,180,250,0.25);
+    }
+
+    /* Comments */
+    .comment { padding: 12px 0; border-bottom: 1px solid #313244; }
+    .comment:last-of-type { border-bottom: none; }
+    .c-meta { font-size: 11px; color: #6c7086; margin-bottom: 5px; }
+    .c-body { font-size: 14px; color: #cdd6f4; line-height: 1.55; }
+    .c-input {
+      width: 100%;
+      background: #1e1e2e;
+      border: 1px solid #313244;
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #cdd6f4;
+      font-size: 14px;
+      outline: none;
+      margin-top: 12px;
+      resize: vertical;
+      min-height: 68px;
+      font-family: inherit;
+    }
+    .c-input::placeholder { color: #45475a; }
+    .c-input:focus { border-color: #89b4fa; }
+
+    /* Linked rows inside sections */
+    .linked-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-bottom: 1px solid #313244;
+      cursor: pointer;
+    }
+    .linked-row:last-child { border-bottom: none; }
+    .linked-row:hover .linked-title { color: #89b4fa; }
+    .linked-title { font-size: 14px; color: #cdd6f4; flex: 1; }
+
+    /* ── Habits ── */
+    .habit-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 14px;
+      margin-top: 6px;
+    }
+    .hc {
+      background: #181825;
+      border: 1px solid #313244;
+      border-radius: 10px;
+      padding: 18px 20px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .hc:hover { border-color: #89b4fa; }
+    .hc-name   { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+    .hc-streak { font-size: 12px; color: #6c7086; }
+    .hc-streak strong { color: #0F9D58; }
+    .dots { display: flex; gap: 4px; margin: 11px 0 9px; }
+    .dot {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      position: relative;
+    }
+    .dot[title]:hover::after {
+      content: attr(title);
+      position: absolute;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #313244;
+      color: #cdd6f4;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      white-space: nowrap;
+      z-index: 10;
+    }
+    .d-on   { background: #0F9D58; }
+    .d-off  { background: #313244; }
+    .d-miss { background: #313244; opacity: 0.35; }
+    .hc-pct    { font-size: 12px; color: #6c7086; }
+    .pct-wrap  { background: #313244; border-radius: 999px; height: 4px; margin-top: 6px; overflow: hidden; }
+    .pct-fill  { height: 100%; border-radius: 999px; background: #0F9D58; }
+    .pct-warn  { background: #89b4fa; }
+
+    /* Calendar */
+    .cal-headers {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+    .cal-dh { font-size: 10px; color: #45475a; text-align: center; font-weight: 500; }
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+    .cal-cell {
+      aspect-ratio: 1;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: #6c7086;
+      background: #313244;
+    }
+    .cal-cell.c-on     { background: #0F9D58; color: #000; font-weight: 600; }
+    .cal-cell.c-future { background: transparent; color: #45475a; }
+    .cal-cell.c-empty  { background: transparent; }
+    .cal-cell.c-missed { background: #313244; color: #45475a; opacity: 0.5; }
+
+    /* Misc */
+    .mt8 { margin-top: 8px; }
+    .meta-sm { font-size: 12px; color: #6c7086; }
+    .overdue { color: #DB4437; }
+
+    /* ── Daily page ── */
+    #daily { background: #1e1e2e; }
+    .daily-col { max-width: 640px; margin: 0 auto; }
+    .daily-date { text-align: center; padding: 16px 0 26px; }
+    .daily-day  { font-size: 29px; font-weight: 300; letter-spacing: 0.18em; text-transform: uppercase; color: #89b4fa; }
+    .daily-day-sep { width: 36px; height: 2px; background: #89b4fa; opacity: 0.45; border-radius: 2px; margin: 14px auto 16px; }
+    .daily-full { font-size: 52px; font-weight: 700; color: #cdd6f4; line-height: 1.05; }
+    .daily-hr   { border: none; border-top: 1px solid #313244; margin: 18px 0; }
+    .daily-sec  { margin-bottom: 0; }
+    .daily-sec-head {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .daily-sec-head h3 { font-size: 15px; font-weight: 600; color: #cdd6f4; }
+    .daily-sec-sub     { font-size: 12px; color: #6c7086; }
+    .daily-card {
+      background: #181825;
+      border: 1px solid #313244;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .daily-card-pad { padding: 14px 16px; }
+    .quick-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; justify-content: center; }
+    .daily-stats {
+      display: flex; gap: 10px; margin-bottom: 0;
+    }
+    .dsc {
+      flex: 1;
+      background: #181825;
+      border: 1px solid #313244;
+      border-radius: 10px;
+      padding: 10px 12px;
+      text-align: center;
+    }
+    .dsc-label { font-size: 10px; color: #6c7086; text-transform: uppercase; letter-spacing: 0.05em; }
+    .dsc-val   { font-size: 22px; font-weight: 700; margin-top: 3px; line-height: 1; }
+    .daily-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 16px;
+      border-bottom: 1px solid #313244;
+      cursor: pointer;
+    }
+    .daily-row:last-child { border-bottom: none; }
+    .daily-row:hover { background: #1e1e2e; }
+    .daily-row-main { flex: 1; min-width: 0; }
+    .daily-row-title { font-size: 14px; color: #cdd6f4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .daily-row-sub   { font-size: 12px; color: #6c7086; margin-top: 2px; }
+    .daily-row-meta  { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .filter-pills { display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; }
+    .fpill {
+      padding: 4px 10px; border-radius: 8px; font-size: 12px; font-weight: 500;
+      cursor: pointer; color: #6c7086; background: transparent;
+      border: none;
+    }
+    .fpill.on { background: #313244; color: #cdd6f4; }
+    .habit-check-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 16px;
+      border-bottom: 1px solid #313244;
+    }
+    .habit-check-row:last-child { border-bottom: none; }
+    .hcheck {
+      width: 22px; height: 22px; border-radius: 6px; border: 2px solid #313244;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 11px; font-weight: 700;
+    }
+    .hcheck.checked { background: #0F9D58; border-color: #0F9D58; color: #000; }
+    .habit-icon { font-size: 16px; flex-shrink: 0; }
+    .habit-name-label { font-size: 14px; color: #cdd6f4; flex: 1; }
+    .mini-bar-wrap { width: 72px; height: 5px; background: #313244; border-radius: 999px; overflow: hidden; }
+    .mini-bar-fill { height: 100%; border-radius: 999px; }
+    .hint-text { font-size: 11px; color: #45475a; margin-top: 6px; }
+    .tom-item { display: flex; align-items: flex-start; gap: 8px; padding: 4px 0; font-size: 14px; color: #cdd6f4; }
+    .tom-bullet { color: #6c7086; margin-top: 1px; }
+    .note-entry { padding: 10px 0; border-bottom: 1px solid #313244; }
+    .note-entry:last-child { border-bottom: none; }
+    .note-time { font-size: 11px; color: #6c7086; margin-bottom: 4px; }
+    .note-body { font-size: 14px; color: #cdd6f4; line-height: 1.5; }
+    .note-add-input {
+      width: 100%; background: transparent; border: none; outline: none;
+      font-size: 14px; color: #6c7086; padding: 12px 16px;
+      font-family: inherit; border-top: 1px solid #313244;
+    }
+    .note-add-input::placeholder { color: #45475a; }
+    .review-btns { display: flex; gap: 10px; flex-wrap: wrap; padding-bottom: 32px; }
+  </style>
+</head>
+<body>
+
+<!-- ── Mockup nav bar ── -->
+<div class="mockup-bar">
+  <span class="mockup-bar-label">Page:</span>
+  <button class="mbtn"        data-p="daily"         onclick="show('daily',this)">Daily</button>
+  <button class="mbtn active" data-p="tasks-list"    onclick="show('tasks-list',this)">Tasks</button>
+  <button class="mbtn"        data-p="task-detail"   onclick="show('task-detail',this)">Task Detail</button>
+  <button class="mbtn"        data-p="proj-list"     onclick="show('proj-list',this)">Projects</button>
+  <button class="mbtn"        data-p="proj-detail"   onclick="show('proj-detail',this)">Project Detail</button>
+  <button class="mbtn"        data-p="people-list"   onclick="show('people-list',this)">People</button>
+  <button class="mbtn"        data-p="person-detail" onclick="show('person-detail',this)">Person Detail</button>
+  <button class="mbtn"        data-p="habits-list"   onclick="show('habits-list',this)">Habits</button>
+  <button class="mbtn"        data-p="habit-detail"  onclick="show('habit-detail',this)">Habit Detail</button>
+</div>
+
+<!-- ── App shell ── -->
+<div class="shell">
+
+  <!-- Sidebar -->
+  <aside id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-text">
+        <h1>GTD</h1>
+        <p>Getting Things Done</p>
+      </div>
+      <button class="collapse-btn" onclick="toggleSidebar()" title="Toggle sidebar">◀</button>
+    </div>
+    <nav>
+      <div class="nl" data-sec="daily"    onclick="show('daily')"><span class="nl-icon">📅</span><span class="nl-label">Daily</span></div>
+      <div class="nl active" data-sec="tasks"    onclick="show('tasks-list')"><span class="nl-icon">⚡</span><span class="nl-label">Tasks</span></div>
+      <div class="nl" data-sec="projects" onclick="show('proj-list')"><span class="nl-icon">🗂</span><span class="nl-label">Projects</span></div>
+      <div class="nl" data-sec="people"   onclick="show('people-list')"><span class="nl-icon">👥</span><span class="nl-label">People</span></div>
+      <div class="nl" data-sec="habits"   onclick="show('habits-list')"><span class="nl-icon">🎯</span><span class="nl-label">Habits</span></div>
+      <div class="nl" data-sec="reviews"><span class="nl-icon">🔍</span><span class="nl-label">Reviews</span></div>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="sf-email">emailemsmith@gmail.com</div>
+      <button class="signout"><span class="signout-text">Sign out</span><span class="signout-icon">↪</span></button>
+    </div>
+  </aside>
+
+  <!-- Content -->
+  <main>
+
+    <!-- ════════════════════════════════════
+         DAILY
+    ════════════════════════════════════ -->
+    <div id="daily" class="page">
+
+        <!-- Date header -->
+        <div class="daily-date">
+          <p class="daily-day">Sunday</p>
+          <div class="daily-day-sep"></div>
+          <h1 class="daily-full">May 25, 2026</h1>
+        </div>
+
+        <hr class="daily-hr">
+
+        <!-- Quick capture -->
+        <div class="quick-btns">
+          <button class="btn btn-secondary btn-sm">+ New Task</button>
+          <button class="btn btn-secondary btn-sm">+ New Project</button>
+          <button class="btn btn-secondary btn-sm">+ New Person</button>
+          <button class="btn btn-secondary btn-sm">+ New Note</button>
+        </div>
+
+        <!-- Stat cards -->
+        <div class="daily-stats">
+          <div class="dsc"><div class="dsc-label">In Progress</div><div class="dsc-val" style="color:#89b4fa">4</div></div>
+          <div class="dsc"><div class="dsc-label">Next Actions</div><div class="dsc-val" style="color:#0F9D58">12</div></div>
+          <div class="dsc"><div class="dsc-label">Waiting</div><div class="dsc-val" style="color:#DB4437">3</div></div>
+          <div class="dsc"><div class="dsc-label">Due Today</div><div class="dsc-val" style="color:#FBBC05">2</div></div>
+          <div class="dsc"><div class="dsc-label">Stalled</div><div class="dsc-val" style="color:#FB9039">2</div></div>
+        </div>
+
+        <hr class="daily-hr">
+
+        <!-- Top of Mind -->
+        <div class="daily-sec">
+          <div class="daily-sec-head">
+            <h3>Top of Mind</h3>
+            <button style="background:none;border:none;cursor:pointer;font-size:14px">✏️</button>
+          </div>
+          <div class="daily-card daily-card-pad">
+            <div class="tom-item"><span class="tom-bullet">•</span>Finish the Q2 strategy draft before Thursday</div>
+            <div class="tom-item"><span class="tom-bullet">•</span>Call mom back about the weekend</div>
+            <div class="tom-item"><span class="tom-bullet">•</span>Schedule dentist appointment</div>
+          </div>
+        </div>
+
+        <hr class="daily-hr">
+
+        <!-- Agenda -->
+        <div class="daily-sec">
+          <div class="daily-sec-head"><h3>Agenda</h3></div>
+          <div class="daily-card">
+            <div class="daily-row" onclick="goto('task-detail')">
+              <div class="daily-row-main">
+                <div class="daily-row-title">Monthly budget review</div>
+                <div class="daily-row-sub">📁 Finance</div>
+              </div>
+              <div class="daily-row-meta"><span class="meta-sm">Task · Scheduled</span></div>
+            </div>
+            <div class="daily-row" onclick="goto('proj-detail')">
+              <div class="daily-row-main">
+                <div class="daily-row-title">Website Redesign</div>
+              </div>
+              <div class="daily-row-meta"><span class="meta-sm">Project End</span></div>
+            </div>
+          </div>
+          <p class="hint-text">Google Calendar integration coming soon</p>
+        </div>
+
+        <hr class="daily-hr">
+
+        <!-- Projects -->
+        <div class="daily-sec">
+          <div class="daily-sec-head"><h3>Projects</h3></div>
+          <div class="filter-pills">
+            <button class="fpill on">In Progress</button>
+            <button class="fpill">Planning</button>
+            <button class="fpill">Waiting</button>
+            <button class="fpill">Stalled</button>
+          </div>
+          <div class="daily-card">
+            <div class="daily-row" onclick="goto('proj-detail')">
+              <div class="daily-row-main">
+                <div class="daily-row-title">⭐ Website Redesign</div>
+                <div class="daily-row-sub">Work</div>
+              </div>
+              <div class="daily-row-meta">
+                <span class="meta-sm">Due Jun 15</span>
+                <span class="badge b-urgent">URGENT</span>
+              </div>
+            </div>
+            <div class="daily-row" onclick="goto('proj-detail')">
+              <div class="daily-row-main">
+                <div class="daily-row-title">Client Portal v2</div>
+                <div class="daily-row-sub">Work</div>
+              </div>
+              <div class="daily-row-meta">
+                <span class="meta-sm">Due Jul 30</span>
+                <span class="badge b-stat">STAT</span>
+              </div>
+            </div>
+            <div class="daily-row" onclick="goto('proj-detail')">
+              <div class="daily-row-main">
+                <div class="daily-row-title">Team Hiring Q3</div>
+                <div class="daily-row-sub">Work</div>
+              </div>
+              <div class="daily-row-meta">
+                <span class="meta-sm">Due Aug 1</span>
+                <span class="badge b-eod">EOD</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <hr class="daily-hr">
+
+        <!-- Tasks -->
+        <div class="daily-sec">
+          <div class="daily-sec-head"><h3>Tasks</h3></div>
+          <div class="filter-pills">
+            <button class="fpill on">Next Actions</button>
+            <button class="fpill">Inbox</button>
+            <button class="fpill">Queued</button>
+            <button class="fpill">Waiting</button>
+            <button class="fpill">Scheduled</button>
+          </div>
+          <div class="daily-card">
+            <div class="daily-row" onclick="goto('task-detail')">
+              <div class="daily-row-main">
+                <div class="daily-row-title">Draft Q2 marketing strategy</div>
+                <div class="daily-row-sub">📁 Marketing Overhaul</div>
+              </div>
+              <div class="daily-row-meta">
+                <span class="meta-sm overdue">⚠ May 28</span>
+                <span class="badge b-urgent">URGENT</span>
+              </div>
+            </div>
+            <div class="daily-row" onclick="goto('task-detail')">
+              <div class="daily-row-main">
+                <div class="daily-row-title">Set up CI/CD pipeline</div>
+                <div class="daily-row-sub">📁 Dev Infrastructure</div>
+              </div>
+              <div class="daily-row-meta"><span class="badge b-routine">ROUTINE</span></div>
+            </div>
+            <div class="daily-row" onclick="goto('task-detail')">
+              <div class="daily-row-main">
+                <div class="daily-row-title">Brief design agency on brand guidelines</div>
+                <div class="daily-row-sub">📁 Website Redesign</div>
+              </div>
+              <div class="daily-row-meta"><span class="badge b-eod">EOD</span></div>
+            </div>
+          </div>
+        </div>
+
+        <hr class="daily-hr">
+
+        <!-- Notes -->
+        <div class="daily-sec">
+          <div class="daily-sec-head"><h3>Notes</h3></div>
+          <div class="daily-card">
+            <div style="padding:0 16px">
+              <div class="note-entry">
+                <div class="note-time">9:42 AM</div>
+                <div class="note-body">Talked to Sarah — she's sending the Q1 ad data by noon. Agreed to push strategy deadline to May 30.</div>
+              </div>
+              <div class="note-entry">
+                <div class="note-time">8:15 AM</div>
+                <div class="note-body">Morning focus: finish the agenda section of the marketing doc, then review the CI pipeline PR.</div>
+              </div>
+            </div>
+            <input class="note-add-input" type="text" placeholder="Add a note…">
+          </div>
+        </div>
+
+        <hr class="daily-hr">
+
+        <!-- Habits -->
+        <div class="daily-sec">
+          <div class="daily-sec-head">
+            <h3>Habits</h3>
+            <span class="daily-sec-sub">5 of 7 completed today</span>
+          </div>
+          <div class="daily-card">
+            <div class="habit-check-row">
+              <div class="hcheck checked">✓</div>
+              <span class="habit-icon">💊</span>
+              <span class="habit-name-label">Morning Meds</span>
+              <div class="mini-bar-wrap"><div class="mini-bar-fill" style="width:90%;background:#0F9D58"></div></div>
+              <span class="meta-sm">90%</span>
+            </div>
+            <div class="habit-check-row">
+              <div class="hcheck checked">✓</div>
+              <span class="habit-icon">🌙</span>
+              <span class="habit-name-label">Evening Meds</span>
+              <div class="mini-bar-wrap"><div class="mini-bar-fill" style="width:76%;background:#0F9D58"></div></div>
+              <span class="meta-sm">76%</span>
+            </div>
+            <div class="habit-check-row">
+              <div class="hcheck checked">✓</div>
+              <span class="habit-icon">📓</span>
+              <span class="habit-name-label">Journal</span>
+              <div class="mini-bar-wrap"><div class="mini-bar-fill" style="width:64%;background:#FBBC05"></div></div>
+              <span class="meta-sm">64%</span>
+            </div>
+            <div class="habit-check-row">
+              <div class="hcheck"></div>
+              <span class="habit-icon">🧘</span>
+              <span class="habit-name-label">Meditation</span>
+              <div class="mini-bar-wrap"><div class="mini-bar-fill" style="width:44%;background:#FBBC05"></div></div>
+              <span class="meta-sm">44%</span>
+            </div>
+            <div class="habit-check-row">
+              <div class="hcheck checked">✓</div>
+              <span class="habit-icon">💨</span>
+              <span class="habit-name-label">Breathwork</span>
+              <div class="mini-bar-wrap"><div class="mini-bar-fill" style="width:80%;background:#0F9D58"></div></div>
+              <span class="meta-sm">80%</span>
+            </div>
+            <div class="habit-check-row">
+              <div class="hcheck"></div>
+              <span class="habit-icon">🤸</span>
+              <span class="habit-name-label">Stretching</span>
+              <div class="mini-bar-wrap"><div class="mini-bar-fill" style="width:32%;background:#DB4437"></div></div>
+              <span class="meta-sm">32%</span>
+            </div>
+            <div class="habit-check-row">
+              <div class="hcheck checked">✓</div>
+              <span class="habit-icon">📊</span>
+              <span class="habit-name-label">Health Tracking</span>
+              <div class="mini-bar-wrap"><div class="mini-bar-fill" style="width:96%;background:#0F9D58"></div></div>
+              <span class="meta-sm">96%</span>
+            </div>
+          </div>
+        </div>
+
+        <hr class="daily-hr">
+
+        <!-- Review buttons -->
+        <div class="review-btns">
+          <button class="btn btn-secondary">📋 Daily Review</button>
+          <button class="btn btn-secondary">📅 Weekly Review</button>
+          <button class="btn btn-secondary">📆 Monthly Review</button>
+        </div>
+
+    </div>
+
+    <!-- ════════════════════════════════════
+         TASKS LIST
+    ════════════════════════════════════ -->
+    <div id="tasks-list" class="page on">
+      <div class="ph">
+        <h1>Tasks</h1>
+        <button class="btn btn-primary">+ New Task</button>
+      </div>
+
+      <div class="stats">
+        <div class="sc"><div class="sc-label">Inbox</div><div class="sc-val">5</div></div>
+        <div class="sc"><div class="sc-label">Next Action</div><div class="sc-val">12</div></div>
+        <div class="sc"><div class="sc-label">Waiting</div><div class="sc-val">3</div></div>
+        <div class="sc"><div class="sc-label">Queued</div><div class="sc-val">8</div></div>
+        <div class="sc"><div class="sc-label">Someday</div><div class="sc-val">7</div></div>
+        <div class="sc"><div class="sc-label">Done</div><div class="sc-val">24</div></div>
+      </div>
+
+      <input class="search" type="text" placeholder="🔍  Search tasks…">
+
+      <div class="tabs">
+        <div class="tab active">All Active</div>
+        <div class="tab">Inbox</div>
+        <div class="tab">Next Action</div>
+        <div class="tab">Queued</div>
+        <div class="tab">Waiting</div>
+        <div class="tab">Scheduled</div>
+        <div class="tab">Someday</div>
+        <div class="tab">Done</div>
+      </div>
+
+      <div class="lp">
+        <div class="lr" onclick="goto('task-detail')">
+          <span class="pill p-next">Next Action</span>
+          <div class="lr-main">
+            <div class="lr-title">Draft Q2 marketing strategy</div>
+            <div class="lr-sub">📁 Marketing Overhaul</div>
+          </div>
+          <div class="lr-meta">
+            <span class="meta-sm overdue">⚠ May 28</span>
+            <span class="badge b-urgent">URGENT</span>
+          </div>
+        </div>
+        <div class="lr" onclick="goto('task-detail')">
+          <span class="pill p-inbox">Inbox</span>
+          <div class="lr-main">
+            <div class="lr-title">Review contractor invoices — April</div>
+            <div class="lr-sub"></div>
+          </div>
+          <div class="lr-meta">
+            <span class="meta-sm overdue">⚠ May 26</span>
+            <span class="badge b-stat">STAT</span>
+          </div>
+        </div>
+        <div class="lr" onclick="goto('task-detail')">
+          <span class="pill p-next">Next Action</span>
+          <div class="lr-main">
+            <div class="lr-title">Set up CI/CD pipeline</div>
+            <div class="lr-sub">📁 Dev Infrastructure</div>
+          </div>
+          <div class="lr-meta">
+            <span class="badge b-routine">ROUTINE</span>
+          </div>
+        </div>
+        <div class="lr" onclick="goto('task-detail')">
+          <span class="pill p-waiting">Waiting</span>
+          <div class="lr-main">
+            <div class="lr-title">Call back Dr. Smith re: referral</div>
+            <div class="lr-sub">⏳ Waiting for: appointment confirmation</div>
+          </div>
+          <div class="lr-meta">
+            <span class="badge b-eod">EOD</span>
+          </div>
+        </div>
+        <div class="lr" onclick="goto('task-detail')">
+          <span class="pill p-queued">Queued</span>
+          <div class="lr-main">
+            <div class="lr-title">Update company handbook — remote policy</div>
+            <div class="lr-sub">📁 HR Operations</div>
+          </div>
+          <div class="lr-meta">
+            <span class="badge b-routine">ROUTINE</span>
+          </div>
+        </div>
+        <div class="lr" onclick="goto('task-detail')">
+          <span class="pill p-inbox">Inbox</span>
+          <div class="lr-main">
+            <div class="lr-title">Research new CRM options</div>
+          </div>
+          <div class="lr-meta">
+            <span class="badge b-urgent">URGENT</span>
+          </div>
+        </div>
+        <div class="lr" onclick="goto('task-detail')">
+          <span class="pill p-scheduled">Scheduled</span>
+          <div class="lr-main">
+            <div class="lr-title">Monthly budget review</div>
+            <div class="lr-sub">📁 Finance</div>
+          </div>
+          <div class="lr-meta">
+            <span class="meta-sm">Jun 1</span>
+            <span class="badge b-routine">ROUTINE</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════
+         TASK DETAIL
+    ════════════════════════════════════ -->
+    <div id="task-detail" class="page">
+      <span class="back" onclick="goto('tasks-list')">← Tasks</span>
+
+      <div class="detail-header">
+        <div class="badge-row">
+          <span class="pill p-next">Next Action</span>
+          <span class="badge b-urgent">URGENT</span>
+          <span class="meta-sm" style="color:#6c7086">📁 Marketing Overhaul</span>
+        </div>
+        <h1 class="d-title">Draft Q2 marketing strategy</h1>
+      </div>
+
+      <div class="action-bar">
+        <span class="action-label">Actions</span>
+        <button class="btn btn-success">✓ Complete</button>
+        <button class="btn btn-secondary">⏳ Move to Waiting</button>
+        <button class="btn btn-secondary">Queue It</button>
+        <button class="btn btn-secondary">Someday</button>
+      </div>
+
+      <div class="sec">
+        <div class="sec-head">
+          <span class="sec-label">Core Details</span>
+          <button class="btn btn-secondary btn-sm">Edit</button>
+        </div>
+        <div class="sec-body">
+          <div class="fg">
+            <div><div class="fl">Priority</div><div class="fv"><span class="badge b-urgent">URGENT</span></div></div>
+            <div><div class="fl">Energy</div><div class="fv">🔥 High</div></div>
+            <div><div class="fl">Duration</div><div class="fv">⏱ 2 hours</div></div>
+            <div><div class="fl">Area</div><div class="fv">Work</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-head">
+          <span class="sec-label">Description</span>
+          <button class="btn btn-secondary btn-sm">Edit</button>
+        </div>
+        <div class="sec-body">
+          <p class="fb">Prepare a comprehensive Q2 strategy document covering social media campaigns, email cadence, paid acquisition targets, and the content calendar for April–June. Include competitive analysis and proposed budget breakdown.</p>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-head">
+          <span class="sec-label">Notes</span>
+          <button class="btn btn-secondary btn-sm">Edit</button>
+        </div>
+        <div class="sec-body">
+          <p class="fb">Talk to Sarah about the ad spend cap before finalizing numbers. Need last quarter's data from the analytics dashboard.</p>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-head">
+          <span class="sec-label">Dates</span>
+          <button class="btn btn-secondary btn-sm">Edit</button>
+        </div>
+        <div class="sec-body">
+          <div class="fg">
+            <div><div class="fl">Due Date</div><div class="fv overdue">⚠ May 28, 2026</div></div>
+            <div><div class="fl">Created</div><div class="fv">May 20, 2026</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-head">
+          <span class="sec-label">Context Tags</span>
+          <button class="btn btn-secondary btn-sm">Edit</button>
+        </div>
+        <div class="sec-body">
+          <div class="tags">
+            <span class="tag">@computer</span>
+            <span class="tag">@deep-work</span>
+            <span class="tag">@marketing</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-head">
+          <span class="sec-label">Linked People</span>
+          <button class="btn btn-secondary btn-sm">Edit</button>
+        </div>
+        <div class="sec-body" style="padding:0">
+          <div class="linked-row" onclick="goto('person-detail')">
+            <span>👤</span>
+            <span class="linked-title">Sarah Johnson</span>
+            <span class="meta-sm">Partner</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-head"><span class="sec-label">Comments</span></div>
+        <div class="sec-body">
+          <div class="comment">
+            <div class="c-meta">May 22, 2026 · 9:14 AM</div>
+            <div class="c-body">Asked Sarah to pull last quarter's ad performance numbers. She'll send by EOD tomorrow.</div>
+          </div>
+          <div class="comment">
+            <div class="c-meta">May 21, 2026 · 2:30 PM</div>
+            <div class="c-body">Initial outline drafted. Need to flesh out the content calendar section before the deadline.</div>
+          </div>
+          <textarea class="c-input" placeholder="Add a comment…"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════
+         PROJECTS LIST
+    ════════════════════════════════════ -->
+    <div id="proj-list" class="page">
+      <div class="ph">
+        <h1>Projects</h1>
+        <button class="btn btn-primary">+ New Project</button>
+      </div>
+
+      <div class="stats">
+        <div class="sc"><div class="sc-label">Inbox</div><div class="sc-val">2</div></div>
+        <div class="sc"><div class="sc-label">Planning</div><div class="sc-val">3</div></div>
+        <div class="sc"><div class="sc-label">In Progress</div><div class="sc-val">4</div></div>
+        <div class="sc"><div class="sc-label">Waiting</div><div class="sc-val">1</div></div>
+        <div class="sc"><div class="sc-label">Stalled</div><div class="sc-val">2</div></div>
+        <div class="sc"><div class="sc-label">Completed</div><div class="sc-val">8</div></div>
+      </div>
+
+      <input class="search" type="text" placeholder="🔍  Search projects…">
+
+      <div class="tabs">
+        <div class="tab active">All Active</div>
+        <div class="tab">Inbox</div>
+        <div class="tab">Planning</div>
+        <div class="tab">In Progress</div>
+        <div class="tab">Waiting</div>
+        <div class="tab">Stalled</div>
+        <div class="tab">Completed</div>
+        <div class="tab">Archived</div>
+      </div>
+
+      <div class="lp">
+        <div class="lr" onclick="goto('proj-detail')">
+          <span class="pill p-inprog">In Progress</span>
+          <div class="lr-main">
+            <div class="lr-title">⭐ Website Redesign</div>
+            <div class="lr-sub">Work · 6 tasks</div>
+          </div>
+          <div class="lr-meta">
+            <span class="meta-sm">Due Jun 15</span>
+            <span class="badge b-urgent">URGENT</span>
+          </div>
+        </div>
+        <div class="lr" onclick="goto('proj-detail')">
+          <span class="pill p-planning">Planning</span>
+          <div class="lr-main">
+            <div class="lr-title">Team Hiring Q3</div>
+            <div class="lr-sub">Work · 2 tasks</div>
+          </div>
+          <div class="lr-meta">
+            <span class="meta-sm">Due Aug 1</span>
+            <span class="badge b-eod">EOD</span>
+          </div>
+        </div>
+        <div class="lr" onclick="goto('proj-detail')">
+          <span class="pill p-waiting">Waiting</span>
+          <div class="lr-main">
+            <div class="lr-title">Client Portal v2</div>
+            <div class="lr-sub">Work · 5 tasks · ⏳ design sign-off</div>
+          </div>
+          <div class="lr-meta">
+            <span class="meta-sm">Due Jul 30</span>
+            <span class="badge b-stat">STAT</span>
+          </div>
+        </div>
+        <div class="lr" onclick="goto('proj-detail')">
+          <span class="pill p-stalled">Stalled</span>
+          <div class="lr-main">
+            <div class="lr-title">Office Move</div>
+            <div class="lr-sub">Personal · 4 tasks</div>
+          </div>
+          <div class="lr-meta">
+            <span class="meta-sm">Due Jun 30</span>
+            <span class="badge b-routine">ROUTINE</span>
+          </div>
+        </div>
+        <div class="lr" onclick="goto('proj-detail')">
+          <span class="pill p-inbox">Inbox</span>
+          <div class="lr-main">
+            <div class="lr-title">Podcast Launch</div>
+            <div class="lr-sub">Personal</div>
+          </div>
+          <div class="lr-meta">
+            <span class="badge b-routine">ROUTINE</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════
+         PROJECT DETAIL
+    ════════════════════════════════════ -->
+    <div id="proj-detail" class="page">
+      <span class="back" onclick="goto('proj-list')">← Projects</span>
+
+      <div class="detail-header">
+        <div class="badge-row">
+          <span class="pill p-inprog">In Progress</span>
+          <span class="badge b-urgent">URGENT</span>
+          <span style="font-size:12px;color:#FBBC05">⭐ Highlight</span>
+        </div>
+        <h1 class="d-title">Website Redesign</h1>
+        <p class="d-sub">Work · Due Jun 15, 2026</p>
+      </div>
+
+      <div class="action-bar">
+        <span class="action-label">Actions</span>
+        <button class="btn btn-success">✓ Complete Project</button>
+        <button class="btn btn-purple">⭐ Add to Highlights</button>
+        <button class="btn btn-danger">Discard</button>
+      </div>
+
+      <div class="sec">
+        <div class="sec-head">
+          <span class="sec-label">Overview</span>
+          <button class="btn btn-secondary btn-sm">Edit</button>
+        </div>
+        <div class="sec-body">
+          <div style="margin-bottom:14px">
+            <div class="fl">Description</div>
+            <p class="fb">Full redesign of the public-facing website including new brand direction, improved mobile experience, and integration of the new CMS. Coordinating with the design agency through launch.</p>
+          </div>
+          <div class="fg">
+            <div><div class="fl">Area</div><div class="fv">Work</div></div>
+            <div><div class="fl">Priority</div><div class="fv"><span class="badge b-urgent">URGENT</span></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-head">
+          <span class="sec-label">Dates</span>
+          <button class="btn btn-secondary btn-sm">Edit</button>
+        </div>
+        <div class="sec-body">
+          <div class="fg">
+            <div><div class="fl">Start Date</div><div class="fv">Apr 1, 2026</div></div>
+            <div><div class="fl">End Date</div><div class="fv">Jun 15, 2026</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-head">
+          <span class="sec-label">Tasks (6)</span>
+          <button class="btn btn-primary btn-sm">+ Add Task</button>
+        </div>
+        <div class="sec-body" style="padding:0">
+          <div class="linked-row" onclick="goto('task-detail')">
+            <span class="pill p-next" style="font-size:10px;padding:1px 7px">Next</span>
+            <span class="linked-title">Draft Q2 marketing strategy</span>
+            <span class="badge b-urgent">URGENT</span>
+          </div>
+          <div class="linked-row" onclick="goto('task-detail')">
+            <span class="pill p-next" style="font-size:10px;padding:1px 7px">Next</span>
+            <span class="linked-title">Brief design agency on brand guidelines</span>
+            <span class="badge b-eod">EOD</span>
+          </div>
+          <div class="linked-row" onclick="goto('task-detail')">
+            <span class="pill p-waiting" style="font-size:10px;padding:1px 7px">Waiting</span>
+            <span class="linked-title">Review homepage wireframes</span>
+            <span class="badge b-stat">STAT</span>
+          </div>
+          <div class="linked-row" onclick="goto('task-detail')">
+            <span class="pill p-queued" style="font-size:10px;padding:1px 7px">Queued</span>
+            <span class="linked-title">Write new About Us copy</span>
+            <span class="badge b-routine">ROUTINE</span>
+          </div>
+          <div class="linked-row" onclick="goto('task-detail')">
+            <span class="pill p-queued" style="font-size:10px;padding:1px 7px">Queued</span>
+            <span class="linked-title">Set up staging environment</span>
+            <span class="badge b-routine">ROUTINE</span>
+          </div>
+          <div class="linked-row" onclick="goto('task-detail')">
+            <span class="pill p-inbox" style="font-size:10px;padding:1px 7px">Inbox</span>
+            <span class="linked-title">Launch QA checklist</span>
+            <span class="badge b-urgent">URGENT</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-head">
+          <span class="sec-label">Linked People</span>
+          <button class="btn btn-secondary btn-sm">Edit</button>
+        </div>
+        <div class="sec-body" style="padding:0">
+          <div class="linked-row" onclick="goto('person-detail')">
+            <span>👤</span>
+            <span class="linked-title">Sarah Johnson</span>
+            <span class="meta-sm">Partner</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-head"><span class="sec-label">Comments</span></div>
+        <div class="sec-body">
+          <div class="comment">
+            <div class="c-meta">May 19, 2026 · 11:00 AM</div>
+            <div class="c-body">Agency sent revised timeline — pushing final delivery to Jun 12 to account for revision rounds. Updated end date accordingly.</div>
+          </div>
+          <textarea class="c-input" placeholder="Add a comment…"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════
+         PEOPLE LIST
+    ════════════════════════════════════ -->
+    <div id="people-list" class="page">
+      <div class="ph">
+        <h1>People</h1>
+        <button class="btn btn-primary">+ Add Person</button>
+      </div>
+
+      <div class="stats">
+        <div class="sc"><div class="sc-label">Active</div><div class="sc-val">18</div></div>
+        <div class="sc"><div class="sc-label">Inbox</div><div class="sc-val">3</div></div>
+        <div class="sc"><div class="sc-label">Stale</div><div class="sc-val">4</div></div>
+      </div>
+
+      <input class="search" type="text" placeholder="🔍  Search people…">
+
+      <div class="tabs">
+        <div class="tab active">All</div>
+        <div class="tab">Inbox</div>
+        <div class="tab">Active</div>
+        <div class="tab">Stale</div>
+      </div>
+
+      <div class="lp">
+        <div class="lr" onclick="goto('person-detail')">
+          <span class="pill p-active">Active</span>
+          <div class="lr-main">
+            <div class="lr-title">Sarah Johnson</div>
+            <div class="lr-sub">Acme Corp · Partner · Last contact May 20</div>
+          </div>
+        </div>
+        <div class="lr" onclick="goto('person-detail')">
+          <span class="pill p-active">Active</span>
+          <div class="lr-main">
+            <div class="lr-title">Mike Chen</div>
+            <div class="lr-sub">TechStart · Client · Last contact May 10</div>
+          </div>
+          <div class="lr-meta">
+            <span class="meta-sm overdue">⚠ Going stale</span>
+          </div>
+        </div>
+        <div class="lr" onclick="goto('person-detail')">
+          <span class="pill p-inbox">Inbox</span>
+          <div class="lr-main">
+            <div class="lr-title">Dr. Emily Ross</div>
+            <div class="lr-sub">City Medical · Healthcare</div>
+          </div>
+        </div>
+        <div class="lr" onclick="goto('person-detail')">
+          <span class="pill p-stale">Stale</span>
+          <div class="lr-main">
+            <div class="lr-title">Alex Turner</div>
+            <div class="lr-sub">PrintCo · Vendor · Last contact Mar 15</div>
+          </div>
+          <div class="lr-meta">
+            <span class="meta-sm overdue">71 days ago</span>
+          </div>
+        </div>
+        <div class="lr" onclick="goto('person-detail')">
+          <span class="pill p-active">Active</span>
+          <div class="lr-main">
+            <div class="lr-title">Jordan Lee</div>
+            <div class="lr-sub">Freelance · Contractor · Last contact May 18</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════
+         PERSON DETAIL
+    ════════════════════════════════════ -->
+    <div id="person-detail" class="page">
+      <span class="back" onclick="goto('people-list')">← People</span>
+
+      <div class="detail-header">
+        <div class="badge-row">
+          <span class="pill p-active">Active</span>
+          <span class="meta-sm">Last contact May 20, 2026</span>
+        </div>
+        <h1 class="d-title">Sarah Johnson</h1>
+        <p class="d-sub">Partner · Acme Corp</p>
+      </div>
+
+      <div class="action-bar">
+        <span class="action-label">Actions</span>
+        <button class="btn btn-secondary">Log Contact</button>
+        <button class="btn btn-secondary">Mark Stale</button>
+        <button class="btn btn-danger">Archive</button>
+      </div>
+
+      <div class="sec">
+        <div class="sec-head">
+          <span class="sec-label">Name</span>
+          <button class="btn btn-secondary btn-sm">Edit</button>
+        </div>
+        <div class="sec-body">
+          <div class="fg">
+            <div><div class="fl">First Name</div><div class="fv">Sarah</div></div>
+            <div><div class="fl">Last Name</div><div class="fv">Johnson</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-head">
+          <span class="sec-label">Contact Info</span>
+          <button class="btn btn-secondary btn-sm">Edit</button>
+        </div>
+        <div class="sec-body">
+          <div class="fg">
+            <div><div class="fl">Email</div><div class="fv">sarah@acmecorp.com</div></div>
+            <div><div class="fl">Phone</div><div class="fv">(555) 012-3456</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-head">
+          <span class="sec-label">Company &amp; Role</span>
+          <button class="btn btn-secondary btn-sm">Edit</button>
+        </div>
+        <div class="sec-body">
+          <div class="fg">
+            <div><div class="fl">Company</div><div class="fv">Acme Corp</div></div>
+            <div><div class="fl">Contact Type</div><div class="fv">Partner</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-head"><span class="sec-label">Linked Tasks (2)</span></div>
+        <div class="sec-body" style="padding:0">
+          <div class="linked-row" onclick="goto('task-detail')">
+            <span class="pill p-next" style="font-size:10px;padding:1px 7px">Next</span>
+            <span class="linked-title">Draft Q2 marketing strategy</span>
+          </div>
+          <div class="linked-row" onclick="goto('task-detail')">
+            <span class="pill p-queued" style="font-size:10px;padding:1px 7px">Queued</span>
+            <span class="linked-title">Send partnership renewal agreement</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-head"><span class="sec-label">Linked Projects (1)</span></div>
+        <div class="sec-body" style="padding:0">
+          <div class="linked-row" onclick="goto('proj-detail')">
+            <span class="pill p-inprog" style="font-size:10px;padding:1px 7px">In Progress</span>
+            <span class="linked-title">Website Redesign</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-head"><span class="sec-label">Comments</span></div>
+        <div class="sec-body">
+          <div class="comment">
+            <div class="c-meta">May 20, 2026 · 3:15 PM</div>
+            <div class="c-body">Met for coffee. Discussed partnership renewal timeline — she wants to extend through Q4. Will send revised agreement by end of week.</div>
+          </div>
+          <textarea class="c-input" placeholder="Add a comment…"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════
+         HABITS LIST
+    ════════════════════════════════════ -->
+    <div id="habits-list" class="page">
+      <div class="ph">
+        <h1>Habits</h1>
+        <span class="meta-sm">May 2026</span>
+      </div>
+
+      <div class="habit-grid">
+        <div class="hc" onclick="goto('habit-detail')">
+          <div class="hc-name">Morning Meds</div>
+          <div class="hc-streak">🔥 <strong>18</strong> day streak</div>
+          <div class="dots">
+            <div class="dot d-on" title="May 19"></div>
+            <div class="dot d-on" title="May 20"></div>
+            <div class="dot d-on" title="May 21"></div>
+            <div class="dot d-on" title="May 22"></div>
+            <div class="dot d-on" title="May 23"></div>
+            <div class="dot d-on" title="May 24"></div>
+            <div class="dot d-on" title="May 25"></div>
+          </div>
+          <div class="hc-pct">90% this month</div>
+          <div class="pct-wrap"><div class="pct-fill" style="width:90%"></div></div>
+        </div>
+
+        <div class="hc" onclick="goto('habit-detail')">
+          <div class="hc-name">Evening Meds</div>
+          <div class="hc-streak">🔥 <strong>15</strong> day streak</div>
+          <div class="dots">
+            <div class="dot d-on"></div>
+            <div class="dot d-on"></div>
+            <div class="dot d-on"></div>
+            <div class="dot d-on"></div>
+            <div class="dot d-off"></div>
+            <div class="dot d-on"></div>
+            <div class="dot d-on"></div>
+          </div>
+          <div class="hc-pct">76% this month</div>
+          <div class="pct-wrap"><div class="pct-fill" style="width:76%"></div></div>
+        </div>
+
+        <div class="hc" onclick="goto('habit-detail')">
+          <div class="hc-name">Journal</div>
+          <div class="hc-streak">🔥 <strong>7</strong> day streak</div>
+          <div class="dots">
+            <div class="dot d-on"></div>
+            <div class="dot d-on"></div>
+            <div class="dot d-on"></div>
+            <div class="dot d-on"></div>
+            <div class="dot d-on"></div>
+            <div class="dot d-on"></div>
+            <div class="dot d-on"></div>
+          </div>
+          <div class="hc-pct">64% this month</div>
+          <div class="pct-wrap"><div class="pct-fill" style="width:64%"></div></div>
+        </div>
+
+        <div class="hc" onclick="goto('habit-detail')">
+          <div class="hc-name">Meditation</div>
+          <div class="hc-streak">🔥 <strong>3</strong> day streak</div>
+          <div class="dots">
+            <div class="dot d-off"></div>
+            <div class="dot d-off"></div>
+            <div class="dot d-off"></div>
+            <div class="dot d-on"></div>
+            <div class="dot d-on"></div>
+            <div class="dot d-on"></div>
+            <div class="dot d-on"></div>
+          </div>
+          <div class="hc-pct">44% this month</div>
+          <div class="pct-wrap"><div class="pct-fill" style="width:44%"></div></div>
+        </div>
+
+        <div class="hc" onclick="goto('habit-detail')">
+          <div class="hc-name">Breathwork</div>
+          <div class="hc-streak">🔥 <strong>12</strong> day streak</div>
+          <div class="dots">
+            <div class="dot d-on"></div>
+            <div class="dot d-on"></div>
+            <div class="dot d-off"></div>
+            <div class="dot d-on"></div>
+            <div class="dot d-on"></div>
+            <div class="dot d-on"></div>
+            <div class="dot d-on"></div>
+          </div>
+          <div class="hc-pct">80% this month</div>
+          <div class="pct-wrap"><div class="pct-fill" style="width:80%"></div></div>
+        </div>
+
+        <div class="hc" onclick="goto('habit-detail')">
+          <div class="hc-name">Stretching</div>
+          <div class="hc-streak" style="color:#6c7086">No current streak</div>
+          <div class="dots">
+            <div class="dot d-off"></div>
+            <div class="dot d-on"></div>
+            <div class="dot d-off"></div>
+            <div class="dot d-off"></div>
+            <div class="dot d-off"></div>
+            <div class="dot d-off"></div>
+            <div class="dot d-on"></div>
+          </div>
+          <div class="hc-pct">32% this month</div>
+          <div class="pct-wrap"><div class="pct-fill pct-warn" style="width:32%"></div></div>
+        </div>
+
+        <div class="hc" onclick="goto('habit-detail')">
+          <div class="hc-name">Health Tracking</div>
+          <div class="hc-streak">🔥 <strong>22</strong> day streak</div>
+          <div class="dots">
+            <div class="dot d-on"></div>
+            <div class="dot d-on"></div>
+            <div class="dot d-on"></div>
+            <div class="dot d-on"></div>
+            <div class="dot d-on"></div>
+            <div class="dot d-on"></div>
+            <div class="dot d-on"></div>
+          </div>
+          <div class="hc-pct">96% this month</div>
+          <div class="pct-wrap"><div class="pct-fill" style="width:96%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════
+         HABIT DETAIL
+    ════════════════════════════════════ -->
+    <div id="habit-detail" class="page">
+      <span class="back" onclick="goto('habits-list')">← Habits</span>
+
+      <div class="ph">
+        <h1>Journal</h1>
+        <div style="display:flex;gap:2px;border:1px solid #313244;border-radius:8px;overflow:hidden">
+          <div class="tab active" style="border-bottom:none;padding:6px 12px">30 days</div>
+          <div class="tab"       style="border-bottom:none;padding:6px 12px">90 days</div>
+          <div class="tab"       style="border-bottom:none;padding:6px 12px">All time</div>
+        </div>
+      </div>
+
+      <div class="stats" style="margin-top:6px">
+        <div class="sc">
+          <div class="sc-label">Current Streak</div>
+          <div class="sc-val" style="color:#0F9D58">7</div>
+          <div class="meta-sm" style="margin-top:4px">days</div>
+        </div>
+        <div class="sc">
+          <div class="sc-label">Longest Streak</div>
+          <div class="sc-val">21</div>
+          <div class="meta-sm" style="margin-top:4px">days</div>
+        </div>
+        <div class="sc">
+          <div class="sc-label">This Month</div>
+          <div class="sc-val">64%</div>
+          <div class="meta-sm" style="margin-top:4px">16 of 25 days</div>
+        </div>
+        <div class="sc">
+          <div class="sc-label">Total</div>
+          <div class="sc-val">89</div>
+          <div class="meta-sm" style="margin-top:4px">completions</div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-head"><span class="sec-label">May 2026</span></div>
+        <div class="sec-body">
+          <div class="cal-headers">
+            <div class="cal-dh">Sun</div>
+            <div class="cal-dh">Mon</div>
+            <div class="cal-dh">Tue</div>
+            <div class="cal-dh">Wed</div>
+            <div class="cal-dh">Thu</div>
+            <div class="cal-dh">Fri</div>
+            <div class="cal-dh">Sat</div>
+          </div>
+          <div class="cal-grid" id="cal"></div>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-head"><span class="sec-label">Completion Log</span></div>
+        <div class="sec-body" style="padding:0">
+          <div class="linked-row" style="cursor:default"><span>✅</span><span class="linked-title">May 25, 2026 · Sunday</span></div>
+          <div class="linked-row" style="cursor:default"><span>✅</span><span class="linked-title">May 24, 2026 · Saturday</span></div>
+          <div class="linked-row" style="cursor:default"><span>✅</span><span class="linked-title">May 23, 2026 · Friday</span></div>
+          <div class="linked-row" style="cursor:default"><span>✅</span><span class="linked-title">May 22, 2026 · Thursday</span></div>
+          <div class="linked-row" style="cursor:default"><span>✅</span><span class="linked-title">May 21, 2026 · Wednesday</span></div>
+          <div class="linked-row" style="cursor:default"><span>✅</span><span class="linked-title">May 20, 2026 · Tuesday</span></div>
+          <div class="linked-row" style="cursor:default"><span>✅</span><span class="linked-title">May 19, 2026 · Monday</span></div>
+          <div class="linked-row" style="cursor:default;opacity:0.5"><span>—</span><span class="linked-title" style="color:#45475a">May 18, 2026 · Sunday</span></div>
+          <div class="linked-row" style="cursor:default;opacity:0.5"><span>—</span><span class="linked-title" style="color:#45475a">May 17, 2026 · Saturday</span></div>
+          <div class="linked-row" style="cursor:default"><span>✅</span><span class="linked-title">May 16, 2026 · Friday</span></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const btn = sidebar.querySelector('.collapse-btn');
+    sidebar.classList.toggle('collapsed');
+    btn.textContent = sidebar.classList.contains('collapsed') ? '▶' : '◀';
+  }
+
+  const pageToSection = {
+    'daily':         'daily',
+    'tasks-list':    'tasks',
+    'task-detail':   'tasks',
+    'proj-list':     'projects',
+    'proj-detail':   'projects',
+    'people-list':   'people',
+    'person-detail': 'people',
+    'habits-list':   'habits',
+    'habit-detail':  'habits',
+  };
+
+  function show(pageId, btn) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+    document.getElementById(pageId).classList.add('on');
+    document.getElementById(pageId).scrollTop = 0;
+
+    document.querySelectorAll('.mbtn').forEach(b =>
+      b.classList.toggle('active', b.dataset.p === pageId));
+
+    const sec = pageToSection[pageId] || '';
+    document.querySelectorAll('.nl').forEach(n =>
+      n.classList.toggle('active', n.dataset.sec === sec));
+  }
+
+  function goto(pageId) { show(pageId); }
+
+  // Build May 2026 calendar
+  // May 1 = Thursday → index 4 (Sun=0)
+  const done = new Set([1,3,7,8,11,12,16,17,18,19,20,21,22,23,24,25]);
+  const grid = document.getElementById('cal');
+  for (let i = 0; i < 4; i++) {
+    const e = document.createElement('div');
+    e.className = 'cal-cell c-empty';
+    grid.appendChild(e);
+  }
+  for (let d = 1; d <= 31; d++) {
+    const e = document.createElement('div');
+    if (d > 25) {
+      e.className = 'cal-cell c-future';
+      e.textContent = d;
+    } else if (done.has(d)) {
+      e.className = 'cal-cell c-on';
+      e.textContent = d;
+    } else {
+      e.className = 'cal-cell c-missed';
+      e.textContent = d;
+    }
+    grid.appendChild(e);
+  }
+</script>
+</body>
+</html>
