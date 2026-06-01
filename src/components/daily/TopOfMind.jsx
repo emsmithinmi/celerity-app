@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import Button from '../ui/Button'
 
 export default function TopOfMind({ items = [], onSave }) {
@@ -32,14 +32,14 @@ export default function TopOfMind({ items = [], onSave }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-base font-semibold" style={{ color: '#cdd6f4' }}>
+        <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
           Top of Mind
         </h3>
         {!editing && (
           <button
             onClick={startEdit}
             className="text-sm transition-opacity hover:opacity-70"
-            style={{ color: '#6c7086' }}
+            style={{ color: 'var(--text-secondary)' }}
             title="Edit"
           >
             ✏️
@@ -49,13 +49,13 @@ export default function TopOfMind({ items = [], onSave }) {
 
       <div
         className="rounded-xl border px-4 py-3"
-        style={{ backgroundColor: '#181825', borderColor: '#313244' }}
+        style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
       >
         {editing ? (
           <div className="space-y-2">
             {draft.map((item, i) => (
               <div key={i} className="flex items-center gap-2">
-                <span style={{ color: '#6c7086' }}>•</span>
+                <span style={{ color: 'var(--text-secondary)' }}>•</span>
                 <input
                   type="text"
                   value={item}
@@ -69,12 +69,12 @@ export default function TopOfMind({ items = [], onSave }) {
                   }}
                   autoFocus={i === draft.length - 1}
                   className="flex-1 bg-transparent text-sm outline-none border-b"
-                  style={{ color: '#cdd6f4', borderColor: '#313244' }}
+                  style={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}
                   placeholder="What's on your mind..."
                 />
                 <button
                   onClick={() => removeItem(i)}
-                  style={{ color: '#6c7086' }}
+                  style={{ color: 'var(--text-secondary)' }}
                   className="hover:opacity-70 text-sm"
                 >
                   ×
@@ -84,11 +84,11 @@ export default function TopOfMind({ items = [], onSave }) {
             <button
               onClick={addItem}
               className="text-xs mt-1 hover:opacity-70"
-              style={{ color: '#6c7086' }}
+              style={{ color: 'var(--text-secondary)' }}
             >
               + Add item
             </button>
-            <div className="flex gap-2 mt-3 pt-3 border-t" style={{ borderColor: '#313244' }}>
+            <div className="flex gap-2 mt-3 pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
               <Button size="sm" variant="primary" onClick={handleSave}>Save</Button>
               <Button size="sm" variant="ghost" onClick={handleCancel}>Cancel</Button>
             </div>
@@ -96,14 +96,14 @@ export default function TopOfMind({ items = [], onSave }) {
         ) : items.length > 0 ? (
           <ul className="space-y-1.5">
             {items.map((item, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm" style={{ color: '#cdd6f4' }}>
-                <span className="mt-0.5" style={{ color: '#6c7086' }}>•</span>
+              <li key={i} className="flex items-start gap-2 text-sm" style={{ color: 'var(--text-primary)' }}>
+                <span className="mt-0.5" style={{ color: 'var(--text-secondary)' }}>•</span>
                 {item}
               </li>
             ))}
           </ul>
         ) : (
-          <p className="text-sm" style={{ color: '#6c7086' }}>
+          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
             Nothing added yet. Click ✏️ to add items.
           </p>
         )}

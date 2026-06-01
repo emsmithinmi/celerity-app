@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { useTasks } from '../../hooks/useTasks'
 import { PriorityBadge, EnergyBadge } from '../ui'
 
@@ -17,17 +17,17 @@ function TaskRow({ task }) {
   return (
     <div
       className="flex items-center gap-3 px-4 py-3 border-b last:border-b-0 hover:opacity-90 transition-opacity cursor-pointer"
-      style={{ borderColor: '#313244' }}
+      style={{ borderColor: 'var(--border)' }}
     >
       <div className="flex-1 min-w-0">
         <p
           className="text-sm truncate"
-          style={{ color: isWaiting ? '#6c7086' : '#cdd6f4' }}
+          style={{ color: isWaiting ? 'var(--text-secondary)' : 'var(--text-primary)' }}
         >
           {task.title}
         </p>
         {task.projects?.title && (
-          <p className="text-xs truncate mt-0.5" style={{ color: '#6c7086' }}>
+          <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-secondary)' }}>
             📁 {task.projects.title}
           </p>
         )}
@@ -39,8 +39,8 @@ function TaskRow({ task }) {
             className="text-xs"
             style={{
               color: task.due_date <= new Date().toISOString().split('T')[0]
-                ? '#DB4437'
-                : '#6c7086',
+                ? 'var(--danger)'
+                : 'var(--text-secondary)',
             }}
           >
             {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
@@ -61,7 +61,7 @@ export default function TasksSection({ onRefreshStats }) {
 
   return (
     <div>
-      <h3 className="text-base font-semibold mb-3" style={{ color: '#cdd6f4' }}>
+      <h3 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
         Tasks
       </h3>
 
@@ -73,8 +73,8 @@ export default function TasksSection({ onRefreshStats }) {
             onClick={() => setActiveTab(tab.key)}
             className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
             style={{
-              backgroundColor: activeTab === tab.key ? '#313244' : 'transparent',
-              color: activeTab === tab.key ? '#cdd6f4' : '#6c7086',
+              backgroundColor: activeTab === tab.key ? 'var(--border)' : 'transparent',
+              color: activeTab === tab.key ? 'var(--text-primary)' : 'var(--text-secondary)',
             }}
           >
             {tab.label}
@@ -84,14 +84,14 @@ export default function TasksSection({ onRefreshStats }) {
 
       <div
         className="rounded-xl border overflow-hidden"
-        style={{ backgroundColor: '#181825', borderColor: '#313244' }}
+        style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
       >
         {loading ? (
-          <p className="px-4 py-3 text-sm" style={{ color: '#6c7086' }}>Loading…</p>
+          <p className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p>
         ) : tasks.length > 0 ? (
           tasks.map(t => <TaskRow key={t.id} task={t} />)
         ) : (
-          <p className="px-4 py-3 text-sm" style={{ color: '#6c7086' }}>
+          <p className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
             No {TABS.find(t => t.key === activeTab)?.label.toLowerCase()} tasks.
           </p>
         )}

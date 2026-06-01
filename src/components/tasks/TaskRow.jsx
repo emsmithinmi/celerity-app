@@ -1,4 +1,4 @@
-import { StatusPill, PriorityBadge, EnergyBadge, DurationDisplay, ContextTag } from '../ui'
+﻿import { StatusPill, PriorityBadge, EnergyBadge, DurationDisplay, ContextTag } from '../ui'
 
 export default function TaskRow({ task, onClick }) {
   const isDone    = task.status === 'done'
@@ -10,7 +10,7 @@ export default function TaskRow({ task, onClick }) {
     <div
       onClick={onClick}
       className="flex items-center gap-3 px-4 py-3 border-b last:border-b-0 cursor-pointer transition-colors hover:opacity-90"
-      style={{ borderColor: '#313244' }}
+      style={{ borderColor: 'var(--border)' }}
     >
       {/* Status dot */}
       <StatusPill status={task.status} type="task" />
@@ -20,7 +20,7 @@ export default function TaskRow({ task, onClick }) {
         <p
           className="text-sm truncate"
           style={{
-            color: isDone ? '#6c7086' : '#cdd6f4',
+            color: isDone ? 'var(--text-secondary)' : 'var(--text-primary)',
             textDecoration: isDone ? 'line-through' : 'none',
           }}
         >
@@ -28,7 +28,7 @@ export default function TaskRow({ task, onClick }) {
           {task.title}
         </p>
         {task.projects?.title && (
-          <p className="text-xs truncate mt-0.5" style={{ color: '#6c7086' }}>
+          <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-secondary)' }}>
             📁 {task.projects.title}
           </p>
         )}
@@ -44,7 +44,7 @@ export default function TaskRow({ task, onClick }) {
       {/* Meta */}
       <div className="flex items-center gap-2 shrink-0">
         {task.due_date && (
-          <span className="text-xs" style={{ color: overdue ? '#DB4437' : '#6c7086' }}>
+          <span className="text-xs" style={{ color: overdue ? 'var(--danger)' : 'var(--text-secondary)' }}>
             {overdue ? '⚠ ' : ''}
             {new Date(task.due_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
           </span>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Trash2, Pencil } from 'lucide-react'
 import {
@@ -28,7 +28,7 @@ function isClarified(task) {
 }
 
 const inputCls = 'w-full px-3 py-2 rounded-lg text-sm border outline-none bg-transparent'
-const inputStyle = { borderColor: '#313244', color: '#cdd6f4' }
+const inputStyle = { borderColor: 'var(--border)', color: 'var(--text-primary)' }
 
 function PencilBtn({ onClick, title = 'Edit' }) {
   return (
@@ -36,9 +36,9 @@ function PencilBtn({ onClick, title = 'Edit' }) {
       onClick={onClick}
       title={title}
       className="flex items-center justify-center rounded-md transition-colors duration-150"
-      style={{ width: 30, height: 30, backgroundColor: 'transparent', color: '#6c7086' }}
-      onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#313244'; e.currentTarget.style.color = '#cdd6f4' }}
-      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#6c7086' }}
+      style={{ width: 30, height: 30, backgroundColor: 'transparent', color: 'var(--text-secondary)' }}
+      onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }}
+      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
     >
       <Pencil size={14} />
     </button>
@@ -51,9 +51,9 @@ function TrashBtn({ onClick, title = 'Scrap it' }) {
       onClick={onClick}
       title={title}
       className="flex items-center justify-center rounded-md transition-colors duration-150"
-      style={{ width: 30, height: 30, backgroundColor: '#DB4437', color: '#fff' }}
-      onMouseEnter={e => e.currentTarget.style.backgroundColor = '#c53929'}
-      onMouseLeave={e => e.currentTarget.style.backgroundColor = '#DB4437'}
+      style={{ width: 30, height: 30, backgroundColor: 'var(--danger)', color: '#fff' }}
+      onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--danger-hover)'}
+      onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--danger)'}
     >
       <Trash2 size={14} />
     </button>
@@ -63,8 +63,8 @@ function TrashBtn({ onClick, title = 'Scrap it' }) {
 function ReadField({ label, value, fallback = '—' }) {
   return (
     <div>
-      <p className="text-xs font-medium mb-0.5" style={{ color: '#6c7086' }}>{label}</p>
-      <p className="text-sm" style={{ color: value ? '#cdd6f4' : '#45475a' }}>{value || fallback}</p>
+      <p className="text-xs font-medium mb-0.5" style={{ color: 'var(--text-secondary)' }}>{label}</p>
+      <p className="text-sm" style={{ color: value ? 'var(--text-primary)' : 'var(--text-dim)' }}>{value || fallback}</p>
     </div>
   )
 }
@@ -128,13 +128,13 @@ export default function TaskPage() {
 
   if (loading) return (
     <div className="flex items-center justify-center h-full">
-      <p className="text-sm" style={{ color: '#6c7086' }}>Loading…</p>
+      <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p>
     </div>
   )
 
   if (!task) return (
     <div className="flex items-center justify-center h-full">
-      <p className="text-sm" style={{ color: '#DB4437' }}>Task not found.</p>
+      <p className="text-sm" style={{ color: 'var(--danger)' }}>Task not found.</p>
     </div>
   )
 
@@ -238,17 +238,17 @@ export default function TaskPage() {
         {/* Breadcrumb header */}
         <div
           className="flex items-center gap-3 px-6 py-4 border-b shrink-0"
-          style={{ borderColor: '#313244' }}
+          style={{ borderColor: 'var(--border)' }}
         >
           <button
             onClick={() => navigate('/tasks')}
             className="text-sm transition-opacity hover:opacity-80"
-            style={{ color: '#6c7086' }}
+            style={{ color: 'var(--text-secondary)' }}
           >
             ← Tasks
           </button>
-          <span style={{ color: '#313244' }}>/</span>
-          <span className="text-sm truncate flex-1" style={{ color: '#cdd6f4' }}>{task.title}</span>
+          <span style={{ color: 'var(--border)' }}>/</span>
+          <span className="text-sm truncate flex-1" style={{ color: 'var(--text-primary)' }}>{task.title}</span>
           <StatusPill status={task.status} type="task" />
         </div>
 
@@ -258,10 +258,10 @@ export default function TaskPage() {
           {task.status === 'inbox' && !clarified && (
             <div
               className="rounded-lg px-4 py-3 border text-sm"
-              style={{ backgroundColor: '#2d2410', borderColor: '#FBBC05', color: '#FBBC05' }}
+              style={{ backgroundColor: 'var(--state-warning-bg)', borderColor: 'var(--state-warning-text)', color: 'var(--state-warning-text)' }}
             >
               <p className="font-medium mb-1">📋 This task needs clarification</p>
-              <p className="text-xs" style={{ color: '#e9c46a' }}>
+              <p className="text-xs" style={{ color: 'var(--state-warning-dim)' }}>
                 Missing: {CLARIFY_REQUIRED.filter(f => !task[f]).join(', ')}
               </p>
             </div>
@@ -270,7 +270,7 @@ export default function TaskPage() {
           {/* Details section */}
           <section>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base font-semibold" style={{ color: '#cdd6f4' }}>Details</h2>
+              <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Details</h2>
               {!editing ? (
                 <PencilBtn onClick={startEdit} />
               ) : (
@@ -284,14 +284,14 @@ export default function TaskPage() {
             </div>
 
             {saveError && (
-              <div className="rounded-lg px-3 py-2 mb-3 text-sm" style={{ backgroundColor: '#2d1e1e', borderColor: '#DB4437', border: '1px solid', color: '#f28b82' }}>
+              <div className="rounded-lg px-3 py-2 mb-3 text-sm" style={{ backgroundColor: 'var(--state-error-bg)', borderColor: 'var(--danger)', border: '1px solid', color: 'var(--state-error-text)' }}>
                 ⚠ {saveError}
               </div>
             )}
 
             <div
               className="rounded-xl border p-4 space-y-4"
-              style={{ backgroundColor: '#181825', borderColor: '#313244' }}
+              style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
             >
               {/* Title */}
               {editing ? (
@@ -303,7 +303,7 @@ export default function TaskPage() {
                   style={inputStyle}
                 />
               ) : (
-                <p className="text-base font-semibold" style={{ color: '#cdd6f4' }}>
+                <p className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
                   {task.is_highlight && <span className="mr-1">⭐</span>}
                   {task.title}
                 </p>
@@ -313,7 +313,7 @@ export default function TaskPage() {
                 {/* Priority */}
                 {editing ? (
                   <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Priority</label>
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Priority</label>
                     <select value={d.priority ?? ''} onChange={e => change('priority', e.target.value)} className={inputCls} style={inputStyle}>
                       <option value="">Select…</option>
                       {priorities.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
@@ -321,15 +321,15 @@ export default function TaskPage() {
                   </div>
                 ) : (
                   <div>
-                    <p className="text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Priority</p>
-                    {task.priority ? <PriorityBadge priority={task.priority} /> : <span className="text-sm" style={{ color: '#45475a' }}>—</span>}
+                    <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Priority</p>
+                    {task.priority ? <PriorityBadge priority={task.priority} /> : <span className="text-sm" style={{ color: 'var(--text-dim)' }}>—</span>}
                   </div>
                 )}
 
                 {/* Energy */}
                 {editing ? (
                   <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Energy Level</label>
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Energy Level</label>
                     <select value={d.energy_level ?? ''} onChange={e => change('energy_level', e.target.value)} className={inputCls} style={inputStyle}>
                       <option value="">Select…</option>
                       {levels.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
@@ -344,7 +344,7 @@ export default function TaskPage() {
                 {/* Duration */}
                 {editing ? (
                   <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Duration</label>
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Duration</label>
                     <DurationInput value={d.duration} onChange={v => change('duration', v)} />
                   </div>
                 ) : (
@@ -354,7 +354,7 @@ export default function TaskPage() {
                 {/* Area */}
                 {editing ? (
                   <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Area</label>
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Area</label>
                     <input
                       list="areas-list"
                       value={d.area ?? ''}
@@ -375,7 +375,7 @@ export default function TaskPage() {
               {/* Description */}
               {editing ? (
                 <div>
-                  <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Description</label>
+                  <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Description</label>
                   <textarea
                     value={d.description ?? ''}
                     onChange={e => change('description', e.target.value)}
@@ -393,7 +393,7 @@ export default function TaskPage() {
                 {/* Due date */}
                 {editing ? (
                   <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Due Date</label>
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Due Date</label>
                     <input
                       type="date"
                       value={d.due_date ?? ''}
@@ -418,10 +418,10 @@ export default function TaskPage() {
               {/* Linked people */}
               {task.task_people?.length > 0 && (
                 <div>
-                  <p className="text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Linked People</p>
+                  <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Linked People</p>
                   <div className="flex flex-wrap gap-2">
                     {task.task_people.map(tp => tp.people && (
-                      <span key={tp.person_id} className="px-2 py-1 rounded-lg text-xs border" style={{ borderColor: '#313244', color: '#cdd6f4' }}>
+                      <span key={tp.person_id} className="px-2 py-1 rounded-lg text-xs border" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
                         👤 {tp.people.preferred_name ?? tp.people.first_name} {tp.people.last_name}
                       </span>
                     ))}
@@ -433,13 +433,13 @@ export default function TaskPage() {
 
           {/* Context Tags section */}
           <section>
-            <h2 className="text-base font-semibold mb-3" style={{ color: '#cdd6f4' }}>Context Tags</h2>
-            <div className="rounded-xl border p-4 space-y-4" style={{ backgroundColor: '#181825', borderColor: '#313244' }}>
+            <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Context Tags</h2>
+            <div className="rounded-xl border p-4 space-y-4" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
 
               {/* Existing tags across all tasks */}
               {allTags.length > 0 && (
                 <div>
-                  <p className="text-xs font-medium mb-2" style={{ color: '#6c7086' }}>Your tags</p>
+                  <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Your tags</p>
                   <div className="flex flex-wrap gap-2">
                     {allTags.map(tag => {
                       const active = task.context?.includes(tag)
@@ -449,8 +449,8 @@ export default function TaskPage() {
                           onClick={() => toggleTag(tag)}
                           className="px-2.5 py-1 rounded-lg text-xs font-medium transition-opacity hover:opacity-80"
                           style={{
-                            backgroundColor: active ? '#1967D2' : '#313244',
-                            color: active ? '#ffffff' : '#cdd6f4',
+                            backgroundColor: active ? 'var(--context-tag-active-bg)' : 'var(--border)',
+                            color: active ? 'var(--context-tag-active-text)' : 'var(--text-primary)',
                           }}
                         >
                           @{tag}
@@ -463,7 +463,7 @@ export default function TaskPage() {
 
               {/* Add new */}
               <div>
-                <p className="text-xs font-medium mb-2" style={{ color: '#6c7086' }}>Add new</p>
+                <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Add new</p>
                 <div className="flex gap-2">
                   <input
                     list="tp-tag-suggestions"
@@ -490,7 +490,7 @@ export default function TaskPage() {
                       }
                     }}
                     className="px-3 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-80"
-                    style={{ backgroundColor: '#313244', color: '#cdd6f4' }}
+                    style={{ backgroundColor: 'var(--border)', color: 'var(--text-primary)' }}
                   >
                     Add
                   </button>
@@ -500,13 +500,13 @@ export default function TaskPage() {
               {/* Active tags */}
               {task.context?.length > 0 && (
                 <div>
-                  <p className="text-xs font-medium mb-2" style={{ color: '#6c7086' }}>On this task</p>
+                  <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>On this task</p>
                   <div className="flex flex-wrap gap-1.5">
                     {task.context.map(tag => (
                       <span
                         key={tag}
                         className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
-                        style={{ backgroundColor: '#ffffff', color: '#1967D2' }}
+                        style={{ backgroundColor: 'var(--context-tag-bg)', color: 'var(--context-tag-text)' }}
                       >
                         @{tag}
                         <button
@@ -532,10 +532,10 @@ export default function TaskPage() {
 
           {/* Comments section */}
           <section>
-            <h2 className="text-base font-semibold mb-3" style={{ color: '#cdd6f4' }}>Notes</h2>
+            <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Notes</h2>
             <div
               className="rounded-xl border p-4"
-              style={{ backgroundColor: '#181825', borderColor: '#313244' }}
+              style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
             >
               <TaskComments taskId={task.id} />
             </div>
@@ -544,7 +544,7 @@ export default function TaskPage() {
           {/* Action bar */}
           {!isDone && (
             <section className="pb-6">
-              <h2 className="text-base font-semibold mb-3" style={{ color: '#cdd6f4' }}>What's Next?</h2>
+              <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>What's Next?</h2>
               <div className="flex flex-wrap gap-2">
                 {task.status === 'inbox' && (
                   <>

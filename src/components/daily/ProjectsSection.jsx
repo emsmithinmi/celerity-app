@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { useProjects } from '../../hooks/useProjects'
 import { StatusPill, PriorityBadge } from '../ui'
 
@@ -13,21 +13,21 @@ function ProjectRow({ project }) {
   return (
     <div
       className="flex items-center gap-3 px-4 py-3 border-b last:border-b-0 hover:opacity-90 transition-opacity cursor-pointer"
-      style={{ borderColor: '#313244' }}
+      style={{ borderColor: 'var(--border)' }}
     >
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate" style={{ color: '#cdd6f4' }}>
+        <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
           {project.title}
         </p>
         {project.area && (
-          <p className="text-xs truncate mt-0.5" style={{ color: '#6c7086' }}>
+          <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-secondary)' }}>
             {project.area}
           </p>
         )}
       </div>
       <div className="flex items-center gap-2 shrink-0">
         {project.end_date && (
-          <span className="text-xs" style={{ color: '#6c7086' }}>
+          <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
             Due {new Date(project.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
           </span>
         )}
@@ -43,7 +43,7 @@ export default function ProjectsSection() {
 
   return (
     <div>
-      <h3 className="text-base font-semibold mb-3" style={{ color: '#cdd6f4' }}>
+      <h3 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
         Projects
       </h3>
 
@@ -55,8 +55,8 @@ export default function ProjectsSection() {
             onClick={() => setActiveTab(tab.key)}
             className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
             style={{
-              backgroundColor: activeTab === tab.key ? '#313244' : 'transparent',
-              color: activeTab === tab.key ? '#cdd6f4' : '#6c7086',
+              backgroundColor: activeTab === tab.key ? 'var(--border)' : 'transparent',
+              color: activeTab === tab.key ? 'var(--text-primary)' : 'var(--text-secondary)',
             }}
           >
             {tab.label}
@@ -66,14 +66,14 @@ export default function ProjectsSection() {
 
       <div
         className="rounded-xl border overflow-hidden"
-        style={{ backgroundColor: '#181825', borderColor: '#313244' }}
+        style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
       >
         {loading ? (
-          <p className="px-4 py-3 text-sm" style={{ color: '#6c7086' }}>Loading…</p>
+          <p className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p>
         ) : projects.length > 0 ? (
           projects.map(p => <ProjectRow key={p.id} project={p} />)
         ) : (
-          <p className="px-4 py-3 text-sm" style={{ color: '#6c7086' }}>
+          <p className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
             No {TABS.find(t => t.key === activeTab)?.label.toLowerCase()} projects.
           </p>
         )}

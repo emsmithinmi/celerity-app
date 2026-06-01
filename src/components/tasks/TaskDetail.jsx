@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import {
   updateTask, completeTask, didIt, moveToNextAction,
   moveToQueued, moveToWaiting, clearWaiting,
@@ -30,8 +30,8 @@ function isClarified(task) {
 function FormField({ label, required, children }) {
   return (
     <div>
-      <label className="block text-xs font-medium mb-1.5" style={{ color: '#6c7086' }}>
-        {label}{required && <span style={{ color: '#DB4437' }}> *</span>}
+      <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+        {label}{required && <span style={{ color: 'var(--danger)' }}> *</span>}
       </label>
       {children}
     </div>
@@ -39,7 +39,7 @@ function FormField({ label, required, children }) {
 }
 
 const inputCls = "w-full px-3 py-2 rounded-lg text-sm border outline-none bg-transparent"
-const inputStyle = { borderColor: '#313244', color: '#cdd6f4' }
+const inputStyle = { borderColor: 'var(--border)', color: 'var(--text-primary)' }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function TaskDetail({ task: initialTask, open, onClose, onRefresh }) {
@@ -222,7 +222,7 @@ export default function TaskDetail({ task: initialTask, open, onClose, onRefresh
               value={task.title}
               onChange={e => change('title', e.target.value)}
               className="w-full bg-transparent text-lg font-semibold outline-none border-b pb-1"
-              style={{ color: '#cdd6f4', borderColor: dirty ? '#89b4fa' : 'transparent' }}
+              style={{ color: 'var(--text-primary)', borderColor: dirty ? 'var(--accent)' : 'transparent' }}
             />
           </div>
           <StatusPill status={task.status} type="task" className="shrink-0 mt-1" />
@@ -232,25 +232,25 @@ export default function TaskDetail({ task: initialTask, open, onClose, onRefresh
         {task.status === 'inbox' && !clarified && (
           <div
             className="rounded-lg px-4 py-3 mb-4 border text-sm"
-            style={{ backgroundColor: '#2d2410', borderColor: '#FBBC05', color: '#FBBC05' }}
+            style={{ backgroundColor: 'var(--state-warning-bg)', borderColor: 'var(--state-warning-text)', color: 'var(--state-warning-text)' }}
           >
             <p className="font-medium mb-1">📋 This task needs clarification</p>
-            <p className="text-xs" style={{ color: '#e9c46a' }}>
+            <p className="text-xs" style={{ color: 'var(--state-warning-dim)' }}>
               Missing: {missing.join(', ')}
             </p>
           </div>
         )}
 
         {/* ── Tabs ── */}
-        <div className="flex gap-1 mb-5 border-b" style={{ borderColor: '#313244' }}>
+        <div className="flex gap-1 mb-5 border-b" style={{ borderColor: 'var(--border)' }}>
           {['details', 'context', 'notes'].map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
               className="px-4 py-2 text-sm font-medium capitalize border-b-2 -mb-px transition-colors"
               style={{
-                borderColor: tab === t ? '#89b4fa' : 'transparent',
-                color: tab === t ? '#89b4fa' : '#6c7086',
+                borderColor: tab === t ? 'var(--accent)' : 'transparent',
+                color: tab === t ? 'var(--accent)' : 'var(--text-secondary)',
               }}
             >
               {t}
@@ -341,7 +341,7 @@ export default function TaskDetail({ task: initialTask, open, onClose, onRefresh
               <FormField label="Project">
                 <div
                   className="px-3 py-2 rounded-lg text-sm border"
-                  style={{ borderColor: '#313244', color: task.projects ? '#cdd6f4' : '#6c7086' }}
+                  style={{ borderColor: 'var(--border)', color: task.projects ? 'var(--text-primary)' : 'var(--text-secondary)' }}
                 >
                   {task.projects?.title ?? 'Standalone task'}
                 </div>
@@ -368,7 +368,7 @@ export default function TaskDetail({ task: initialTask, open, onClose, onRefresh
                     <span
                       key={tp.person_id}
                       className="px-2 py-1 rounded-lg text-xs border"
-                      style={{ borderColor: '#313244', color: '#cdd6f4' }}
+                      style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
                     >
                       👤 {tp.people.preferred_name ?? tp.people.first_name} {tp.people.last_name}
                     </span>
@@ -381,9 +381,9 @@ export default function TaskDetail({ task: initialTask, open, onClose, onRefresh
             {task.is_highlight && (
               <div className="flex items-center gap-2">
                 <span>⭐</span>
-                <span className="text-sm" style={{ color: '#f9e2af' }}>Highlight</span>
+                <span className="text-sm" style={{ color: 'var(--accent-yellow)' }}>Highlight</span>
                 {task.highlight_note && (
-                  <span className="text-sm" style={{ color: '#6c7086' }}>— {task.highlight_note}</span>
+                  <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>— {task.highlight_note}</span>
                 )}
               </div>
             )}
@@ -393,14 +393,14 @@ export default function TaskDetail({ task: initialTask, open, onClose, onRefresh
         {/* ── Context tab ── */}
         {tab === 'context' && (
           <div className="space-y-4">
-            <p className="text-sm" style={{ color: '#6c7086' }}>
-              Tag this task with contexts like <span style={{ color: '#89b4fa' }}>@phone</span>, <span style={{ color: '#89b4fa' }}>@computer</span>, <span style={{ color: '#89b4fa' }}>@errands</span>…
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+              Tag this task with contexts like <span style={{ color: 'var(--accent)' }}>@phone</span>, <span style={{ color: 'var(--accent)' }}>@computer</span>, <span style={{ color: 'var(--accent)' }}>@errands</span>…
             </p>
 
             {/* Existing tag suggestions */}
             {allTags.length > 0 && (
               <div>
-                <p className="text-xs font-medium mb-2" style={{ color: '#6c7086' }}>Your tags</p>
+                <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Your tags</p>
                 <div className="flex flex-wrap gap-2">
                   {allTags.map(tag => {
                     const active = task.context?.includes(tag)
@@ -410,8 +410,8 @@ export default function TaskDetail({ task: initialTask, open, onClose, onRefresh
                         onClick={() => active ? removeTag(tag) : change('context', [...(task.context ?? []), tag])}
                         className="px-2.5 py-1 rounded-lg text-xs font-medium transition-opacity hover:opacity-80"
                         style={{
-                          backgroundColor: active ? '#1967D2' : '#313244',
-                          color: active ? '#ffffff' : '#cdd6f4',
+                          backgroundColor: active ? 'var(--context-tag-active-bg)' : 'var(--border)',
+                          color: active ? 'var(--context-tag-active-text)' : 'var(--text-primary)',
                         }}
                       >
                         @{tag}
@@ -424,7 +424,7 @@ export default function TaskDetail({ task: initialTask, open, onClose, onRefresh
 
             {/* Add new tag */}
             <div>
-              <p className="text-xs font-medium mb-2" style={{ color: '#6c7086' }}>Add new</p>
+              <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Add new</p>
               <div className="flex gap-2">
                 <input
                   list="ctx-tag-suggestions"
@@ -452,7 +452,7 @@ export default function TaskDetail({ task: initialTask, open, onClose, onRefresh
                     }
                   }}
                   className="px-3 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-80"
-                  style={{ backgroundColor: '#313244', color: '#cdd6f4' }}
+                  style={{ backgroundColor: 'var(--border)', color: 'var(--text-primary)' }}
                 >
                   Add
                 </button>
@@ -462,7 +462,7 @@ export default function TaskDetail({ task: initialTask, open, onClose, onRefresh
             {/* Active tags on this task */}
             {(task.context?.length ?? 0) > 0 && (
               <div>
-                <p className="text-xs font-medium mb-2" style={{ color: '#6c7086' }}>On this task</p>
+                <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>On this task</p>
                 <ContextTagList tags={task.context} onRemove={removeTag} />
               </div>
             )}
@@ -476,7 +476,7 @@ export default function TaskDetail({ task: initialTask, open, onClose, onRefresh
         {!isDone && (
           <div
             className="mt-6 pt-5 border-t flex flex-wrap gap-2"
-            style={{ borderColor: '#313244' }}
+            style={{ borderColor: 'var(--border)' }}
           >
             {/* INBOX actions */}
             {task.status === 'inbox' && (
@@ -567,7 +567,7 @@ export default function TaskDetail({ task: initialTask, open, onClose, onRefresh
 
         {/* DONE actions */}
         {isDone && !task.is_highlight && (
-          <div className="mt-6 pt-5 border-t" style={{ borderColor: '#313244' }}>
+          <div className="mt-6 pt-5 border-t" style={{ borderColor: 'var(--border)' }}>
             <Button variant="secondary" size="sm" onClick={() => setShowHighlight(true)}>
               ⭐ Add to Highlights
             </Button>

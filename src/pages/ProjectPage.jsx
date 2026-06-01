@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Trash2, Pencil } from 'lucide-react'
 import {
@@ -23,9 +23,9 @@ function PencilBtn({ onClick, title = 'Edit' }) {
       onClick={onClick}
       title={title}
       className="flex items-center justify-center rounded-md transition-colors duration-150"
-      style={{ width: 30, height: 30, backgroundColor: 'transparent', color: '#6c7086' }}
-      onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#313244'; e.currentTarget.style.color = '#cdd6f4' }}
-      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#6c7086' }}
+      style={{ width: 30, height: 30, backgroundColor: 'transparent', color: 'var(--text-secondary)' }}
+      onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }}
+      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
     >
       <Pencil size={14} />
     </button>
@@ -38,9 +38,9 @@ function TrashBtn({ onClick, title = 'Scrap it' }) {
       onClick={onClick}
       title={title}
       className="flex items-center justify-center rounded-md transition-colors duration-150"
-      style={{ width: 30, height: 30, backgroundColor: '#DB4437', color: '#fff' }}
-      onMouseEnter={e => e.currentTarget.style.backgroundColor = '#c53929'}
-      onMouseLeave={e => e.currentTarget.style.backgroundColor = '#DB4437'}
+      style={{ width: 30, height: 30, backgroundColor: 'var(--danger)', color: '#fff' }}
+      onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--danger-hover)'}
+      onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--danger)'}
     >
       <Trash2 size={14} />
     </button>
@@ -53,13 +53,13 @@ function isClarified(project) {
 }
 
 const inputCls  = 'w-full px-3 py-2 rounded-lg text-sm border outline-none bg-transparent'
-const inputStyle = { borderColor: '#313244', color: '#cdd6f4' }
+const inputStyle = { borderColor: 'var(--border)', color: 'var(--text-primary)' }
 
 function ReadField({ label, value, fallback = '—' }) {
   return (
     <div>
-      <p className="text-xs font-medium mb-0.5" style={{ color: '#6c7086' }}>{label}</p>
-      <p className="text-sm" style={{ color: value ? '#cdd6f4' : '#45475a' }}>{value || fallback}</p>
+      <p className="text-xs font-medium mb-0.5" style={{ color: 'var(--text-secondary)' }}>{label}</p>
+      <p className="text-sm" style={{ color: value ? 'var(--text-primary)' : 'var(--text-dim)' }}>{value || fallback}</p>
     </div>
   )
 }
@@ -100,13 +100,13 @@ export default function ProjectPage() {
 
   if (loading) return (
     <div className="flex items-center justify-center h-full">
-      <p className="text-sm" style={{ color: '#6c7086' }}>Loading…</p>
+      <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p>
     </div>
   )
 
   if (!project) return (
     <div className="flex items-center justify-center h-full">
-      <p className="text-sm" style={{ color: '#DB4437' }}>Project not found.</p>
+      <p className="text-sm" style={{ color: 'var(--danger)' }}>Project not found.</p>
     </div>
   )
 
@@ -195,21 +195,21 @@ export default function ProjectPage() {
         {/* Breadcrumb header */}
         <div
           className="flex items-center gap-3 px-6 py-4 border-b shrink-0"
-          style={{ borderColor: '#313244' }}
+          style={{ borderColor: 'var(--border)' }}
         >
           <button
             onClick={() => navigate('/projects')}
             className="text-sm transition-opacity hover:opacity-80"
-            style={{ color: '#6c7086' }}
+            style={{ color: 'var(--text-secondary)' }}
           >
             ← Projects
           </button>
-          <span style={{ color: '#313244' }}>/</span>
-          <span className="text-sm truncate flex-1" style={{ color: '#cdd6f4' }}>{project.title}</span>
+          <span style={{ color: 'var(--border)' }}>/</span>
+          <span className="text-sm truncate flex-1" style={{ color: 'var(--text-primary)' }}>{project.title}</span>
           <div className="flex items-center gap-2 shrink-0">
             {project.is_highlight && <span>⭐</span>}
             {isArchived && (
-              <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: '#313244', color: '#6c7086' }}>
+              <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: 'var(--border)', color: 'var(--text-secondary)' }}>
                 Archived
               </span>
             )}
@@ -221,38 +221,38 @@ export default function ProjectPage() {
 
           {/* Status banners */}
           {project.status === 'inbox' && !clarified && (
-            <div className="rounded-lg px-4 py-3 border text-sm" style={{ backgroundColor: '#2d2410', borderColor: '#FBBC05', color: '#FBBC05' }}>
+            <div className="rounded-lg px-4 py-3 border text-sm" style={{ backgroundColor: 'var(--state-warning-bg)', borderColor: 'var(--state-warning-text)', color: 'var(--state-warning-text)' }}>
               <p className="font-medium mb-1">📋 Fill in required fields to start planning</p>
-              <p className="text-xs" style={{ color: '#e9c46a' }}>
+              <p className="text-xs" style={{ color: 'var(--state-warning-dim)' }}>
                 Missing: {PLAN_REQUIRED.filter(f => !project[f]).join(', ')}
               </p>
             </div>
           )}
           {project.status === 'planning' && !canStart && (
-            <div className="rounded-lg px-4 py-3 border text-sm" style={{ backgroundColor: '#1e1e2d', borderColor: '#89b4fa', color: '#89b4fa' }}>
+            <div className="rounded-lg px-4 py-3 border text-sm" style={{ backgroundColor: 'var(--state-info-bg)', borderColor: 'var(--accent)', color: 'var(--accent)' }}>
               <p className="font-medium">
                 🗂 Add at least {Math.max(0, 2 - taskCount)} more task{2 - taskCount !== 1 ? 's' : ''} to start this project
               </p>
-              <p className="text-xs mt-1" style={{ color: '#6c7086' }}>{taskCount} of 2 minimum tasks added</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{taskCount} of 2 minimum tasks added</p>
             </div>
           )}
           {project.status === 'stalled' && (
-            <div className="rounded-lg px-4 py-3 border text-sm" style={{ backgroundColor: '#2d1e10', borderColor: '#FB9039', color: '#FB9039' }}>
+            <div className="rounded-lg px-4 py-3 border text-sm" style={{ backgroundColor: 'var(--state-stalled-bg)', borderColor: 'var(--highlight)', color: 'var(--highlight)' }}>
               <p className="font-medium">⚠ Project is stalled</p>
-              <p className="text-xs mt-1" style={{ color: '#c97030' }}>Move a task to Next Actions to un-stall this project.</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--state-stalled-dim)' }}>Move a task to Next Actions to un-stall this project.</p>
             </div>
           )}
           {project.status === 'waiting' && (
-            <div className="rounded-lg px-4 py-3 border text-sm" style={{ backgroundColor: '#2d1e1e', borderColor: '#DB4437', color: '#f28b82' }}>
+            <div className="rounded-lg px-4 py-3 border text-sm" style={{ backgroundColor: 'var(--state-error-bg)', borderColor: 'var(--danger)', color: 'var(--state-error-text)' }}>
               <p className="font-medium">⏳ Project is waiting on blocked tasks</p>
-              <p className="text-xs mt-1" style={{ color: '#c07070' }}>Clear blockers on waiting tasks to resume.</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--state-error-dim)' }}>Clear blockers on waiting tasks to resume.</p>
             </div>
           )}
 
           {/* Details section */}
           <section>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base font-semibold" style={{ color: '#cdd6f4' }}>Details</h2>
+              <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Details</h2>
               {!editing ? (
                 <PencilBtn onClick={startEdit} />
               ) : (
@@ -266,12 +266,12 @@ export default function ProjectPage() {
             </div>
 
             {saveError && (
-              <div className="rounded-lg px-3 py-2 mb-3 text-sm" style={{ backgroundColor: '#2d1e1e', border: '1px solid #DB4437', color: '#f28b82' }}>
+              <div className="rounded-lg px-3 py-2 mb-3 text-sm" style={{ backgroundColor: 'var(--state-error-bg)', border: '1px solid var(--danger)', color: 'var(--state-error-text)' }}>
                 ⚠ {saveError}
               </div>
             )}
 
-            <div className="rounded-xl border p-4 space-y-4" style={{ backgroundColor: '#181825', borderColor: '#313244' }}>
+            <div className="rounded-xl border p-4 space-y-4" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
               {/* Title */}
               {editing ? (
                 <input
@@ -282,14 +282,14 @@ export default function ProjectPage() {
                   style={inputStyle}
                 />
               ) : (
-                <p className="text-base font-semibold" style={{ color: '#cdd6f4' }}>{project.title}</p>
+                <p className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>{project.title}</p>
               )}
 
               <div className="grid grid-cols-2 gap-4">
                 {/* Priority */}
                 {editing ? (
                   <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Priority</label>
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Priority</label>
                     <select value={d.priority ?? ''} onChange={e => change('priority', e.target.value)} className={inputCls} style={inputStyle}>
                       <option value="">Select…</option>
                       {priorities.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
@@ -297,15 +297,15 @@ export default function ProjectPage() {
                   </div>
                 ) : (
                   <div>
-                    <p className="text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Priority</p>
-                    {project.priority ? <PriorityBadge priority={project.priority} /> : <span className="text-sm" style={{ color: '#45475a' }}>—</span>}
+                    <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Priority</p>
+                    {project.priority ? <PriorityBadge priority={project.priority} /> : <span className="text-sm" style={{ color: 'var(--text-dim)' }}>—</span>}
                   </div>
                 )}
 
                 {/* Area */}
                 {editing ? (
                   <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Area</label>
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Area</label>
                     <input list="pp-areas-list" value={d.area ?? ''} onChange={e => change('area', e.target.value)} className={inputCls} style={inputStyle} placeholder="Select or type…" />
                     <datalist id="pp-areas-list">
                       {areas.map(a => <option key={a.id} value={a.value} />)}
@@ -319,7 +319,7 @@ export default function ProjectPage() {
               {/* Description */}
               {editing ? (
                 <div>
-                  <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Description</label>
+                  <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Description</label>
                   <textarea value={d.description ?? ''} onChange={e => change('description', e.target.value)} rows={3} className={`${inputCls} resize-none`} style={inputStyle} placeholder="What is this project and what does done look like?" />
                 </div>
               ) : (
@@ -330,7 +330,7 @@ export default function ProjectPage() {
                 {/* Start date */}
                 {editing ? (
                   <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Start Date</label>
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Start Date</label>
                     <input type="date" value={d.start_date ?? ''} onChange={e => change('start_date', e.target.value)} className={inputCls} style={inputStyle} />
                   </div>
                 ) : (
@@ -340,7 +340,7 @@ export default function ProjectPage() {
                 {/* End date */}
                 {editing ? (
                   <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>End Date</label>
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>End Date</label>
                     <input type="date" value={d.end_date ?? ''} onChange={e => change('end_date', e.target.value)} className={inputCls} style={inputStyle} />
                   </div>
                 ) : (
@@ -351,7 +351,7 @@ export default function ProjectPage() {
               {/* Waiting for */}
               {editing ? (
                 <div>
-                  <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Waiting For</label>
+                  <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Waiting For</label>
                   <input type="text" value={d.waiting_for ?? ''} onChange={e => change('waiting_for', e.target.value)} className={inputCls} style={inputStyle} placeholder="What are you waiting on?" />
                 </div>
               ) : project.waiting_for ? (
@@ -360,9 +360,9 @@ export default function ProjectPage() {
 
               {/* Highlight note */}
               {project.is_highlight && project.highlight_note && (
-                <div className="flex items-start gap-2 px-3 py-2 rounded-lg" style={{ backgroundColor: '#2d2a1e' }}>
+                <div className="flex items-start gap-2 px-3 py-2 rounded-lg" style={{ backgroundColor: 'var(--highlight-note-bg)' }}>
                   <span>⭐</span>
-                  <p className="text-sm" style={{ color: '#f9e2af' }}>{project.highlight_note}</p>
+                  <p className="text-sm" style={{ color: 'var(--accent-yellow)' }}>{project.highlight_note}</p>
                 </div>
               )}
             </div>
@@ -370,18 +370,18 @@ export default function ProjectPage() {
 
           {/* Tasks section */}
           <section>
-            <h2 className="text-base font-semibold mb-3" style={{ color: '#cdd6f4' }}>
-              Tasks {taskCount > 0 && <span className="text-sm font-normal" style={{ color: '#6c7086' }}>({taskCount})</span>}
+            <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
+              Tasks {taskCount > 0 && <span className="text-sm font-normal" style={{ color: 'var(--text-secondary)' }}>({taskCount})</span>}
             </h2>
-            <div className="rounded-xl border p-4" style={{ backgroundColor: '#181825', borderColor: '#313244' }}>
+            <div className="rounded-xl border p-4" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
               <ProjectTaskList projectId={project.id} onTaskCountChange={() => {}} />
             </div>
           </section>
 
           {/* Comments section */}
           <section>
-            <h2 className="text-base font-semibold mb-3" style={{ color: '#cdd6f4' }}>Notes</h2>
-            <div className="rounded-xl border p-4" style={{ backgroundColor: '#181825', borderColor: '#313244' }}>
+            <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Notes</h2>
+            <div className="rounded-xl border p-4" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
               <ProjectComments projectId={project.id} />
             </div>
           </section>
@@ -389,7 +389,7 @@ export default function ProjectPage() {
           {/* Action bar */}
           {!isCompleted && !isArchived && (
             <section className="pb-6">
-              <h2 className="text-base font-semibold mb-3" style={{ color: '#cdd6f4' }}>What's Next?</h2>
+              <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>What's Next?</h2>
               <div className="flex flex-wrap gap-2">
                 {project.status === 'inbox' && (
                   <>
@@ -418,7 +418,7 @@ export default function ProjectPage() {
                 )}
                 {(project.status === 'stalled' || project.status === 'waiting') && (
                   <>
-                    <p className="text-sm" style={{ color: '#6c7086' }}>
+                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                       {project.status === 'stalled'
                         ? 'Move a task to Next Actions to un-stall this project.'
                         : 'Clear blockers on waiting tasks to resume.'}

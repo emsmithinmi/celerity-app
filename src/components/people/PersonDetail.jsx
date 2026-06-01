@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { updatePerson, activatePerson, getPersonTasks, getPersonProjects } from '../../lib/api/people'
 
 import Modal         from '../ui/Modal'
@@ -13,7 +13,7 @@ const CONTACT_TYPES = ['Colleague', 'Friend', 'Family', 'Client', 'Vendor', 'Men
 function FormField({ label, children }) {
   return (
     <div>
-      <label className="block text-xs font-medium mb-1.5" style={{ color: '#6c7086' }}>
+      <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
         {label}
       </label>
       {children}
@@ -22,7 +22,7 @@ function FormField({ label, children }) {
 }
 
 const inputCls  = "w-full px-3 py-2 rounded-lg text-sm border outline-none bg-transparent"
-const inputStyle = { borderColor: '#313244', color: '#cdd6f4' }
+const inputStyle = { borderColor: 'var(--border)', color: 'var(--text-primary)' }
 
 // ─── Linked Tasks ─────────────────────────────────────────────────────────────
 function PersonTasksTab({ personId }) {
@@ -34,22 +34,22 @@ function PersonTasksTab({ personId }) {
     getPersonTasks(personId).then(setTasks).finally(() => setLoading(false))
   }, [personId])
 
-  if (loading) return <p className="text-sm" style={{ color: '#6c7086' }}>Loading…</p>
-  if (!tasks.length) return <p className="text-sm" style={{ color: '#6c7086' }}>No linked tasks.</p>
+  if (loading) return <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p>
+  if (!tasks.length) return <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>No linked tasks.</p>
 
   return (
     <>
-      <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: '#181825', borderColor: '#313244' }}>
+      <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
         {tasks.map(t => (
           <div
             key={t.id}
             onClick={() => setSelected(t)}
             className="flex items-center gap-3 px-4 py-2.5 border-b last:border-b-0 cursor-pointer hover:opacity-90"
-            style={{ borderColor: '#313244' }}
+            style={{ borderColor: 'var(--border)' }}
           >
             <StatusPill status={t.status} type="task" />
             <span className="flex-1 text-sm truncate" style={{
-              color: t.status === 'done' ? '#6c7086' : '#cdd6f4',
+              color: t.status === 'done' ? 'var(--text-secondary)' : 'var(--text-primary)',
               textDecoration: t.status === 'done' ? 'line-through' : 'none',
             }}>
               {t.title}
@@ -84,22 +84,22 @@ function PersonProjectsTab({ personId }) {
     getPersonProjects(personId).then(setProjects).finally(() => setLoading(false))
   }, [personId])
 
-  if (loading) return <p className="text-sm" style={{ color: '#6c7086' }}>Loading…</p>
-  if (!projects.length) return <p className="text-sm" style={{ color: '#6c7086' }}>No linked projects.</p>
+  if (loading) return <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p>
+  if (!projects.length) return <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>No linked projects.</p>
 
   return (
     <>
-      <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: '#181825', borderColor: '#313244' }}>
+      <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
         {projects.map(p => (
           <div
             key={p.id}
             onClick={() => setSelected(p)}
             className="flex items-center gap-3 px-4 py-2.5 border-b last:border-b-0 cursor-pointer hover:opacity-90"
-            style={{ borderColor: '#313244' }}
+            style={{ borderColor: 'var(--border)' }}
           >
             <StatusPill status={p.status} type="project" />
-            <span className="flex-1 text-sm truncate" style={{ color: '#cdd6f4' }}>{p.title}</span>
-            {p.area && <span className="text-xs" style={{ color: '#6c7086' }}>{p.area}</span>}
+            <span className="flex-1 text-sm truncate" style={{ color: 'var(--text-primary)' }}>{p.title}</span>
+            {p.area && <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{p.area}</span>}
           </div>
         ))}
       </div>
@@ -204,7 +204,7 @@ export default function PersonDetail({ person: initialPerson, open, onClose, onR
         {/* Avatar circle */}
         <div
           className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-semibold shrink-0"
-          style={{ backgroundColor: '#313244', color: '#89b4fa' }}
+          style={{ backgroundColor: 'var(--border)', color: 'var(--accent)' }}
         >
           {person.first_name?.[0]?.toUpperCase()}{person.last_name?.[0]?.toUpperCase()}
         </div>
@@ -216,7 +216,7 @@ export default function PersonDetail({ person: initialPerson, open, onClose, onR
             onChange={e => change('first_name', e.target.value)}
             placeholder="First name"
             className="bg-transparent text-lg font-semibold outline-none border-b pb-0.5 mr-2"
-            style={{ color: '#cdd6f4', borderColor: dirty ? '#89b4fa' : 'transparent', width: '45%' }}
+            style={{ color: 'var(--text-primary)', borderColor: dirty ? 'var(--accent)' : 'transparent', width: '45%' }}
           />
           <input
             type="text"
@@ -224,10 +224,10 @@ export default function PersonDetail({ person: initialPerson, open, onClose, onR
             onChange={e => change('last_name', e.target.value)}
             placeholder="Last name"
             className="bg-transparent text-lg font-semibold outline-none border-b pb-0.5"
-            style={{ color: '#cdd6f4', borderColor: dirty ? '#89b4fa' : 'transparent', width: '45%' }}
+            style={{ color: 'var(--text-primary)', borderColor: dirty ? 'var(--accent)' : 'transparent', width: '45%' }}
           />
           {person.company && (
-            <p className="text-xs mt-0.5" style={{ color: '#6c7086' }}>{person.company}</p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{person.company}</p>
           )}
         </div>
 
@@ -240,25 +240,25 @@ export default function PersonDetail({ person: initialPerson, open, onClose, onR
       {isStale && (
         <div
           className="rounded-lg px-4 py-3 mb-4 border text-sm"
-          style={{ backgroundColor: '#1e1e2d', borderColor: '#6c7086', color: '#a6adc8' }}
+          style={{ backgroundColor: 'var(--state-info-bg)', borderColor: 'var(--text-secondary)', color: 'var(--text-mid)' }}
         >
           <p className="font-medium">⚠ Contact is marked stale</p>
-          <p className="text-xs mt-1" style={{ color: '#6c7086' }}>
+          <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
             No contact logged in the past 365 days. Reactivate to clear this flag.
           </p>
         </div>
       )}
 
       {/* ── Tabs ── */}
-      <div className="flex gap-1 mb-5 border-b" style={{ borderColor: '#313244' }}>
+      <div className="flex gap-1 mb-5 border-b" style={{ borderColor: 'var(--border)' }}>
         {['details', 'tasks', 'projects', 'notes'].map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
             className="px-4 py-2 text-sm font-medium capitalize border-b-2 -mb-px transition-colors"
             style={{
-              borderColor: tab === t ? '#89b4fa' : 'transparent',
-              color:       tab === t ? '#89b4fa' : '#6c7086',
+              borderColor: tab === t ? 'var(--accent)' : 'transparent',
+              color:       tab === t ? 'var(--accent)' : 'var(--text-secondary)',
             }}
           >
             {t}
@@ -335,7 +335,7 @@ export default function PersonDetail({ person: initialPerson, open, onClose, onR
       {tab === 'notes' && <PersonComments personId={person.id} />}
 
       {/* ── Action buttons ── */}
-      <div className="mt-6 pt-5 border-t flex flex-wrap gap-2" style={{ borderColor: '#313244' }}>
+      <div className="mt-6 pt-5 border-t flex flex-wrap gap-2" style={{ borderColor: 'var(--border)' }}>
         {person.status === 'inbox' && (
           <Button variant="success" size="sm" onClick={handleActivate}>
             Activate Contact

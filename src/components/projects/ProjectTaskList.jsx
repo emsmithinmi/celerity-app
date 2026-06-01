@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { useTasks } from '../../hooks/useTasks'
 import { createTask } from '../../lib/api/tasks'
 import { StatusPill, PriorityBadge } from '../ui'
@@ -20,13 +20,13 @@ function MiniTaskRow({ task, onClick }) {
     <div
       onClick={onClick}
       className="flex items-center gap-3 px-4 py-2.5 border-b last:border-b-0 cursor-pointer hover:opacity-90 transition-opacity"
-      style={{ borderColor: '#313244' }}
+      style={{ borderColor: 'var(--border)' }}
     >
       <StatusPill status={task.status} type="task" />
       <span
         className="flex-1 text-sm truncate"
         style={{
-          color: task.status === 'done' ? '#6c7086' : '#cdd6f4',
+          color: task.status === 'done' ? 'var(--text-secondary)' : 'var(--text-primary)',
           textDecoration: task.status === 'done' ? 'line-through' : 'none',
         }}
       >
@@ -81,15 +81,15 @@ export default function ProjectTaskList({ projectId, onTaskCountChange }) {
               onClick={() => setTab(t.key)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
               style={{
-                backgroundColor: tab === t.key ? '#313244' : 'transparent',
-                color: tab === t.key ? '#cdd6f4' : '#6c7086',
+                backgroundColor: tab === t.key ? 'var(--border)' : 'transparent',
+                color: tab === t.key ? 'var(--text-primary)' : 'var(--text-secondary)',
               }}
             >
               {t.label}
               {counts[t.key] > 0 && (
                 <span
                   className="px-1.5 py-0.5 rounded-full text-xs"
-                  style={{ backgroundColor: '#1e1e2e', color: '#89b4fa' }}
+                  style={{ backgroundColor: 'var(--app-bg)', color: 'var(--accent)' }}
                 >
                   {counts[t.key]}
                 </span>
@@ -101,16 +101,16 @@ export default function ProjectTaskList({ projectId, onTaskCountChange }) {
         {/* Task list */}
         <div
           className="rounded-xl border overflow-hidden"
-          style={{ backgroundColor: '#181825', borderColor: '#313244' }}
+          style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
         >
           {loading ? (
-            <p className="px-4 py-3 text-sm" style={{ color: '#6c7086' }}>Loading…</p>
+            <p className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p>
           ) : displayed.length > 0 ? (
             displayed.map(t => (
               <MiniTaskRow key={t.id} task={t} onClick={() => setSelectedTask(t)} />
             ))
           ) : (
-            <p className="px-4 py-3 text-sm" style={{ color: '#6c7086' }}>
+            <p className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
               No {STATUS_TABS.find(s => s.key === tab)?.label.toLowerCase()} tasks.
             </p>
           )}
@@ -124,22 +124,22 @@ export default function ProjectTaskList({ projectId, onTaskCountChange }) {
             onChange={e => setNewTitle(e.target.value)}
             placeholder="Add a task to this project…"
             className="flex-1 px-3 py-2 rounded-lg text-sm border outline-none bg-transparent"
-            style={{ borderColor: '#313244', color: '#cdd6f4' }}
-            onFocus={e => e.target.style.borderColor = '#89b4fa'}
-            onBlur={e => e.target.style.borderColor = '#313244'}
+            style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+            onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+            onBlur={e => e.target.style.borderColor = 'var(--border)'}
           />
           <button
             type="submit"
             disabled={!newTitle.trim() || addingTask}
             className="px-4 py-2 rounded-lg text-sm font-medium transition-opacity disabled:opacity-40"
-            style={{ backgroundColor: '#313244', color: '#cdd6f4' }}
+            style={{ backgroundColor: 'var(--border)', color: 'var(--text-primary)' }}
           >
             {addingTask ? '…' : 'Add'}
           </button>
         </form>
 
         {/* Task count summary */}
-        <p className="text-xs" style={{ color: '#6c7086' }}>
+        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
           {tasks.length} total task{tasks.length !== 1 ? 's' : ''} —&nbsp;
           {counts.next_action} next action{counts.next_action !== 1 ? 's' : ''},&nbsp;
           {counts.waiting} waiting,&nbsp;

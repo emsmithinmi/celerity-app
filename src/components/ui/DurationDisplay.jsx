@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Formats a PostgreSQL interval string (e.g. "01:30:00") as hh:mm:ss.
  * Also exports helpers for summing durations.
  */
@@ -60,12 +60,12 @@ export function toIntervalString(hhmmss) {
 }
 
 export default function DurationDisplay({ duration, className = '' }) {
-  if (!duration) return <span style={{ color: '#6c7086' }}>—</span>
+  if (!duration) return <span style={{ color: 'var(--text-secondary)' }}>—</span>
 
   return (
     <span
       className={`font-mono text-sm ${className}`}
-      style={{ color: '#cdd6f4' }}
+      style={{ color: 'var(--text-primary)' }}
     >
       {formatDuration(duration)}
     </span>

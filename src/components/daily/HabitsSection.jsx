@@ -1,15 +1,15 @@
-import { HABITS } from '../../lib/constants'
+﻿import { HABITS } from '../../lib/constants'
 
 function HabitRow({ habit, checked, onToggle, percentage }) {
   return (
-    <div className="flex items-center gap-3 px-4 py-3 border-b last:border-b-0" style={{ borderColor: '#313244' }}>
+    <div className="flex items-center gap-3 px-4 py-3 border-b last:border-b-0" style={{ borderColor: 'var(--border)' }}>
       {/* Checkbox */}
       <button
         onClick={() => onToggle(!checked)}
         className="shrink-0 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors"
         style={{
-          borderColor: checked ? '#0F9D58' : '#313244',
-          backgroundColor: checked ? '#0F9D58' : 'transparent',
+          borderColor: checked ? 'var(--habit-done-bg)' : 'var(--border)',
+          backgroundColor: checked ? 'var(--habit-done-bg)' : 'transparent',
         }}
         aria-label={`Toggle ${habit.label}`}
       >
@@ -18,23 +18,23 @@ function HabitRow({ habit, checked, onToggle, percentage }) {
 
       {/* Icon + Label */}
       <span className="text-lg shrink-0">{habit.icon}</span>
-      <span className="text-sm flex-1" style={{ color: '#cdd6f4' }}>{habit.label}</span>
+      <span className="text-sm flex-1" style={{ color: 'var(--text-primary)' }}>{habit.label}</span>
 
       {/* 7-day mini bar */}
       <div className="flex items-center gap-2 shrink-0">
         <div
           className="w-20 h-1.5 rounded-full overflow-hidden"
-          style={{ backgroundColor: '#313244' }}
+          style={{ backgroundColor: 'var(--border)' }}
         >
           <div
             className="h-full rounded-full transition-all"
             style={{
               width: `${percentage}%`,
-              backgroundColor: percentage >= 70 ? '#0F9D58' : percentage >= 40 ? '#FBBC05' : '#DB4437',
+              backgroundColor: percentage >= 70 ? 'var(--habit-done-bg)' : percentage >= 40 ? 'var(--state-warning-text)' : 'var(--danger)',
             }}
           />
         </div>
-        <span className="text-xs w-8 text-right" style={{ color: '#6c7086' }}>
+        <span className="text-xs w-8 text-right" style={{ color: 'var(--text-secondary)' }}>
           {percentage}%
         </span>
       </div>
@@ -59,15 +59,15 @@ export default function HabitsSection({ note, habitHistory = [], onToggle }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-base font-semibold" style={{ color: '#cdd6f4' }}>Habits</h3>
-        <span className="text-xs" style={{ color: '#6c7086' }}>
+        <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Habits</h3>
+        <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
           {completedToday} of {displayHabits.length} completed today
         </span>
       </div>
 
       <div
         className="rounded-xl border overflow-hidden"
-        style={{ backgroundColor: '#181825', borderColor: '#313244' }}
+        style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
       >
         {displayHabits.map(habit => (
           <HabitRow

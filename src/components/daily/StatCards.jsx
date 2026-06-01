@@ -1,4 +1,4 @@
-const CARDS = [
+﻿const CARDS = [
   { key: 'inProgress',  label: 'Projects in Progress' },
   { key: 'nextActions', label: 'Next Actions'          },
   { key: 'dueToday',    label: 'Due Today'             },
@@ -10,10 +10,10 @@ function StatCard({ label, value }) {
   return (
     <div
       className="flex-1 rounded-xl px-4 py-3 border text-center min-w-0"
-      style={{ backgroundColor: '#181825', borderColor: '#313244' }}
+      style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
     >
-      <p className="text-xs mb-1 truncate" style={{ color: '#6c7086' }}>{label}</p>
-      <p className="text-2xl font-bold" style={{ color: '#cdd6f4' }}>{value}</p>
+      <p className="text-xs mb-1 truncate" style={{ color: 'var(--text-secondary)' }}>{label}</p>
+      <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{value}</p>
     </div>
   )
 }

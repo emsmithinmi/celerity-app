@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
 
@@ -33,7 +33,7 @@ export function CaptureTaskModal({ open, onClose, onCreate }) {
       }
     >
       <form onSubmit={handleSubmit}>
-        <label className="block text-sm font-medium mb-2" style={{ color: '#cdd6f4' }}>
+        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
           Task name
         </label>
         <input
@@ -43,11 +43,11 @@ export function CaptureTaskModal({ open, onClose, onCreate }) {
           placeholder="What needs to be done?"
           autoFocus
           className="w-full px-3 py-2 rounded-lg text-sm border outline-none"
-          style={{ backgroundColor: '#1e1e2e', borderColor: '#313244', color: '#cdd6f4' }}
-          onFocus={e => e.target.style.borderColor = '#89b4fa'}
-          onBlur={e => e.target.style.borderColor = '#313244'}
+          style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+          onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+          onBlur={e => e.target.style.borderColor = 'var(--border)'}
         />
-        <p className="text-xs mt-2" style={{ color: '#6c7086' }}>
+        <p className="text-xs mt-2" style={{ color: 'var(--text-secondary)' }}>
           You'll clarify priority, duration, and area next.
         </p>
       </form>
@@ -86,7 +86,7 @@ export function CaptureProjectModal({ open, onClose, onCreate }) {
       }
     >
       <form onSubmit={handleSubmit}>
-        <label className="block text-sm font-medium mb-2" style={{ color: '#cdd6f4' }}>
+        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
           Project name
         </label>
         <input
@@ -96,11 +96,11 @@ export function CaptureProjectModal({ open, onClose, onCreate }) {
           placeholder="What's the project?"
           autoFocus
           className="w-full px-3 py-2 rounded-lg text-sm border outline-none"
-          style={{ backgroundColor: '#1e1e2e', borderColor: '#313244', color: '#cdd6f4' }}
-          onFocus={e => e.target.style.borderColor = '#89b4fa'}
-          onBlur={e => e.target.style.borderColor = '#313244'}
+          style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+          onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+          onBlur={e => e.target.style.borderColor = 'var(--border)'}
         />
-        <p className="text-xs mt-2" style={{ color: '#6c7086' }}>
+        <p className="text-xs mt-2" style={{ color: 'var(--text-secondary)' }}>
           You'll add description, dates, and tasks in the planning phase.
         </p>
       </form>
@@ -146,7 +146,7 @@ export function CapturePersonModal({ open, onClose, onCreate }) {
           { label: 'Last name',  value: lastName,  setter: setLastName,  placeholder: 'Last'  },
         ].map(({ label, value, setter, placeholder }) => (
           <div key={label}>
-            <label className="block text-sm font-medium mb-1.5" style={{ color: '#cdd6f4' }}>
+            <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-primary)' }}>
               {label}
             </label>
             <input
@@ -156,9 +156,9 @@ export function CapturePersonModal({ open, onClose, onCreate }) {
               placeholder={placeholder}
               autoFocus={label === 'First name'}
               className="w-full px-3 py-2 rounded-lg text-sm border outline-none"
-              style={{ backgroundColor: '#1e1e2e', borderColor: '#313244', color: '#cdd6f4' }}
-              onFocus={e => e.target.style.borderColor = '#89b4fa'}
-              onBlur={e => e.target.style.borderColor = '#313244'}
+              style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+              onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+              onBlur={e => e.target.style.borderColor = 'var(--border)'}
             />
           </div>
         ))}
@@ -205,9 +205,9 @@ export function QuickNoteModal({ open, onClose, onAdd }) {
           rows={4}
           autoFocus
           className="w-full px-3 py-2 rounded-lg text-sm border outline-none resize-none"
-          style={{ backgroundColor: '#1e1e2e', borderColor: '#313244', color: '#cdd6f4' }}
-          onFocus={e => e.target.style.borderColor = '#89b4fa'}
-          onBlur={e => e.target.style.borderColor = '#313244'}
+          style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+          onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+          onBlur={e => e.target.style.borderColor = 'var(--border)'}
         />
       </form>
     </Modal>

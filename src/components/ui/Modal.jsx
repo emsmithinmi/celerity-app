@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+﻿import { useEffect, useRef } from 'react'
 
 /**
  * Modal sizes: sm | md (default) | lg | xl
@@ -50,16 +50,16 @@ export default function Modal({
     >
       <div
         className={`relative w-full ${SIZES[size]} rounded-2xl border shadow-2xl flex flex-col max-h-[90vh]`}
-        style={{ backgroundColor: '#181825', borderColor: '#313244' }}
+        style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
       >
         {/* Header */}
         {(title || !hideClose) && (
           <div
             className="flex items-center justify-between px-6 py-4 border-b shrink-0"
-            style={{ borderColor: '#313244' }}
+            style={{ borderColor: 'var(--border)' }}
           >
             {title && (
-              <h2 className="text-base font-semibold" style={{ color: '#cdd6f4' }}>
+              <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
                 {title}
               </h2>
             )}
@@ -67,7 +67,7 @@ export default function Modal({
               <button
                 onClick={onClose}
                 className="ml-auto text-lg leading-none transition-opacity hover:opacity-70"
-                style={{ color: '#6c7086' }}
+                style={{ color: 'var(--text-secondary)' }}
                 aria-label="Close"
               >
                 ✕
@@ -85,7 +85,7 @@ export default function Modal({
         {footer && (
           <div
             className="px-6 py-4 border-t shrink-0 flex items-center justify-end gap-3"
-            style={{ borderColor: '#313244' }}
+            style={{ borderColor: 'var(--border)' }}
           >
             {footer}
           </div>

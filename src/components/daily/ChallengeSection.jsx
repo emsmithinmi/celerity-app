@@ -1,17 +1,17 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import Button from '../ui/Button'
 
 const TOPIC_COLORS = {
-  python:  { bg: '#1e2d3d', text: '#89b4fa', label: 'Python'  },
-  ai:      { bg: '#2d1e2d', text: '#cba6f7', label: 'AI'      },
-  llm:     { bg: '#1e2d2d', text: '#94e2d5', label: 'LLM'     },
-  general: { bg: '#2d2d1e', text: '#f9e2af', label: 'General' },
+  python:  { bg: 'var(--challenge-python-bg)', text: 'var(--accent)', label: 'Python'  },
+  ai:      { bg: 'var(--state-purple-bg)', text: 'var(--accent-purple)', label: 'AI'      },
+  llm:     { bg: 'var(--challenge-llm-bg)', text: 'var(--accent-teal)', label: 'LLM'     },
+  general: { bg: 'var(--challenge-general-bg)', text: 'var(--accent-yellow)', label: 'General' },
 }
 
 const DIFFICULTY_COLORS = {
-  beginner:     { text: '#0F9D58' },
-  intermediate: { text: '#FBBC05' },
-  advanced:     { text: '#DB4437' },
+  beginner:     { text: 'var(--habit-done-bg)' },
+  intermediate: { text: 'var(--state-warning-text)' },
+  advanced:     { text: 'var(--danger)' },
 }
 
 export default function ChallengeSection({ challenge, onUpdate, onComplete }) {
@@ -45,7 +45,7 @@ export default function ChallengeSection({ challenge, onUpdate, onComplete }) {
         onClick={() => setOpen(o => !o)}
         className="flex items-center gap-3 w-full text-left"
       >
-        <h3 className="text-base font-semibold" style={{ color: '#cdd6f4' }}>Challenge</h3>
+        <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Challenge</h3>
         {challenge && topic && (
           <span
             className="px-2 py-0.5 rounded text-xs font-medium"
@@ -60,12 +60,12 @@ export default function ChallengeSection({ challenge, onUpdate, onComplete }) {
           </span>
         )}
         {submitted && (
-          <span className="text-xs" style={{ color: '#0F9D58' }}>✓ done</span>
+          <span className="text-xs" style={{ color: 'var(--habit-done-bg)' }}>✓ done</span>
         )}
         {!challenge && (
-          <span className="text-xs" style={{ color: '#6c7086' }}>none yet</span>
+          <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>none yet</span>
         )}
-        <span className="ml-auto text-xs" style={{ color: '#6c7086' }}>
+        <span className="ml-auto text-xs" style={{ color: 'var(--text-secondary)' }}>
           {open ? '▲' : '▼'}
         </span>
       </button>
@@ -74,21 +74,21 @@ export default function ChallengeSection({ challenge, onUpdate, onComplete }) {
       {open && (
         <div
           className="mt-3 rounded-xl border overflow-hidden"
-          style={{ backgroundColor: '#181825', borderColor: '#313244' }}
+          style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
         >
           {!challenge ? (
-            <p className="px-4 py-4 text-sm" style={{ color: '#6c7086' }}>
+            <p className="px-4 py-4 text-sm" style={{ color: 'var(--text-secondary)' }}>
               No challenge yet — run the Daily Review to generate one.
             </p>
           ) : (
             <>
               {/* Prompt */}
-              <div className="px-4 py-4 border-b" style={{ borderColor: '#313244' }}>
-                <p className="text-sm leading-relaxed" style={{ color: '#cdd6f4' }}>
+              <div className="px-4 py-4 border-b" style={{ borderColor: 'var(--border)' }}>
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--text-primary)' }}>
                   {challenge.prompt}
                 </p>
                 {challenge.hint && (
-                  <p className="text-xs mt-3 italic" style={{ color: '#6c7086' }}>
+                  <p className="text-xs mt-3 italic" style={{ color: 'var(--text-secondary)' }}>
                     💡 {challenge.hint}
                   </p>
                 )}
@@ -96,9 +96,9 @@ export default function ChallengeSection({ challenge, onUpdate, onComplete }) {
 
               {/* Previous feedback, if any */}
               {challenge.ai_feedback && (
-                <div className="px-4 py-3 border-b" style={{ borderColor: '#313244', backgroundColor: '#1a1f2e' }}>
-                  <p className="text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Feedback from last review</p>
-                  <p className="text-sm leading-relaxed" style={{ color: '#cdd6f4' }}>{challenge.ai_feedback}</p>
+                <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--state-info-bg)' }}>
+                  <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Feedback from last review</p>
+                  <p className="text-sm leading-relaxed" style={{ color: 'var(--text-primary)' }}>{challenge.ai_feedback}</p>
                 </div>
               )}
 
@@ -107,14 +107,14 @@ export default function ChallengeSection({ challenge, onUpdate, onComplete }) {
                 <div className="px-4 py-4">
                   {challenge.user_response && (
                     <>
-                      <p className="text-xs font-medium mb-2" style={{ color: '#6c7086' }}>Your answer</p>
-                      <pre className="text-sm font-mono leading-relaxed whitespace-pre-wrap" style={{ color: '#a6adc8' }}>
+                      <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Your answer</p>
+                      <pre className="text-sm font-mono leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--text-mid)' }}>
                         {challenge.user_response}
                       </pre>
                     </>
                   )}
                   {!challenge.ai_feedback && (
-                    <p className="text-xs mt-3" style={{ color: '#6c7086' }}>
+                    <p className="text-xs mt-3" style={{ color: 'var(--text-secondary)' }}>
                       Feedback will appear after your next Daily Review.
                     </p>
                   )}
@@ -127,7 +127,7 @@ export default function ChallengeSection({ challenge, onUpdate, onComplete }) {
                     placeholder="Paste your solution here…"
                     rows={6}
                     className="w-full bg-transparent text-sm outline-none resize-none font-mono border rounded-lg px-3 py-2"
-                    style={{ color: '#cdd6f4', borderColor: '#313244' }}
+                    style={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}
                   />
                   <div className="flex gap-2">
                     <Button size="sm" variant="primary" onClick={handleSubmit} disabled={!response.trim() || saving}>

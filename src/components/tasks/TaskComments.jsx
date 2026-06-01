@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { getTaskComments, addTaskComment, deleteTaskComment } from '../../lib/api/tasks'
 import Button from '../ui/Button'
@@ -40,17 +40,17 @@ export default function TaskComments({ taskId }) {
   return (
     <div className="space-y-3">
       {loading ? (
-        <p className="text-xs" style={{ color: '#6c7086' }}>Loading…</p>
+        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Loading…</p>
       ) : comments.length > 0 ? (
         <div className="space-y-2">
           {comments.map(c => (
             <div
               key={c.id}
               className="rounded-lg px-3 py-2.5 border"
-              style={{ backgroundColor: '#1e1e2e', borderColor: '#313244' }}
+              style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)' }}
             >
               <div className="flex items-center justify-between mb-1">
-                <p className="text-xs" style={{ color: '#6c7086' }}>
+                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                   {new Date(c.created_at).toLocaleDateString('en-US', {
                     month: 'short', day: 'numeric', year: 'numeric',
                     hour: '2-digit', minute: '2-digit',
@@ -61,19 +61,19 @@ export default function TaskComments({ taskId }) {
                   disabled={deletingId === c.id}
                   title="Delete comment"
                   className="flex items-center justify-center rounded transition-colors disabled:opacity-40"
-                  style={{ color: '#45475a' }}
-                  onMouseEnter={e => { e.currentTarget.style.color = '#DB4437' }}
-                  onMouseLeave={e => { e.currentTarget.style.color = '#45475a' }}
+                  style={{ color: 'var(--text-dim)' }}
+                  onMouseEnter={e => { e.currentTarget.style.color = 'var(--danger)' }}
+                  onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-dim)' }}
                 >
                   <X size={12} />
                 </button>
               </div>
-              <p className="text-sm whitespace-pre-wrap" style={{ color: '#cdd6f4' }}>{c.body}</p>
+              <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--text-primary)' }}>{c.body}</p>
             </div>
           ))}
         </div>
       ) : (
-        <p className="text-xs" style={{ color: '#6c7086' }}>No comments yet.</p>
+        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>No comments yet.</p>
       )}
 
       <form onSubmit={handleAdd} className="space-y-2">
@@ -84,9 +84,9 @@ export default function TaskComments({ taskId }) {
           placeholder="Add a comment… (Ctrl+Enter)"
           rows={2}
           className="w-full px-3 py-2 rounded-lg text-sm border outline-none resize-none"
-          style={{ backgroundColor: '#1e1e2e', borderColor: '#313244', color: '#cdd6f4' }}
-          onFocus={e => e.target.style.borderColor = '#89b4fa'}
-          onBlur={e => e.target.style.borderColor = '#313244'}
+          style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+          onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+          onBlur={e => e.target.style.borderColor = 'var(--border)'}
         />
         <div className="flex justify-end">
           <Button type="submit" size="sm" variant="secondary" disabled={!body.trim() || saving}>

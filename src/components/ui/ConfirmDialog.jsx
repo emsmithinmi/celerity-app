@@ -1,4 +1,4 @@
-import Modal from './Modal'
+﻿import Modal from './Modal'
 import Button from './Button'
 
 /**
@@ -48,7 +48,7 @@ export default function ConfirmDialog({
       }
     >
       {message && (
-        <p className="text-sm" style={{ color: '#6c7086' }}>
+        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
           {message}
         </p>
       )}

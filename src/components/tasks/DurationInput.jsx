@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { parseDuration, toIntervalString } from '../ui/DurationDisplay'
 
 /**
@@ -39,13 +39,13 @@ export default function DurationInput({ value, onChange, className = '' }) {
       onChange={e => setter(e.target.value)}
       onBlur={() => onBlur()}
       className="w-12 text-center bg-transparent border rounded px-1 py-1 text-sm outline-none"
-      style={{ borderColor: '#313244', color: '#cdd6f4' }}
-      onFocus={e => { e.target.style.borderColor = '#89b4fa'; e.target.select() }}
+      style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+      onFocus={e => { e.target.style.borderColor = 'var(--accent)'; e.target.select() }}
     />
   )
 
   return (
-    <div className={`flex items-center gap-1 font-mono ${className}`} style={{ color: '#6c7086' }}>
+    <div className={`flex items-center gap-1 font-mono ${className}`} style={{ color: 'var(--text-secondary)' }}>
       {part(h, setH, 999, () => emit(h, m, s))}
       <span>:</span>
       {part(m, setM,  59, () => emit(h, m, s))}

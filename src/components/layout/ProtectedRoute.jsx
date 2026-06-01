@@ -1,4 +1,4 @@
-import { Navigate } from 'react-router-dom'
+﻿import { Navigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 
 export default function ProtectedRoute({ children }) {
@@ -9,9 +9,9 @@ export default function ProtectedRoute({ children }) {
     return (
       <div
         className="min-h-screen flex items-center justify-center"
-        style={{ backgroundColor: '#1e1e2e' }}
+        style={{ backgroundColor: 'var(--app-bg)' }}
       >
-        <div className="text-sm" style={{ color: '#6c7086' }}>Loading...</div>
+        <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading...</div>
       </div>
     )
   }

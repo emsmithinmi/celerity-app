@@ -1,4 +1,4 @@
-import { StatusPill, PriorityBadge } from '../ui'
+﻿import { StatusPill, PriorityBadge } from '../ui'
 
 export default function ProjectRow({ project, onClick }) {
   const isArchived  = !!project.archived_at
@@ -10,7 +10,7 @@ export default function ProjectRow({ project, onClick }) {
     <div
       onClick={onClick}
       className="flex items-center gap-3 px-4 py-3 border-b last:border-b-0 cursor-pointer transition-opacity hover:opacity-90"
-      style={{ borderColor: '#313244' }}
+      style={{ borderColor: 'var(--border)' }}
     >
       {/* Status */}
       <StatusPill status={project.status} type="project" />
@@ -20,7 +20,7 @@ export default function ProjectRow({ project, onClick }) {
         <p
           className="text-sm truncate"
           style={{
-            color: isArchived || project.status === 'completed' ? '#6c7086' : '#cdd6f4',
+            color: isArchived || project.status === 'completed' ? 'var(--text-secondary)' : 'var(--text-primary)',
             textDecoration: project.status === 'completed' ? 'line-through' : 'none',
           }}
         >
@@ -28,7 +28,7 @@ export default function ProjectRow({ project, onClick }) {
           {project.title}
         </p>
         {project.area && (
-          <p className="text-xs truncate mt-0.5" style={{ color: '#6c7086' }}>
+          <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-secondary)' }}>
             📂 {project.area}
           </p>
         )}
@@ -39,13 +39,13 @@ export default function ProjectRow({ project, onClick }) {
         {isArchived && (
           <span
             className="text-xs px-2 py-0.5 rounded"
-            style={{ backgroundColor: '#313244', color: '#6c7086' }}
+            style={{ backgroundColor: 'var(--border)', color: 'var(--text-secondary)' }}
           >
             Archived
           </span>
         )}
         {project.end_date && (
-          <span className="text-xs" style={{ color: overdue ? '#DB4437' : '#6c7086' }}>
+          <span className="text-xs" style={{ color: overdue ? 'var(--danger)' : 'var(--text-secondary)' }}>
             {overdue ? '⚠ ' : ''}
             {new Date(project.end_date + 'T00:00:00').toLocaleDateString('en-US', {
               month: 'short', day: 'numeric',

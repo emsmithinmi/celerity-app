@@ -1,4 +1,4 @@
-// One quote per day, cycling through the list based on day-of-year.
+﻿// One quote per day, cycling through the list based on day-of-year.
 // Same quote all day, different quote tomorrow — no API, no network needed.
 
 const QUOTES = [
@@ -93,10 +93,10 @@ export default function DailyQuote({ dateStr }) {
 
   return (
     <div className="text-center px-6 py-2">
-      <p className="text-lg font-light italic leading-relaxed" style={{ color: '#a6adc8' }}>
+      <p className="text-lg font-light italic leading-relaxed" style={{ color: 'var(--text-mid)' }}>
         &ldquo;{text}&rdquo;
       </p>
-      <p className="text-sm mt-2" style={{ color: '#6c7086' }}>
+      <p className="text-sm mt-2" style={{ color: 'var(--text-secondary)' }}>
         &mdash; {author}
       </p>
     </div>

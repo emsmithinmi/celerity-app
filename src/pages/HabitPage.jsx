@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+﻿import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getHabitHistory } from '../lib/api/daily'
 import { HABITS } from '../lib/constants'
@@ -85,27 +85,27 @@ function HabitCalendar({ habitKey, calYear, calMonth, dateMap, onPrev, onNext })
   const today = new Date().toISOString().split('T')[0]
 
   return (
-    <div className="rounded-xl border p-4" style={{ backgroundColor: '#181825', borderColor: '#313244' }}>
+    <div className="rounded-xl border p-4" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
       {/* Month nav */}
       <div className="flex items-center justify-between mb-4">
         <button
           onClick={onPrev}
           className="px-3 py-1.5 rounded-lg text-sm transition-colors"
-          style={{ color: '#6c7086' }}
-          onMouseEnter={e => e.target.style.color = '#cdd6f4'}
-          onMouseLeave={e => e.target.style.color = '#6c7086'}
+          style={{ color: 'var(--text-secondary)' }}
+          onMouseEnter={e => e.target.style.color = 'var(--text-primary)'}
+          onMouseLeave={e => e.target.style.color = 'var(--text-secondary)'}
         >
           ← Prev
         </button>
-        <h3 className="text-sm font-semibold" style={{ color: '#cdd6f4' }}>
+        <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
           {MONTHS[calMonth]} {calYear}
         </h3>
         <button
           onClick={onNext}
           className="px-3 py-1.5 rounded-lg text-sm transition-colors"
-          style={{ color: '#6c7086' }}
-          onMouseEnter={e => e.target.style.color = '#cdd6f4'}
-          onMouseLeave={e => e.target.style.color = '#6c7086'}
+          style={{ color: 'var(--text-secondary)' }}
+          onMouseEnter={e => e.target.style.color = 'var(--text-primary)'}
+          onMouseLeave={e => e.target.style.color = 'var(--text-secondary)'}
         >
           Next →
         </button>
@@ -114,7 +114,7 @@ function HabitCalendar({ habitKey, calYear, calMonth, dateMap, onPrev, onNext })
       {/* DOW header */}
       <div className="grid grid-cols-7 mb-2">
         {DOW_LABELS.map(d => (
-          <div key={d} className="text-center text-xs font-medium py-1" style={{ color: '#6c7086' }}>{d}</div>
+          <div key={d} className="text-center text-xs font-medium py-1" style={{ color: 'var(--text-secondary)' }}>{d}</div>
         ))}
       </div>
 
@@ -133,18 +133,18 @@ function HabitCalendar({ habitKey, calYear, calMonth, dateMap, onPrev, onNext })
               key={dateStr}
               className="flex flex-col items-center justify-center rounded-lg py-1.5 gap-0.5"
               style={{
-                backgroundColor: isToday ? '#1e3a5f' : 'transparent',
-                outline: isToday ? '1px solid #89b4fa' : 'none',
+                backgroundColor: isToday ? 'var(--card-task-bg)' : 'transparent',
+                outline: isToday ? '1px solid var(--accent)' : 'none',
                 minHeight: '48px',
               }}
             >
-              <span className="text-xs" style={{ color: isToday ? '#89b4fa' : isFuture ? '#45475a' : '#cdd6f4' }}>
+              <span className="text-xs" style={{ color: isToday ? 'var(--accent)' : isFuture ? 'var(--text-dim)' : 'var(--text-primary)' }}>
                 {dayNum}
               </span>
               {!isFuture && row && (
                 <div
                   className="w-4 h-4 rounded-full"
-                  style={{ backgroundColor: done ? '#0F9D58' : '#313244' }}
+                  style={{ backgroundColor: done ? 'var(--habit-done-bg)' : 'var(--border)' }}
                 />
               )}
             </div>
@@ -153,14 +153,14 @@ function HabitCalendar({ habitKey, calYear, calMonth, dateMap, onPrev, onNext })
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 mt-3 pt-3 border-t" style={{ borderColor: '#313244' }}>
+      <div className="flex items-center gap-4 mt-3 pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#0F9D58' }} />
-          <span className="text-xs" style={{ color: '#6c7086' }}>Done</span>
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--habit-done-bg)' }} />
+          <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Done</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#313244' }} />
-          <span className="text-xs" style={{ color: '#6c7086' }}>Missed</span>
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--border)' }} />
+          <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Missed</span>
         </div>
       </div>
     </div>
@@ -193,7 +193,7 @@ export default function HabitPage() {
   const longestStreak = useMemo(() => computeLongestStreak(history, habitKey), [history, habitKey])
   const percent       = useMemo(() => computePercent(dateMap, habitKey, timeframe), [dateMap, habitKey, timeframe])
 
-  const barColor = percent >= 70 ? '#0F9D58' : percent >= 40 ? '#FBBC05' : '#DB4437'
+  const barColor = percent >= 70 ? 'var(--habit-done-bg)' : percent >= 40 ? 'var(--state-warning-text)' : 'var(--danger)'
 
   const handlePrevMonth = () => {
     if (calMonth === 0) { setCalYear(y => y - 1); setCalMonth(11) }
@@ -206,7 +206,7 @@ export default function HabitPage() {
 
   if (!habit) return (
     <div className="flex items-center justify-center h-full">
-      <p className="text-sm" style={{ color: '#DB4437' }}>Habit not found.</p>
+      <p className="text-sm" style={{ color: 'var(--danger)' }}>Habit not found.</p>
     </div>
   )
 
@@ -215,40 +215,40 @@ export default function HabitPage() {
       {/* Breadcrumb header */}
       <div
         className="flex items-center gap-3 px-6 py-4 border-b shrink-0"
-        style={{ borderColor: '#313244' }}
+        style={{ borderColor: 'var(--border)' }}
       >
         <button
           onClick={() => navigate('/habits')}
           className="text-sm transition-opacity hover:opacity-80"
-          style={{ color: '#6c7086' }}
+          style={{ color: 'var(--text-secondary)' }}
         >
           ← Habits
         </button>
-        <span style={{ color: '#313244' }}>/</span>
+        <span style={{ color: 'var(--border)' }}>/</span>
         <span className="text-xl">{habit.icon}</span>
-        <span className="text-sm font-medium" style={{ color: '#cdd6f4' }}>{habit.label}</span>
+        <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{habit.label}</span>
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
         {loading ? (
           <div className="flex items-center justify-center h-32">
-            <p className="text-sm" style={{ color: '#6c7086' }}>Loading…</p>
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p>
           </div>
         ) : (
           <>
             {/* Streak stats */}
             <div className="grid grid-cols-3 gap-4">
-              <div className="rounded-xl border p-4 text-center" style={{ backgroundColor: '#181825', borderColor: '#313244' }}>
-                <p className="text-3xl font-bold" style={{ color: '#89b4fa' }}>{currentStreak}</p>
-                <p className="text-xs mt-1" style={{ color: '#6c7086' }}>Current Streak</p>
+              <div className="rounded-xl border p-4 text-center" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
+                <p className="text-3xl font-bold" style={{ color: 'var(--accent)' }}>{currentStreak}</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>Current Streak</p>
               </div>
-              <div className="rounded-xl border p-4 text-center" style={{ backgroundColor: '#181825', borderColor: '#313244' }}>
-                <p className="text-3xl font-bold" style={{ color: '#cba6f7' }}>{longestStreak}</p>
-                <p className="text-xs mt-1" style={{ color: '#6c7086' }}>Best Streak</p>
+              <div className="rounded-xl border p-4 text-center" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
+                <p className="text-3xl font-bold" style={{ color: 'var(--accent-purple)' }}>{longestStreak}</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>Best Streak</p>
               </div>
-              <div className="rounded-xl border p-4 text-center" style={{ backgroundColor: '#181825', borderColor: '#313244' }}>
+              <div className="rounded-xl border p-4 text-center" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
                 <p className="text-3xl font-bold" style={{ color: barColor }}>{percent}%</p>
-                <p className="text-xs mt-1" style={{ color: '#6c7086' }}>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
                   {TIMEFRAMES.find(t => t.key === timeframe)?.label} completion
                 </p>
               </div>
@@ -256,15 +256,15 @@ export default function HabitPage() {
 
             {/* Timeframe selector */}
             <div className="flex items-center gap-2">
-              <span className="text-sm" style={{ color: '#6c7086' }}>Timeframe:</span>
+              <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Timeframe:</span>
               {TIMEFRAMES.map(tf => (
                 <button
                   key={tf.key}
                   onClick={() => setTimeframe(tf.key)}
                   className="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
                   style={{
-                    backgroundColor: timeframe === tf.key ? '#313244' : 'transparent',
-                    color: timeframe === tf.key ? '#cdd6f4' : '#6c7086',
+                    backgroundColor: timeframe === tf.key ? 'var(--border)' : 'transparent',
+                    color: timeframe === tf.key ? 'var(--text-primary)' : 'var(--text-secondary)',
                   }}
                 >
                   {tf.label}
@@ -282,7 +282,7 @@ export default function HabitPage() {
               onNext={handleNextMonth}
             />
 
-            <p className="text-xs pb-4" style={{ color: '#45475a' }}>
+            <p className="text-xs pb-4" style={{ color: 'var(--text-dim)' }}>
               Streak = consecutive days completed · Best = longest run ever
             </p>
           </>

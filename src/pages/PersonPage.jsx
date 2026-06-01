@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Trash2, Pencil, Plus, X } from 'lucide-react'
 import {
@@ -13,7 +13,7 @@ import PersonComments from '../components/people/PersonComments'
 import { PEOPLE_STATUSES } from '../lib/constants'
 
 const inputCls  = 'w-full px-3 py-2 rounded-lg text-sm border outline-none bg-transparent'
-const inputStyle = { borderColor: '#313244', color: '#cdd6f4' }
+const inputStyle = { borderColor: 'var(--border)', color: 'var(--text-primary)' }
 
 const CONTACT_TYPES   = ['colleague', 'friend', 'family', 'client', 'vendor', 'mentor', 'other']
 const SOCIAL_PLATFORMS = ['Twitter/X', 'LinkedIn', 'Instagram', 'Facebook', 'GitHub', 'YouTube', 'TikTok', 'Bluesky', 'Mastodon', 'Other']
@@ -26,9 +26,9 @@ function PencilBtn({ onClick, title = 'Edit' }) {
       onClick={onClick}
       title={title}
       className="flex items-center justify-center rounded-md transition-colors duration-150"
-      style={{ width: 30, height: 30, backgroundColor: 'transparent', color: '#6c7086' }}
-      onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#313244'; e.currentTarget.style.color = '#cdd6f4' }}
-      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#6c7086' }}
+      style={{ width: 30, height: 30, backgroundColor: 'transparent', color: 'var(--text-secondary)' }}
+      onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }}
+      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
     >
       <Pencil size={14} />
     </button>
@@ -41,9 +41,9 @@ function TrashBtn({ onClick, title = 'Remove contact' }) {
       onClick={onClick}
       title={title}
       className="flex items-center justify-center rounded-md transition-colors duration-150"
-      style={{ width: 30, height: 30, backgroundColor: '#DB4437', color: '#fff' }}
-      onMouseEnter={e => e.currentTarget.style.backgroundColor = '#c53929'}
-      onMouseLeave={e => e.currentTarget.style.backgroundColor = '#DB4437'}
+      style={{ width: 30, height: 30, backgroundColor: 'var(--danger)', color: '#fff' }}
+      onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--danger-hover)'}
+      onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--danger)'}
     >
       <Trash2 size={14} />
     </button>
@@ -53,10 +53,10 @@ function TrashBtn({ onClick, title = 'Remove contact' }) {
 function ReadField({ label, value, fallback = '—', link }) {
   return (
     <div>
-      <p className="text-xs font-medium mb-0.5" style={{ color: '#6c7086' }}>{label}</p>
+      <p className="text-xs font-medium mb-0.5" style={{ color: 'var(--text-secondary)' }}>{label}</p>
       {link && value
-        ? <a href={link} className="text-sm hover:underline" style={{ color: '#89b4fa' }}>{value}</a>
-        : <p className="text-sm" style={{ color: value ? '#cdd6f4' : '#45475a' }}>{value || fallback}</p>
+        ? <a href={link} className="text-sm hover:underline" style={{ color: 'var(--accent)' }}>{value}</a>
+        : <p className="text-sm" style={{ color: value ? 'var(--text-primary)' : 'var(--text-dim)' }}>{value || fallback}</p>
       }
     </div>
   )
@@ -64,14 +64,14 @@ function ReadField({ label, value, fallback = '—', link }) {
 
 function SectionCard({ children }) {
   return (
-    <div className="rounded-xl border p-4 space-y-4" style={{ backgroundColor: '#181825', borderColor: '#313244' }}>
+    <div className="rounded-xl border p-4 space-y-4" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
       {children}
     </div>
   )
 }
 
 function SectionLabel({ children }) {
-  return <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: '#45475a' }}>{children}</p>
+  return <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--text-dim)' }}>{children}</p>
 }
 
 function displayName(person) {
@@ -117,13 +117,13 @@ export default function PersonPage() {
 
   if (loading) return (
     <div className="flex items-center justify-center h-full">
-      <p className="text-sm" style={{ color: '#6c7086' }}>Loading…</p>
+      <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p>
     </div>
   )
 
   if (!person) return (
     <div className="flex items-center justify-center h-full">
-      <p className="text-sm" style={{ color: '#DB4437' }}>Person not found.</p>
+      <p className="text-sm" style={{ color: 'var(--danger)' }}>Person not found.</p>
     </div>
   )
 
@@ -225,16 +225,16 @@ export default function PersonPage() {
     <div className="h-full flex flex-col">
 
       {/* ── Breadcrumb header ── */}
-      <div className="flex items-center gap-3 px-6 py-4 border-b shrink-0" style={{ borderColor: '#313244' }}>
+      <div className="flex items-center gap-3 px-6 py-4 border-b shrink-0" style={{ borderColor: 'var(--border)' }}>
         <button
           onClick={() => navigate('/people')}
           className="text-sm transition-opacity hover:opacity-80"
-          style={{ color: '#6c7086' }}
+          style={{ color: 'var(--text-secondary)' }}
         >
           ← People
         </button>
-        <span style={{ color: '#313244' }}>/</span>
-        <span className="text-sm truncate flex-1" style={{ color: '#cdd6f4' }}>
+        <span style={{ color: 'var(--border)' }}>/</span>
+        <span className="text-sm truncate flex-1" style={{ color: 'var(--text-primary)' }}>
           {displayName(person)}
         </span>
         <span
@@ -249,7 +249,7 @@ export default function PersonPage() {
 
         {/* ── Stale banner ── */}
         {isStale && (
-          <div className="rounded-lg px-4 py-3 border text-sm" style={{ backgroundColor: '#2d1e1e', borderColor: '#DB4437', color: '#f28b82' }}>
+          <div className="rounded-lg px-4 py-3 border text-sm" style={{ backgroundColor: 'var(--state-error-bg)', borderColor: 'var(--danger)', color: 'var(--state-error-text)' }}>
             <p className="font-medium">⚠ Contact is stale</p>
           </div>
         )}
@@ -257,7 +257,7 @@ export default function PersonPage() {
         {/* ── Identity section ── */}
         <section>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold" style={{ color: '#cdd6f4' }}>Identity</h2>
+            <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Identity</h2>
             {!editing ? (
               <PencilBtn onClick={startEdit} />
             ) : (
@@ -270,7 +270,7 @@ export default function PersonPage() {
             )}
           </div>
           {saveError && (
-            <p className="text-xs mb-2" style={{ color: '#DB4437' }}>{saveError}</p>
+            <p className="text-xs mb-2" style={{ color: 'var(--danger)' }}>{saveError}</p>
           )}
 
           {/* Avatar */}
@@ -284,8 +284,8 @@ export default function PersonPage() {
               onFileSelect={handleAvatarUpload}
             />
             <div>
-              <p className="text-sm font-medium" style={{ color: '#cdd6f4' }}>{displayName(person)}</p>
-              <p className="text-xs mt-0.5" style={{ color: '#6c7086' }}>
+              <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{displayName(person)}</p>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
                 {avatarUploading ? 'Uploading…' : 'Click to change photo'}
               </p>
             </div>
@@ -297,19 +297,19 @@ export default function PersonPage() {
               {editing ? (
                 <>
                   <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Title</label>
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Title</label>
                     <input type="text" value={d.professional_title ?? ''} onChange={e => change('professional_title', e.target.value)} className={inputCls} style={inputStyle} placeholder="Dr., Mr., Ms." />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>First Name</label>
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>First Name</label>
                     <input type="text" value={d.first_name ?? ''} onChange={e => change('first_name', e.target.value)} className={inputCls} style={inputStyle} />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Last Name</label>
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Last Name</label>
                     <input type="text" value={d.last_name ?? ''} onChange={e => change('last_name', e.target.value)} className={inputCls} style={inputStyle} />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Preferred Name</label>
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Preferred Name</label>
                     <input type="text" value={d.preferred_name ?? ''} onChange={e => change('preferred_name', e.target.value)} className={inputCls} style={inputStyle} placeholder="Optional" />
                   </div>
                 </>
@@ -328,18 +328,18 @@ export default function PersonPage() {
               {editing ? (
                 <>
                   <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Relationship</label>
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Relationship</label>
                     <input type="text" value={d.relationship ?? ''} onChange={e => change('relationship', e.target.value)} className={inputCls} style={inputStyle} placeholder="Wife, Son, Colleague…" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Contact Type</label>
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Contact Type</label>
                     <select value={d.contact_type ?? ''} onChange={e => change('contact_type', e.target.value)} className={inputCls} style={inputStyle}>
                       <option value="">Select…</option>
                       {CONTACT_TYPES.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Occupation</label>
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Occupation</label>
                     <input type="text" value={d.occupation ?? ''} onChange={e => change('occupation', e.target.value)} className={inputCls} style={inputStyle} placeholder="Engineer, Teacher…" />
                   </div>
                 </>
@@ -355,7 +355,7 @@ export default function PersonPage() {
             {/* Company */}
             {editing ? (
               <div>
-                <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Company</label>
+                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Company</label>
                 <input type="text" value={d.company ?? ''} onChange={e => change('company', e.target.value)} className={inputCls} style={inputStyle} placeholder="Company or organization" />
               </div>
             ) : person.company ? (
@@ -366,18 +366,18 @@ export default function PersonPage() {
 
         {/* ── Contact Details section ── */}
         <section>
-          <h2 className="text-base font-semibold mb-3" style={{ color: '#cdd6f4' }}>Contact Details</h2>
+          <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Contact Details</h2>
           <SectionCard>
             {/* Emails */}
             <div className="grid grid-cols-2 gap-3">
               {editing ? (
                 <>
                   <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Personal Email</label>
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Personal Email</label>
                     <input type="email" value={d.email_personal ?? ''} onChange={e => change('email_personal', e.target.value)} className={inputCls} style={inputStyle} placeholder="personal@example.com" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Work Email</label>
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Work Email</label>
                     <input type="email" value={d.email_work ?? ''} onChange={e => change('email_work', e.target.value)} className={inputCls} style={inputStyle} placeholder="work@example.com" />
                   </div>
                 </>
@@ -394,15 +394,15 @@ export default function PersonPage() {
               {editing ? (
                 <>
                   <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Personal Phone</label>
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Personal Phone</label>
                     <input type="tel" value={d.phone_personal ?? ''} onChange={e => change('phone_personal', e.target.value)} className={inputCls} style={inputStyle} placeholder="+1 (555) 000-0000" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Work Phone</label>
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Work Phone</label>
                     <input type="tel" value={d.phone_work ?? ''} onChange={e => change('phone_work', e.target.value)} className={inputCls} style={inputStyle} placeholder="+1 (555) 000-0000" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Birthday</label>
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Birthday</label>
                     <input type="date" value={d.birthday ?? ''} onChange={e => change('birthday', e.target.value || null)} className={inputCls} style={inputStyle} />
                   </div>
                 </>
@@ -419,7 +419,7 @@ export default function PersonPage() {
 
         {/* ── Addresses section ── */}
         <section>
-          <h2 className="text-base font-semibold mb-3" style={{ color: '#cdd6f4' }}>Addresses</h2>
+          <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Addresses</h2>
           <SectionCard>
             {/* Home Address */}
             <div>
@@ -434,11 +434,11 @@ export default function PersonPage() {
                   </div>
                 </div>
               ) : (
-                <p className="text-sm" style={{ color: homeAddressLine ? '#cdd6f4' : '#45475a' }}>{homeAddressLine || '—'}</p>
+                <p className="text-sm" style={{ color: homeAddressLine ? 'var(--text-primary)' : 'var(--text-dim)' }}>{homeAddressLine || '—'}</p>
               )}
             </div>
 
-            <hr style={{ borderColor: '#313244' }} />
+            <hr style={{ borderColor: 'var(--border)' }} />
 
             {/* Work Address */}
             <div>
@@ -453,7 +453,7 @@ export default function PersonPage() {
                   </div>
                 </div>
               ) : (
-                <p className="text-sm" style={{ color: workAddressLine ? '#cdd6f4' : '#45475a' }}>{workAddressLine || '—'}</p>
+                <p className="text-sm" style={{ color: workAddressLine ? 'var(--text-primary)' : 'var(--text-dim)' }}>{workAddressLine || '—'}</p>
               )}
             </div>
           </SectionCard>
@@ -461,7 +461,7 @@ export default function PersonPage() {
 
         {/* ── Social Media section ── */}
         <section>
-          <h2 className="text-base font-semibold mb-3" style={{ color: '#cdd6f4' }}>Social Media</h2>
+          <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Social Media</h2>
           <SectionCard>
             {editing ? (
               <div className="space-y-2">
@@ -490,9 +490,9 @@ export default function PersonPage() {
                     <button
                       onClick={() => removeSocial(idx)}
                       className="flex items-center justify-center rounded-md shrink-0 transition-colors"
-                      style={{ width: 30, height: 30, backgroundColor: 'transparent', color: '#6c7086' }}
-                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#DB4437'; e.currentTarget.style.color = '#fff' }}
-                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#6c7086' }}
+                      style={{ width: 30, height: 30, backgroundColor: 'transparent', color: 'var(--text-secondary)' }}
+                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--danger)'; e.currentTarget.style.color = '#fff' }}
+                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
                     >
                       <X size={14} />
                     </button>
@@ -501,7 +501,7 @@ export default function PersonPage() {
                 <button
                   onClick={addSocial}
                   className="flex items-center gap-1.5 text-xs transition-opacity hover:opacity-80"
-                  style={{ color: '#89b4fa' }}
+                  style={{ color: 'var(--accent)' }}
                 >
                   <Plus size={12} /> Add account
                 </button>
@@ -509,11 +509,11 @@ export default function PersonPage() {
             ) : (
               <div className="space-y-2">
                 {(person.social_media ?? []).length === 0 ? (
-                  <p className="text-sm" style={{ color: '#45475a' }}>—</p>
+                  <p className="text-sm" style={{ color: 'var(--text-dim)' }}>—</p>
                 ) : (person.social_media ?? []).map((entry, idx) => (
                   <div key={idx} className="flex items-center gap-3">
-                    <span className="text-xs font-medium w-28 shrink-0" style={{ color: '#6c7086' }}>{entry.platform}</span>
-                    <span className="text-sm" style={{ color: '#cdd6f4' }}>{entry.handle}</span>
+                    <span className="text-xs font-medium w-28 shrink-0" style={{ color: 'var(--text-secondary)' }}>{entry.platform}</span>
+                    <span className="text-sm" style={{ color: 'var(--text-primary)' }}>{entry.handle}</span>
                   </div>
                 ))}
               </div>
@@ -524,7 +524,7 @@ export default function PersonPage() {
         {/* ── Notes section ── */}
         {(editing || person.notes) && (
           <section>
-            <h2 className="text-base font-semibold mb-3" style={{ color: '#cdd6f4' }}>Notes</h2>
+            <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Notes</h2>
             <SectionCard>
               {editing ? (
                 <textarea
@@ -536,7 +536,7 @@ export default function PersonPage() {
                   placeholder="Notes about this person…"
                 />
               ) : (
-                <p className="text-sm whitespace-pre-wrap" style={{ color: '#cdd6f4' }}>{person.notes}</p>
+                <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--text-primary)' }}>{person.notes}</p>
               )}
             </SectionCard>
           </section>
@@ -545,21 +545,21 @@ export default function PersonPage() {
         {/* ── Tasks section ── */}
         {tasks.length > 0 && (
           <section>
-            <h2 className="text-base font-semibold mb-3" style={{ color: '#cdd6f4' }}>
-              Tasks <span className="text-sm font-normal" style={{ color: '#6c7086' }}>({tasks.length})</span>
+            <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
+              Tasks <span className="text-sm font-normal" style={{ color: 'var(--text-secondary)' }}>({tasks.length})</span>
             </h2>
-            <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: '#181825', borderColor: '#313244' }}>
+            <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
               {tasks.map(task => task && (
                 <div
                   key={task.id}
                   className="flex items-center gap-3 px-4 py-3 border-b last:border-b-0 cursor-pointer hover:opacity-80"
-                  style={{ borderColor: '#313244' }}
+                  style={{ borderColor: 'var(--border)' }}
                   onClick={() => navigate(`/tasks/${task.id}`)}
                 >
-                  <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: '#313244', color: '#cdd6f4' }}>
+                  <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--border)', color: 'var(--text-primary)' }}>
                     {task.status}
                   </span>
-                  <span className="text-sm flex-1 truncate" style={{ color: '#cdd6f4' }}>{task.title}</span>
+                  <span className="text-sm flex-1 truncate" style={{ color: 'var(--text-primary)' }}>{task.title}</span>
                 </div>
               ))}
             </div>
@@ -569,21 +569,21 @@ export default function PersonPage() {
         {/* ── Projects section ── */}
         {projects.length > 0 && (
           <section>
-            <h2 className="text-base font-semibold mb-3" style={{ color: '#cdd6f4' }}>
-              Projects <span className="text-sm font-normal" style={{ color: '#6c7086' }}>({projects.length})</span>
+            <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
+              Projects <span className="text-sm font-normal" style={{ color: 'var(--text-secondary)' }}>({projects.length})</span>
             </h2>
-            <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: '#181825', borderColor: '#313244' }}>
+            <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
               {projects.map(project => project && (
                 <div
                   key={project.id}
                   className="flex items-center gap-3 px-4 py-3 border-b last:border-b-0 cursor-pointer hover:opacity-80"
-                  style={{ borderColor: '#313244' }}
+                  style={{ borderColor: 'var(--border)' }}
                   onClick={() => navigate(`/projects/${project.id}`)}
                 >
-                  <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: '#313244', color: '#cdd6f4' }}>
+                  <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--border)', color: 'var(--text-primary)' }}>
                     {project.status}
                   </span>
-                  <span className="text-sm flex-1 truncate" style={{ color: '#cdd6f4' }}>{project.title}</span>
+                  <span className="text-sm flex-1 truncate" style={{ color: 'var(--text-primary)' }}>{project.title}</span>
                 </div>
               ))}
             </div>
@@ -592,15 +592,15 @@ export default function PersonPage() {
 
         {/* ── Comments section ── */}
         <section>
-          <h2 className="text-base font-semibold mb-3" style={{ color: '#cdd6f4' }}>Notes</h2>
-          <div className="rounded-xl border p-4" style={{ backgroundColor: '#181825', borderColor: '#313244' }}>
+          <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Notes</h2>
+          <div className="rounded-xl border p-4" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
             <PersonComments personId={person.id} />
           </div>
         </section>
 
         {/* ── What's Next section ── */}
         <section className="pb-6">
-          <h2 className="text-base font-semibold mb-3" style={{ color: '#cdd6f4' }}>What's Next?</h2>
+          <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>What's Next?</h2>
           <div className="flex flex-wrap gap-2">
             {(person.status === 'inbox' || person.status === 'stale' || person.is_stale) && (
               <Button variant="success" size="sm" onClick={handleActivate}>

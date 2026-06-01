@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+﻿import { useRef, useState } from 'react'
 import { Camera } from 'lucide-react'
 
 const SIZES = {
@@ -30,14 +30,14 @@ export default function AvatarCircle({ src, name = '', size = 'md', canUpload = 
         width: px,
         height: px,
         minWidth: px,
-        backgroundColor: '#313244',
+        backgroundColor: 'var(--border)',
         cursor: canUpload && !uploading ? 'pointer' : 'default',
       }}
     >
       {src ? (
         <img src={src} alt={name} className="w-full h-full object-cover" />
       ) : (
-        <span style={{ fontSize, color: '#89b4fa', fontWeight: 600, lineHeight: 1 }}>
+        <span style={{ fontSize, color: 'var(--accent)', fontWeight: 600, lineHeight: 1 }}>
           {initials(name)}
         </span>
       )}
@@ -48,7 +48,7 @@ export default function AvatarCircle({ src, name = '', size = 'md', canUpload = 
           className="absolute inset-0 rounded-full flex items-center justify-center"
           style={{ backgroundColor: 'rgba(0,0,0,0.55)' }}
         >
-          <Camera size={iconSize} color="#cdd6f4" />
+          <Camera size={iconSize} color="var(--text-primary)" />
         </div>
       )}
 
@@ -63,8 +63,8 @@ export default function AvatarCircle({ src, name = '', size = 'md', canUpload = 
             style={{
               width: iconSize + 4,
               height: iconSize + 4,
-              borderColor: '#45475a',
-              borderTopColor: '#89b4fa',
+              borderColor: 'var(--text-dim)',
+              borderTopColor: 'var(--accent)',
             }}
           />
         </div>

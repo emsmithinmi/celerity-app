@@ -6,7 +6,8 @@ All notable changes to Celerity are recorded here.
 
 ## [Unreleased]
 
-_Nothing pending — all changes committed and deployed._
+### Changed
+- **Full color theme system** — theme switching now re-themes the entire app, not just the sidebar. Replaced ~300 hardcoded Catppuccin hex values across 45 files with CSS custom properties. Added 60+ new tokens covering surfaces, text tones, accent palette, state banners (warning/error/success/stalled/purple), challenge badges, review suggestion cards, habit calendar, and button variants. GitHub Dark theme fully mapped with equivalent values throughout.
 
 ## 2026-06-01 (7)
 

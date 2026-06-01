@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+﻿import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { Pencil } from 'lucide-react'
 import { ensureReview, updateReviewContent, completeReview, updateSuggestions } from '../lib/api/reviews'
@@ -19,15 +19,15 @@ import Button from '../components/ui/Button'
 // ─── Shared styles ────────────────────────────────────────────────────────────
 
 const S = {
-  card:     { backgroundColor: '#181825', borderColor: '#313244' },
-  input:    { backgroundColor: '#1e1e2e', borderColor: '#313244', color: '#cdd6f4' },
-  muted:    { color: '#6c7086' },
-  text:     { color: '#cdd6f4' },
-  blue:     { color: '#89b4fa' },
-  green:    { color: '#a6e3a1' },
-  red:      { color: '#f38ba8' },
-  yellow:   { color: '#f9e2af' },
-  purple:   { color: '#cba6f7' },
+  card:     { backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' },
+  input:    { backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)', color: 'var(--text-primary)' },
+  muted:    { color: 'var(--text-secondary)' },
+  text:     { color: 'var(--text-primary)' },
+  blue:     { color: 'var(--accent)' },
+  green:    { color: 'var(--accent-green)' },
+  red:      { color: 'var(--accent-red)' },
+  yellow:   { color: 'var(--accent-yellow)' },
+  purple:   { color: 'var(--accent-purple)' },
 }
 
 // ─── Step progress bar ────────────────────────────────────────────────────────
@@ -36,7 +36,7 @@ const STEPS = ['Capture', 'Clarify', 'Reflect']
 
 function StepBar({ current, onNavigate }) {
   return (
-    <div className="flex items-center px-6 border-b shrink-0" style={{ borderColor: '#313244' }}>
+    <div className="flex items-center px-6 border-b shrink-0" style={{ borderColor: 'var(--border)' }}>
       {STEPS.map((label, i) => {
         const done   = i < current
         const active = i === current
@@ -46,16 +46,16 @@ function StepBar({ current, onNavigate }) {
             onClick={() => onNavigate(i)}
             className="flex items-center gap-2 px-4 py-3 text-xs font-medium border-b-2 transition-colors whitespace-nowrap"
             style={{
-              borderColor: active ? '#89b4fa' : done ? '#a6e3a1' : 'transparent',
-              color: active ? '#89b4fa' : done ? '#a6e3a1' : '#6c7086',
+              borderColor: active ? 'var(--accent)' : done ? 'var(--accent-green)' : 'transparent',
+              color: active ? 'var(--accent)' : done ? 'var(--accent-green)' : 'var(--text-secondary)',
               background: 'transparent',
             }}
           >
             <span
               className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
               style={{
-                backgroundColor: active ? '#89b4fa' : done ? '#a6e3a1' : '#313244',
-                color: active || done ? '#1e1e2e' : '#6c7086',
+                backgroundColor: active ? 'var(--accent)' : done ? 'var(--accent-green)' : 'var(--border)',
+                color: active || done ? 'var(--app-bg)' : 'var(--text-secondary)',
               }}
             >
               {done ? '✓' : i + 1}
@@ -86,15 +86,15 @@ function ClarifyRow({ item, linkTo, onDone, onScrap, meta }) {
     <div
       className="flex items-center gap-2 px-3 py-2.5 rounded-lg border mb-1.5 transition-all"
       style={{
-        backgroundColor: '#1e1e2e',
-        borderColor: state === 'done' ? '#a6e3a133' : state === 'scrapped' ? '#f38ba833' : '#313244',
+        backgroundColor: 'var(--app-bg)',
+        borderColor: state === 'done' ? 'var(--accent-green)33' : state === 'scrapped' ? 'var(--accent-red)33' : 'var(--border)',
         opacity: state !== 'pending' ? 0.45 : 1,
       }}
     >
       <Link
         to={linkTo}
         className="flex-1 text-sm truncate hover:underline"
-        style={{ color: state !== 'pending' ? '#6c7086' : '#cdd6f4', textDecoration: state !== 'pending' ? 'line-through' : 'none' }}
+        style={{ color: state !== 'pending' ? 'var(--text-secondary)' : 'var(--text-primary)', textDecoration: state !== 'pending' ? 'line-through' : 'none' }}
       >
         {item.title ?? `${item.first_name} ${item.last_name}`}
       </Link>
@@ -105,17 +105,17 @@ function ClarifyRow({ item, linkTo, onDone, onScrap, meta }) {
             onClick={handleDone}
             title="Done"
             className="w-7 h-7 rounded-md flex items-center justify-center text-sm transition-colors"
-            style={{ backgroundColor: '#1a3a2a', color: '#a6e3a1' }}
-            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#a6e3a1'; e.currentTarget.style.color = '#1e1e2e' }}
-            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#1a3a2a'; e.currentTarget.style.color = '#a6e3a1' }}
+            style={{ backgroundColor: 'var(--state-success-bg)', color: 'var(--accent-green)' }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--accent-green)'; e.currentTarget.style.color = 'var(--app-bg)' }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'var(--state-success-bg)'; e.currentTarget.style.color = 'var(--accent-green)' }}
           >✓</button>
           <button
             onClick={handleScrap}
             title="Scrap"
             className="w-7 h-7 rounded-md flex items-center justify-center text-sm transition-colors"
-            style={{ backgroundColor: '#3a1e1e', color: '#f38ba8' }}
-            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#f38ba8'; e.currentTarget.style.color = '#1e1e2e' }}
-            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#3a1e1e'; e.currentTarget.style.color = '#f38ba8' }}
+            style={{ backgroundColor: 'var(--state-error-bg)', color: 'var(--accent-red)' }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--accent-red)'; e.currentTarget.style.color = 'var(--app-bg)' }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'var(--state-error-bg)'; e.currentTarget.style.color = 'var(--accent-red)' }}
           >🗑</button>
         </div>
       )}
@@ -123,7 +123,7 @@ function ClarifyRow({ item, linkTo, onDone, onScrap, meta }) {
   )
 }
 
-function ClarifySection({ title, titleColor = '#89b4fa', items, renderRow, emptyText }) {
+function ClarifySection({ title, titleColor = 'var(--accent)', items, renderRow, emptyText }) {
   if (!items.length) return null
   return (
     <div className="rounded-xl border p-4 mb-3" style={S.card}>
@@ -143,11 +143,11 @@ function SuggestionCard({ suggestion, onAccept, onSkip, onEdit }) {
   const [edited,  setEdited]  = useState(suggestion.content)
 
   const TYPE_COLORS = {
-    task_update:    { bg: '#1e3a5f', border: '#89b4fa', text: '#89b4fa' },
-    project_update: { bg: '#1e2a4a', border: '#cba6f7', text: '#cba6f7' },
-    new_task:       { bg: '#1a3a2a', border: '#a6e3a1', text: '#a6e3a1' },
-    reminder:       { bg: '#3a2a1e', border: '#fab387', text: '#fab387' },
-    insight:        { bg: '#2a1e3a', border: '#f5c2e7', text: '#f5c2e7' },
+    task_update:    { bg: 'var(--card-task-bg)', border: 'var(--accent)', text: 'var(--accent)' },
+    project_update: { bg: 'var(--card-project-bg)', border: 'var(--accent-purple)', text: 'var(--accent-purple)' },
+    new_task:       { bg: 'var(--state-success-bg)', border: 'var(--accent-green)', text: 'var(--accent-green)' },
+    reminder:       { bg: 'var(--card-reminder-bg)', border: 'var(--accent-orange)', text: 'var(--accent-orange)' },
+    insight:        { bg: 'var(--card-insight-bg)', border: 'var(--accent-pink)', text: 'var(--accent-pink)' },
   }
   const colors = TYPE_COLORS[suggestion.type] ?? TYPE_COLORS.insight
   if (suggestion.status === 'skipped') return null
@@ -190,9 +190,9 @@ function SuggestionCard({ suggestion, onAccept, onSkip, onEdit }) {
                 onClick={() => setEditing(true)}
                 title="Edit"
                 className="w-7 h-7 flex items-center justify-center rounded-md transition-colors"
-                style={{ color: '#6c7086' }}
-                onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#313244'; e.currentTarget.style.color = '#cdd6f4' }}
-                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#6c7086' }}
+                style={{ color: 'var(--text-secondary)' }}
+                onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }}
+                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
               >
                 <Pencil size={13} />
               </button>
@@ -217,8 +217,8 @@ function Bubble({ role, children }) {
       <div
         className="max-w-[82%] px-4 py-3 text-sm leading-relaxed"
         style={{
-          backgroundColor: isAI ? '#313244' : '#89b4fa',
-          color: isAI ? '#cdd6f4' : '#1e1e2e',
+          backgroundColor: isAI ? 'var(--border)' : 'var(--accent)',
+          color: isAI ? 'var(--text-primary)' : 'var(--app-bg)',
           borderRadius: isAI ? '16px 16px 16px 4px' : '16px 16px 4px 16px',
           fontWeight: isAI ? 400 : 500,
         }}
@@ -231,14 +231,14 @@ function Bubble({ role, children }) {
 function TypingIndicator() {
   return (
     <div className="flex justify-start">
-      <div className="px-4 py-3 rounded-2xl rounded-bl-sm" style={{ backgroundColor: '#313244' }}>
+      <div className="px-4 py-3 rounded-2xl rounded-bl-sm" style={{ backgroundColor: 'var(--border)' }}>
         <div className="flex gap-1">
           {[0, 1, 2].map(i => (
             <span
               key={i}
               className="w-2 h-2 rounded-full"
               style={{
-                backgroundColor: '#6c7086',
+                backgroundColor: 'var(--text-secondary)',
                 display: 'inline-block',
                 animation: `bounce 1.2s ${i * 0.2}s infinite`,
               }}
@@ -259,12 +259,12 @@ function RefCard({ title, count, children }) {
       <button
         onClick={() => setOpen(o => !o)}
         className="w-full flex items-center justify-between px-4 py-3 text-xs font-semibold transition-colors"
-        style={{ color: '#6c7086', background: 'transparent' }}
+        style={{ color: 'var(--text-secondary)', background: 'transparent' }}
       >
         <span>
           {title}
           {count != null && (
-            <span className="ml-2 px-1.5 py-0.5 rounded text-xs" style={{ backgroundColor: '#313244', color: '#89b4fa' }}>{count}</span>
+            <span className="ml-2 px-1.5 py-0.5 rounded text-xs" style={{ backgroundColor: 'var(--border)', color: 'var(--accent)' }}>{count}</span>
           )}
         </span>
         <span style={{ transform: open ? 'none' : 'rotate(-90deg)', transition: 'transform 0.2s' }}>▾</span>
@@ -328,9 +328,9 @@ function CaptureStep({ onNext, todayNoteId }) {
             key={type}
             onClick={() => setModal(type)}
             className="rounded-xl border p-4 text-left transition-all"
-            style={{ backgroundColor: '#313244', borderColor: '#45475a' }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = '#89b4fa'; e.currentTarget.style.backgroundColor = '#3d3f52' }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = '#45475a'; e.currentTarget.style.backgroundColor = '#313244' }}
+            style={{ backgroundColor: 'var(--border)', borderColor: 'var(--text-dim)' }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.backgroundColor = 'var(--border)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--text-dim)'; e.currentTarget.style.backgroundColor = 'var(--border)' }}
           >
             <div className="text-xl mb-1">{icon}</div>
             <div className="text-sm font-medium" style={S.text}>{label}</div>
@@ -343,7 +343,7 @@ function CaptureStep({ onNext, todayNoteId }) {
       {captured.length > 0 && (
         <div className="space-y-1.5 mt-2">
           {captured.map((item, i) => (
-            <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg border text-sm" style={{ backgroundColor: '#1a3a2a', borderColor: '#a6e3a133', color: '#a6e3a1' }}>
+            <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg border text-sm" style={{ backgroundColor: 'var(--state-success-bg)', borderColor: 'var(--accent-green)33', color: 'var(--accent-green)' }}>
               <span>{icons[item.type]}</span>
               <span className="flex-1 truncate">{item.title}</span>
               <span className="text-xs uppercase" style={S.muted}>{item.type}</span>
@@ -352,7 +352,7 @@ function CaptureStep({ onNext, todayNoteId }) {
         </div>
       )}
 
-      <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: '#313244' }}>
+      <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
         <span className="text-sm" style={S.muted}>{captured.length > 0 ? `${captured.length} item${captured.length !== 1 ? 's' : ''} captured` : 'Capture anything on your mind'}</span>
         <Button variant="primary" onClick={onNext}>Done Capturing →</Button>
       </div>
@@ -472,7 +472,7 @@ function ClarifyStep({ onNext, onBack }) {
 
           {inboxPeople.length > 0 && (
             <div className="rounded-xl border p-4" style={S.card}>
-              <h3 className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#a6e3a1' }}>👤 Inbox People</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: 'var(--accent-green)' }}>👤 Inbox People</h3>
               {inboxPeople.map(item => (
                 <ClarifyRow
                   key={item.id}
@@ -520,7 +520,7 @@ function ClarifyStep({ onNext, onBack }) {
         </div>
       )}
 
-      <div className="flex items-center justify-between pt-6 mt-4 border-t" style={{ borderColor: '#313244' }}>
+      <div className="flex items-center justify-between pt-6 mt-4 border-t" style={{ borderColor: 'var(--border)' }}>
         <Button variant="ghost" onClick={onBack}>← Back</Button>
         <Button variant="primary" onClick={onNext}>Done Clarifying →</Button>
       </div>
@@ -599,7 +599,7 @@ function ReflectStep({ review, onComplete, onBack }) {
           }
         } else {
           setTyping(false)
-          addBubble('ai', "Set up an AI provider in <a href='/settings' style='color:#89b4fa;text-decoration:underline;'>Settings</a> to enable the AI interview. You can still complete the review below.")
+          addBubble('ai', "Set up an AI provider in <a href='/settings' style='color:var(--accent);text-decoration:underline;'>Settings</a> to enable the AI interview. You can still complete the review below.")
         }
       }, 800)
     }
@@ -677,7 +677,7 @@ function ReflectStep({ review, onComplete, onBack }) {
         <RefCard title="⚡ Next Actions" count={nextActions.length}>
           <div className="space-y-1">
             {nextActions.map(t => (
-              <Link key={t.id} to={`/tasks/${t.id}`} className="block text-sm py-1.5 border-b hover:underline" style={{ color: '#cdd6f4', borderColor: '#313244' }}>
+              <Link key={t.id} to={`/tasks/${t.id}`} className="block text-sm py-1.5 border-b hover:underline" style={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>
                 {t.title}
                 {t.due_date && <span className="ml-2 text-xs" style={S.muted}>{t.due_date}</span>}
               </Link>
@@ -690,7 +690,7 @@ function ReflectStep({ review, onComplete, onBack }) {
         <RefCard title="📁 Projects In Progress" count={inProgress.length}>
           <div className="space-y-1">
             {inProgress.map(p => (
-              <Link key={p.id} to={`/projects/${p.id}`} className="block text-sm py-1.5 border-b hover:underline" style={{ color: '#cdd6f4', borderColor: '#313244' }}>
+              <Link key={p.id} to={`/projects/${p.id}`} className="block text-sm py-1.5 border-b hover:underline" style={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>
                 {p.title}
               </Link>
             ))}
@@ -723,8 +723,8 @@ function ReflectStep({ review, onComplete, onBack }) {
             rows={2}
             className="flex-1 px-3 py-2 rounded-xl border text-sm outline-none resize-none"
             style={{ ...S.input, transition: 'border-color 0.15s' }}
-            onFocus={e => e.target.style.borderColor = '#89b4fa'}
-            onBlur={e => e.target.style.borderColor = '#313244'}
+            onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+            onBlur={e => e.target.style.borderColor = 'var(--border)'}
           />
           <Button variant="primary" onClick={handleSend}>Send</Button>
         </div>
@@ -741,8 +741,8 @@ function ReflectStep({ review, onComplete, onBack }) {
             rows={3}
             className="w-full px-3 py-2 rounded-lg border text-sm outline-none resize-none"
             style={{ ...S.input, transition: 'border-color 0.15s' }}
-            onFocus={e => e.target.style.borderColor = '#89b4fa'}
-            onBlur={e => e.target.style.borderColor = '#313244'}
+            onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+            onBlur={e => e.target.style.borderColor = 'var(--border)'}
           />
         </div>
       )}
@@ -776,10 +776,10 @@ function ReflectStep({ review, onComplete, onBack }) {
       )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between pt-6 mt-4 border-t" style={{ borderColor: '#313244' }}>
+      <div className="flex items-center justify-between pt-6 mt-4 border-t" style={{ borderColor: 'var(--border)' }}>
         <Button variant="ghost" onClick={onBack}>← Back</Button>
         {completed ? (
-          <span className="text-sm px-3 py-1 rounded-lg border" style={{ backgroundColor: '#1a3a2a', borderColor: '#a6e3a1', color: '#a6e3a1' }}>
+          <span className="text-sm px-3 py-1 rounded-lg border" style={{ backgroundColor: 'var(--state-success-bg)', borderColor: 'var(--accent-green)', color: 'var(--accent-green)' }}>
             ✓ Review Complete
           </span>
         ) : (
@@ -826,7 +826,7 @@ export default function Reviews() {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b shrink-0" style={{ borderColor: '#313244' }}>
+      <div className="flex items-center justify-between px-6 py-4 border-b shrink-0" style={{ borderColor: 'var(--border)' }}>
         <h1 className="text-xl font-semibold" style={S.text}>Reviews</h1>
         <p className="text-sm" style={S.muted}>
           {new Date(today + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
@@ -834,15 +834,15 @@ export default function Reviews() {
       </div>
 
       {/* Type tabs */}
-      <div className="flex gap-1 px-4 py-3 border-b shrink-0" style={{ borderColor: '#313244' }}>
+      <div className="flex gap-1 px-4 py-3 border-b shrink-0" style={{ borderColor: 'var(--border)' }}>
         {REVIEW_TYPES.map(rt => (
           <button
             key={rt.key}
             onClick={() => navigate(`/reviews/${rt.key}`)}
             className="px-4 py-2 text-sm font-medium rounded-lg transition-colors"
             style={{
-              backgroundColor: activeType === rt.key ? '#313244' : 'transparent',
-              color: activeType === rt.key ? '#cdd6f4' : '#6c7086',
+              backgroundColor: activeType === rt.key ? 'var(--border)' : 'transparent',
+              color: activeType === rt.key ? 'var(--text-primary)' : 'var(--text-secondary)',
             }}
           >
             {rt.label}

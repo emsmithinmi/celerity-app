@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { Pencil, Plus, X } from 'lucide-react'
 import { updateTask } from '../../lib/api/tasks'
 import Button from '../ui/Button'
@@ -13,9 +13,9 @@ function PencilBtn({ onClick }) {
       onClick={onClick}
       title="Edit subtasks"
       className="flex items-center justify-center rounded-md transition-colors duration-150"
-      style={{ width: 30, height: 30, backgroundColor: 'transparent', color: '#6c7086' }}
-      onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#313244'; e.currentTarget.style.color = '#cdd6f4' }}
-      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#6c7086' }}
+      style={{ width: 30, height: 30, backgroundColor: 'transparent', color: 'var(--text-secondary)' }}
+      onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }}
+      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
     >
       <Pencil size={14} />
     </button>
@@ -23,7 +23,7 @@ function PencilBtn({ onClick }) {
 }
 
 const inputCls = 'flex-1 px-2 py-1 rounded text-sm border outline-none bg-transparent'
-const inputStyle = { borderColor: '#313244', color: '#cdd6f4' }
+const inputStyle = { borderColor: 'var(--border)', color: 'var(--text-primary)' }
 
 export default function TaskChecklist({ taskId, subtasks = [], onSubtasksChange }) {
   const [editing, setEditing] = useState(false)
@@ -80,9 +80,9 @@ export default function TaskChecklist({ taskId, subtasks = [], onSubtasksChange 
     <section>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <h2 className="text-base font-semibold" style={{ color: '#cdd6f4' }}>Subtasks</h2>
+          <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Subtasks</h2>
           {subtasks.length > 0 && (
-            <span className="text-xs" style={{ color: '#6c7086' }}>
+            <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
               {doneCount}/{subtasks.length}
             </span>
           )}
@@ -101,11 +101,11 @@ export default function TaskChecklist({ taskId, subtasks = [], onSubtasksChange 
 
       <div
         className="rounded-xl border p-4"
-        style={{ backgroundColor: '#181825', borderColor: '#313244' }}
+        style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
       >
         {!editing ? (
           subtasks.length === 0 ? (
-            <p className="text-sm" style={{ color: '#45475a' }}>
+            <p className="text-sm" style={{ color: 'var(--text-dim)' }}>
               No steps yet — click the pencil to add subtasks.
             </p>
           ) : (
@@ -117,12 +117,12 @@ export default function TaskChecklist({ taskId, subtasks = [], onSubtasksChange 
                     checked={item.done}
                     onChange={() => toggle(item.id)}
                     className="w-4 h-4 cursor-pointer rounded"
-                    style={{ accentColor: '#89b4fa' }}
+                    style={{ accentColor: 'var(--accent)' }}
                   />
                   <span
                     className="text-sm"
                     style={{
-                      color: item.done ? '#45475a' : '#cdd6f4',
+                      color: item.done ? 'var(--text-dim)' : 'var(--text-primary)',
                       textDecoration: item.done ? 'line-through' : 'none',
                     }}
                   >
@@ -148,9 +148,9 @@ export default function TaskChecklist({ taskId, subtasks = [], onSubtasksChange 
                   onClick={() => removeItem(item.id)}
                   title="Remove"
                   className="flex items-center justify-center rounded transition-colors duration-150 shrink-0"
-                  style={{ width: 24, height: 24, color: '#6c7086' }}
-                  onMouseEnter={e => { e.currentTarget.style.color = '#DB4437' }}
-                  onMouseLeave={e => { e.currentTarget.style.color = '#6c7086' }}
+                  style={{ width: 24, height: 24, color: 'var(--text-secondary)' }}
+                  onMouseEnter={e => { e.currentTarget.style.color = 'var(--danger)' }}
+                  onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-secondary)' }}
                 >
                   <X size={13} />
                 </button>
@@ -171,9 +171,9 @@ export default function TaskChecklist({ taskId, subtasks = [], onSubtasksChange 
                 onClick={addItem}
                 title="Add"
                 className="flex items-center justify-center rounded transition-colors duration-150 shrink-0"
-                style={{ width: 24, height: 24, color: '#6c7086' }}
-                onMouseEnter={e => { e.currentTarget.style.color = '#89b4fa' }}
-                onMouseLeave={e => { e.currentTarget.style.color = '#6c7086' }}
+                style={{ width: 24, height: 24, color: 'var(--text-secondary)' }}
+                onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent)' }}
+                onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-secondary)' }}
               >
                 <Plus size={13} />
               </button>

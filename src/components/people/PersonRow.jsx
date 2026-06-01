@@ -1,4 +1,4 @@
-import { StatusPill, AvatarCircle } from '../ui'
+﻿import { StatusPill, AvatarCircle } from '../ui'
 
 export default function PersonRow({ person, onClick }) {
   const displayName = person.preferred_name
@@ -15,19 +15,19 @@ export default function PersonRow({ person, onClick }) {
     <div
       onClick={onClick}
       className="flex items-center gap-3 px-4 py-3 border-b last:border-b-0 cursor-pointer transition-opacity hover:opacity-90"
-      style={{ borderColor: '#313244' }}
+      style={{ borderColor: 'var(--border)' }}
     >
       <AvatarCircle src={person.avatar_url} name={displayName} size="sm" />
 
       {/* Name + subtitle */}
       <div className="flex-1 min-w-0">
         <p className="text-sm truncate" style={{
-          color: person.status === 'stale' ? '#6c7086' : '#cdd6f4',
+          color: person.status === 'stale' ? 'var(--text-secondary)' : 'var(--text-primary)',
         }}>
           {displayName}
         </p>
         {subtitle && (
-          <p className="text-xs truncate mt-0.5" style={{ color: '#6c7086' }}>
+          <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-secondary)' }}>
             {subtitle}
           </p>
         )}

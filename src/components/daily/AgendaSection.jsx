@@ -1,4 +1,4 @@
-function fmt(isoString) {
+﻿function fmt(isoString) {
   if (!isoString) return null
   const d = new Date(isoString)
   return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
@@ -8,13 +8,13 @@ function AllDayItem({ title, subtitle, dim }) {
   return (
     <div
       className="flex items-center gap-3 px-4 py-2 border-b last:border-b-0"
-      style={{ borderColor: '#313244' }}
+      style={{ borderColor: 'var(--border)' }}
     >
-      <span className="text-xs font-mono shrink-0 w-16" style={{ color: '#45475a' }}>all day</span>
+      <span className="text-xs font-mono shrink-0 w-16" style={{ color: 'var(--text-dim)' }}>all day</span>
       <div className="flex-1 min-w-0">
-        <p className="text-sm truncate" style={{ color: dim ? '#6c7086' : '#cdd6f4' }}>{title}</p>
+        <p className="text-sm truncate" style={{ color: dim ? 'var(--text-secondary)' : 'var(--text-primary)' }}>{title}</p>
         {subtitle && (
-          <p className="text-xs mt-0.5 truncate" style={{ color: '#45475a' }}>{subtitle}</p>
+          <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-dim)' }}>{subtitle}</p>
         )}
       </div>
     </div>
@@ -27,21 +27,21 @@ function TimedItem({ start, end, title, notes, calendarName }) {
   return (
     <div
       className="flex items-start gap-3 px-4 py-2.5 border-b last:border-b-0"
-      style={{ borderColor: '#313244' }}
+      style={{ borderColor: 'var(--border)' }}
     >
       <div className="shrink-0 w-16">
-        <span className="text-xs font-mono" style={{ color: '#89b4fa' }}>{startFmt}</span>
+        <span className="text-xs font-mono" style={{ color: 'var(--accent)' }}>{startFmt}</span>
         {endFmt && (
-          <span className="block text-xs font-mono" style={{ color: '#45475a' }}>{endFmt}</span>
+          <span className="block text-xs font-mono" style={{ color: 'var(--text-dim)' }}>{endFmt}</span>
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm truncate" style={{ color: '#cdd6f4' }}>{title}</p>
+        <p className="text-sm truncate" style={{ color: 'var(--text-primary)' }}>{title}</p>
         {notes && (
-          <p className="text-xs mt-0.5 leading-relaxed" style={{ color: '#6c7086' }}>{notes}</p>
+          <p className="text-xs mt-0.5 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{notes}</p>
         )}
         {calendarName && (
-          <p className="text-xs mt-0.5 truncate" style={{ color: '#45475a' }}>{calendarName}</p>
+          <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-dim)' }}>{calendarName}</p>
         )}
       </div>
     </div>
@@ -57,13 +57,13 @@ export default function AgendaSection({ calendarEvents = [], dueTasks = [], endi
 
   return (
     <div>
-      <h3 className="text-base font-semibold mb-3" style={{ color: '#cdd6f4' }}>Agenda</h3>
+      <h3 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Agenda</h3>
       <div
         className="rounded-xl border overflow-hidden"
-        style={{ backgroundColor: '#181825', borderColor: '#313244' }}
+        style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
       >
         {empty ? (
-          <p className="px-4 py-3 text-sm" style={{ color: '#6c7086' }}>Nothing on the agenda.</p>
+          <p className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>Nothing on the agenda.</p>
         ) : (
           <>
             {/* All-day: calendar all-day events, tasks due, projects ending */}

@@ -1,8 +1,8 @@
-export default function ContextTag({ tag, onRemove, className = '' }) {
+﻿export default function ContextTag({ tag, onRemove, className = '' }) {
   return (
     <span
       className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${className}`}
-      style={{ backgroundColor: '#ffffff', color: '#1967D2' }}
+      style={{ backgroundColor: 'var(--context-tag-bg)', color: 'var(--context-tag-text)' }}
     >
       {tag}
       {onRemove && (

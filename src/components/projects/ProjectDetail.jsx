@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import {
   updateProject, startPlanning, startProject,
   completeProject, archiveProject, highlightProject,
@@ -27,8 +27,8 @@ function isClarified(project) {
 function FormField({ label, required, children }) {
   return (
     <div>
-      <label className="block text-xs font-medium mb-1.5" style={{ color: '#6c7086' }}>
-        {label}{required && <span style={{ color: '#DB4437' }}> *</span>}
+      <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+        {label}{required && <span style={{ color: 'var(--danger)' }}> *</span>}
       </label>
       {children}
     </div>
@@ -36,7 +36,7 @@ function FormField({ label, required, children }) {
 }
 
 const inputCls  = "w-full px-3 py-2 rounded-lg text-sm border outline-none bg-transparent"
-const inputStyle = { borderColor: '#313244', color: '#cdd6f4' }
+const inputStyle = { borderColor: 'var(--border)', color: 'var(--text-primary)' }
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function ProjectDetail({ project: initialProject, open, onClose, onRefresh }) {
@@ -169,12 +169,12 @@ export default function ProjectDetail({ project: initialProject, open, onClose, 
               value={project.title}
               onChange={e => change('title', e.target.value)}
               className="w-full bg-transparent text-lg font-semibold outline-none border-b pb-1"
-              style={{ color: '#cdd6f4', borderColor: dirty ? '#89b4fa' : 'transparent' }}
+              style={{ color: 'var(--text-primary)', borderColor: dirty ? 'var(--accent)' : 'transparent' }}
             />
           </div>
           <div className="flex items-center gap-2 shrink-0 mt-1">
             {project.is_highlight && <span title="Highlight">⭐</span>}
-            {isArchived && <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: '#313244', color: '#6c7086' }}>Archived</span>}
+            {isArchived && <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: 'var(--border)', color: 'var(--text-secondary)' }}>Archived</span>}
             <StatusPill status={project.status} type="project" />
           </div>
         </div>
@@ -183,10 +183,10 @@ export default function ProjectDetail({ project: initialProject, open, onClose, 
         {project.status === 'inbox' && !clarified && (
           <div
             className="rounded-lg px-4 py-3 mb-4 border text-sm"
-            style={{ backgroundColor: '#2d2410', borderColor: '#FBBC05', color: '#FBBC05' }}
+            style={{ backgroundColor: 'var(--state-warning-bg)', borderColor: 'var(--state-warning-text)', color: 'var(--state-warning-text)' }}
           >
             <p className="font-medium mb-1">📋 Fill in required fields to start planning</p>
-            <p className="text-xs" style={{ color: '#e9c46a' }}>Missing: {missing.join(', ')}</p>
+            <p className="text-xs" style={{ color: 'var(--state-warning-dim)' }}>Missing: {missing.join(', ')}</p>
           </div>
         )}
 
@@ -194,12 +194,12 @@ export default function ProjectDetail({ project: initialProject, open, onClose, 
         {project.status === 'planning' && !canStart && (
           <div
             className="rounded-lg px-4 py-3 mb-4 border text-sm"
-            style={{ backgroundColor: '#1e1e2d', borderColor: '#89b4fa', color: '#89b4fa' }}
+            style={{ backgroundColor: 'var(--state-info-bg)', borderColor: 'var(--accent)', color: 'var(--accent)' }}
           >
             <p className="font-medium">
               🗂 Add at least {Math.max(0, 2 - taskCount)} more task{2 - taskCount !== 1 ? 's' : ''} to start this project
             </p>
-            <p className="text-xs mt-1" style={{ color: '#6c7086' }}>
+            <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
               {taskCount} of 2 minimum tasks added
             </p>
           </div>
@@ -209,10 +209,10 @@ export default function ProjectDetail({ project: initialProject, open, onClose, 
         {project.status === 'stalled' && (
           <div
             className="rounded-lg px-4 py-3 mb-4 border text-sm"
-            style={{ backgroundColor: '#2d1e2d', borderColor: '#673ab7', color: '#cba6f7' }}
+            style={{ backgroundColor: 'var(--state-purple-bg)', borderColor: 'var(--accent-purple)', color: 'var(--accent-purple)' }}
           >
             <p className="font-medium">⚠ Project is stalled</p>
-            <p className="text-xs mt-1" style={{ color: '#9c82b8' }}>
+            <p className="text-xs mt-1" style={{ color: 'var(--state-purple-dim)' }}>
               Move a task to Next Actions to un-stall this project.
             </p>
           </div>
@@ -222,30 +222,30 @@ export default function ProjectDetail({ project: initialProject, open, onClose, 
         {project.status === 'waiting' && (
           <div
             className="rounded-lg px-4 py-3 mb-4 border text-sm"
-            style={{ backgroundColor: '#2d1e1e', borderColor: '#DB4437', color: '#f28b82' }}
+            style={{ backgroundColor: 'var(--state-error-bg)', borderColor: 'var(--danger)', color: 'var(--state-error-text)' }}
           >
             <p className="font-medium">⏳ Project is waiting on blocked tasks</p>
-            <p className="text-xs mt-1" style={{ color: '#c07070' }}>
+            <p className="text-xs mt-1" style={{ color: 'var(--state-error-dim)' }}>
               Clear blockers on waiting tasks to resume.
             </p>
           </div>
         )}
 
         {/* ── Tabs ── */}
-        <div className="flex gap-1 mb-5 border-b" style={{ borderColor: '#313244' }}>
+        <div className="flex gap-1 mb-5 border-b" style={{ borderColor: 'var(--border)' }}>
           {['details', 'tasks', 'notes'].map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
               className="px-4 py-2 text-sm font-medium capitalize border-b-2 -mb-px transition-colors"
               style={{
-                borderColor: tab === t ? '#89b4fa' : 'transparent',
-                color:       tab === t ? '#89b4fa' : '#6c7086',
+                borderColor: tab === t ? 'var(--accent)' : 'transparent',
+                color:       tab === t ? 'var(--accent)' : 'var(--text-secondary)',
               }}
             >
               {t}
               {t === 'tasks' && taskCount > 0 && (
-                <span className="ml-1.5 text-xs" style={{ color: '#6c7086' }}>({taskCount})</span>
+                <span className="ml-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>({taskCount})</span>
               )}
             </button>
           ))}
@@ -306,9 +306,9 @@ export default function ProjectDetail({ project: initialProject, open, onClose, 
             {/* Highlight note */}
             {project.is_highlight && project.highlight_note && (
               <div className="flex items-start gap-2 px-3 py-2 rounded-lg"
-                style={{ backgroundColor: '#2d2a1e' }}>
+                style={{ backgroundColor: 'var(--highlight-note-bg)' }}>
                 <span>⭐</span>
-                <p className="text-sm" style={{ color: '#f9e2af' }}>{project.highlight_note}</p>
+                <p className="text-sm" style={{ color: 'var(--accent-yellow)' }}>{project.highlight_note}</p>
               </div>
             )}
           </div>
@@ -327,7 +327,7 @@ export default function ProjectDetail({ project: initialProject, open, onClose, 
 
         {/* ── Action buttons ── */}
         {!isCompleted && !isArchived && (
-          <div className="mt-6 pt-5 border-t flex flex-wrap gap-2" style={{ borderColor: '#313244' }}>
+          <div className="mt-6 pt-5 border-t flex flex-wrap gap-2" style={{ borderColor: 'var(--border)' }}>
 
             {/* INBOX */}
             {project.status === 'inbox' && (
@@ -382,7 +382,7 @@ export default function ProjectDetail({ project: initialProject, open, onClose, 
 
         {/* COMPLETED actions */}
         {isCompleted && (
-          <div className="mt-6 pt-5 border-t flex flex-wrap gap-2" style={{ borderColor: '#313244' }}>
+          <div className="mt-6 pt-5 border-t flex flex-wrap gap-2" style={{ borderColor: 'var(--border)' }}>
             {!project.is_highlight && (
               <Button variant="secondary" size="sm" onClick={() => setShowHighlight(true)}>
                 ⭐ Add to Highlights

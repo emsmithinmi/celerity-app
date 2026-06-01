@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
 
@@ -30,7 +30,7 @@ export default function HighlightModal({ open, onClose, onConfirm, title = 'Add 
       }
     >
       <div className="space-y-3">
-        <p className="text-sm" style={{ color: '#6c7086' }}>
+        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
           Optionally add a note about why this is worth remembering.
         </p>
         <textarea
@@ -40,9 +40,9 @@ export default function HighlightModal({ open, onClose, onConfirm, title = 'Add 
           rows={3}
           autoFocus
           className="w-full px-3 py-2 rounded-lg text-sm border outline-none resize-none"
-          style={{ backgroundColor: '#1e1e2e', borderColor: '#313244', color: '#cdd6f4' }}
-          onFocus={e => e.target.style.borderColor = '#89b4fa'}
-          onBlur={e => e.target.style.borderColor = '#313244'}
+          style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+          onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+          onBlur={e => e.target.style.borderColor = 'var(--border)'}
         />
       </div>
     </Modal>

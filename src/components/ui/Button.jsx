@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Button variants:
  *   primary   — blue, main CTA
  *   secondary — subtle outlined
@@ -12,40 +12,40 @@
 
 const VARIANTS = {
   primary: {
-    bg: '#89b4fa',
-    text: '#1e1e2e',
-    hover: '#7aa2f7',
+    bg: 'var(--accent)',
+    text: 'var(--app-bg)',
+    hover: 'var(--accent-hover)',
     border: 'transparent',
   },
   secondary: {
     bg: 'transparent',
-    text: '#cdd6f4',
-    hover: '#313244',
-    border: '#313244',
+    text: 'var(--text-primary)',
+    hover: 'var(--border)',
+    border: 'var(--border)',
   },
   ghost: {
     bg: 'transparent',
-    text: '#6c7086',
-    hover: '#313244',
+    text: 'var(--text-secondary)',
+    hover: 'var(--border)',
     border: 'transparent',
   },
   danger: {
-    bg: '#DB4437',
+    bg: 'var(--danger)',
     text: '#ffffff',
-    hover: '#c53929',
+    hover: 'var(--danger-hover)',
     border: 'transparent',
   },
   success: {
-    bg: '#0F9D58',
-    text: '#000000',
-    hover: '#0b7a42',
+    bg: 'var(--success)',
+    text: 'var(--success-text)',
+    hover: 'var(--success-hover)',
     border: 'transparent',
   },
   action: {
-    bg: '#313244',
-    text: '#cdd6f4',
-    hover: '#414255',
-    border: '#414255',
+    bg: 'var(--border)',
+    text: 'var(--text-primary)',
+    hover: 'var(--surface-2)',
+    border: 'var(--surface-2)',
   },
 }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useDaily } from '../hooks/useDaily'
@@ -56,25 +56,25 @@ function DateHeader({ dateStr, isToday, onPrev, onNext, onToday }) {
         <button
           onClick={onPrev}
           className="flex items-center justify-center rounded-lg transition-colors"
-          style={{ width: 32, height: 32, color: '#6c7086', backgroundColor: '#313244' }}
-          onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#45475a'; e.currentTarget.style.color = '#cdd6f4' }}
-          onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#313244'; e.currentTarget.style.color = '#6c7086' }}
+          style={{ width: 32, height: 32, color: 'var(--text-secondary)', backgroundColor: 'var(--border)' }}
+          onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--text-dim)'; e.currentTarget.style.color = 'var(--text-primary)' }}
+          onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
           title="Previous day"
         >
           <ChevronLeft size={18} />
         </button>
 
         {/* Day name */}
-        <p className="text-4xl font-normal tracking-widest uppercase w-64 text-center" style={{ color: '#FB9039' }}>
+        <p className="text-4xl font-normal tracking-widest uppercase w-64 text-center" style={{ color: 'var(--highlight)' }}>
           {DAYS[d.getDay()]}
         </p>
 
         <button
           onClick={onNext}
           className="flex items-center justify-center rounded-lg transition-colors"
-          style={{ width: 32, height: 32, color: '#6c7086', backgroundColor: '#313244' }}
-          onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#45475a'; e.currentTarget.style.color = '#cdd6f4' }}
-          onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#313244'; e.currentTarget.style.color = '#6c7086' }}
+          style={{ width: 32, height: 32, color: 'var(--text-secondary)', backgroundColor: 'var(--border)' }}
+          onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--text-dim)'; e.currentTarget.style.color = 'var(--text-primary)' }}
+          onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
           title="Next day"
         >
           <ChevronRight size={18} />
@@ -82,10 +82,10 @@ function DateHeader({ dateStr, isToday, onPrev, onNext, onToday }) {
       </div>
 
       {/* Divider line */}
-      <div className="my-2 h-px mx-auto w-20" style={{ backgroundColor: '#313244' }} />
+      <div className="my-2 h-px mx-auto w-20" style={{ backgroundColor: 'var(--border)' }} />
 
       {/* Full date */}
-      <h1 className="text-5xl font-bold" style={{ color: '#cdd6f4' }}>
+      <h1 className="text-5xl font-bold" style={{ color: 'var(--text-primary)' }}>
         {MONTHS[d.getMonth()]} {d.getDate()}, {d.getFullYear()}
       </h1>
 
@@ -95,9 +95,9 @@ function DateHeader({ dateStr, isToday, onPrev, onNext, onToday }) {
           <button
             onClick={onToday}
             className="px-3 py-1 rounded-full text-xs font-medium transition-colors"
-            style={{ backgroundColor: '#FB9039', color: '#1e1e2e' }}
-            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#e07820'}
-            onMouseLeave={e => e.currentTarget.style.backgroundColor = '#FB9039'}
+            style={{ backgroundColor: 'var(--highlight)', color: 'var(--app-bg)' }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--highlight-hover)'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--highlight)'}
           >
             ↩ Back to Today
           </button>
@@ -109,7 +109,7 @@ function DateHeader({ dateStr, isToday, onPrev, onNext, onToday }) {
 
 // ─── Divider ──────────────────────────────────────────────────────────────────
 function Divider() {
-  return <hr style={{ borderColor: '#313244' }} />
+  return <hr style={{ borderColor: 'var(--border)' }} />
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
@@ -150,7 +150,7 @@ export default function Daily() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p className="text-sm" style={{ color: '#6c7086' }}>Loading…</p>
+        <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p>
       </div>
     )
   }
@@ -158,7 +158,7 @@ export default function Daily() {
   if (error) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p className="text-sm" style={{ color: '#DB4437' }}>Error: {error}</p>
+        <p className="text-sm" style={{ color: 'var(--danger)' }}>Error: {error}</p>
       </div>
     )
   }
