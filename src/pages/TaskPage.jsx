@@ -551,8 +551,13 @@ export default function TaskPage() {
                     <Button variant="danger" size="sm" onClick={() => setShowDidIt(true)}>{TASK_ACTIONS.did_it}</Button>
                     {clarified && (
                       <>
-                        <Button variant="success"   size="sm" onClick={handleClarifyRoute}>{TASK_ACTIONS.next_action}</Button>
-                        {!hasProject && <Button variant="secondary" size="sm" onClick={() => setShowRoute(true)}>Assign to Project →</Button>}
+                        {hasProject
+                          ? <Button variant="success" size="sm" onClick={handleQueue}>{TASK_ACTIONS.queue}</Button>
+                          : <>
+                              <Button variant="success"   size="sm" onClick={handleClarifyRoute}>{TASK_ACTIONS.next_action}</Button>
+                              <Button variant="secondary" size="sm" onClick={() => setShowRoute(true)}>Assign to Project →</Button>
+                            </>
+                        }
                       </>
                     )}
                     <span className="ml-auto"><TrashBtn onClick={() => setShowDiscard(true)} /></span>
