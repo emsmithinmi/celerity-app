@@ -548,14 +548,14 @@ export default function TaskPage() {
               <div className="flex flex-wrap gap-2">
                 {task.status === 'inbox' && (
                   <>
-                    <Button variant="danger"  size="sm" onClick={() => setShowDidIt(true)}>{TASK_ACTIONS.did_it}</Button>
-                    <TrashBtn onClick={() => setShowDiscard(true)} />
+                    <Button variant="danger" size="sm" onClick={() => setShowDidIt(true)}>{TASK_ACTIONS.did_it}</Button>
                     {clarified && (
                       <>
                         <Button variant="success"   size="sm" onClick={handleClarifyRoute}>{TASK_ACTIONS.next_action}</Button>
-                        <Button variant="secondary" size="sm" onClick={() => setShowRoute(true)}>Assign to Project →</Button>
+                        {!hasProject && <Button variant="secondary" size="sm" onClick={() => setShowRoute(true)}>Assign to Project →</Button>}
                       </>
                     )}
+                    <span className="ml-auto"><TrashBtn onClick={() => setShowDiscard(true)} /></span>
                   </>
                 )}
                 {task.status === 'next_action' && (
