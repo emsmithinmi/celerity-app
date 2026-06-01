@@ -8,6 +8,11 @@ All notable changes to Celerity are recorded here.
 
 _Nothing pending — all changes committed and deployed._
 
+## 2026-06-01 (7)
+
+### Changed
+- **Code Challenge habit** hidden from the daily Habits section — still tracked on the Habits page and auto-marked when a challenge is submitted.
+
 ## 2026-06-01 (6)
 
 ### Fixed
