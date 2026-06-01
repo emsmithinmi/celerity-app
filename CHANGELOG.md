@@ -1,139 +1,17 @@
 # Changelog
 
-All notable changes to Celerity are recorded here.
-
----
-
-## [Unreleased]
-
-_Nothing pending — all changes committed and deployed._
-
----
-
-## 2026-06-01 — Review Overhaul (Phase 1)
-
-### Changed
-- **Reviews page fully rebuilt** — replaced the scroll-and-fill form layout with a guided 3-step flow:
-  - **Step 1 — Capture**: four capture buttons (Task, Project, Note, Person) that open existing quick-capture modals in sequence; captured items shown as a running list in the session
-  - **Step 2 — Clarify**: five sections surfacing what needs attention — Inbox Tasks, Inbox Projects, Inbox People, Stalled Projects (in_progress with no active tasks), Overdue Tasks; each item has ✓ (done/activate) and 🗑 (scrap) actions plus a link to its full detail page; ✓ on a task sets status to `done`, on a project sets `completed`, on a person sets `active`
-  - **Step 3 — Reflect**: AI-powered conversational interview in bubble-chat style (iMessage feel); AI reads tasks, projects, habits, and last 30 days of notes before asking the first question; questions are personalized to actual project/task names; collapsible reference cards for Next Actions and In Progress Projects; scratchpad note field; Generate button produces tomorrow's Top of Mind, Agenda, and Challenge; suggestion cards appear after Complete Review is clicked
-- Weekly and Monthly review tabs preserved but show a coming-soon placeholder — they follow next
-- Step progress bar replaces the old type tabs for daily review; back-navigation supported between steps
+## [Unreleased] — 2026-06-01
 
 ### Added
-- `src/lib/ai/skills/reflectReview.js` — new AI skill with three exported functions:
-  - `buildReflectContext()` — pulls projects, tasks, inbox, notes, habits, stalled/overdue data
-  - `generateReflectQuestions(ctx)` — calls AI to produce 4-5 personalized interview questions based on live data
-  - `generateReflectPlan(ctx, conversation, scratchpad)` — generates tomorrow's plan using the full interview conversation as context
-  - `writeReflectResults(reviewId, result)` — writes top_of_mind, agenda, challenge to tomorrow's daily note; saves suggestions to the review record
-
----
-
-## 2026-05-26 (evening)
-
-### Added
-- **Extended People profile** — Person pages now have rich contact information:
-  - **Identity**: Professional Title (Dr., Mr., etc.), First/Last/Preferred Name, Relationship (Wife, Son, Colleague…), Contact Type, Company, Occupation
-  - **Contact Details**: Personal Email, Work Email, Personal Phone, Work Phone, Birthday
-  - **Addresses**: structured Home address (street, city, state, zip) and Work address
-  - **Social Media**: dynamic list of platform + handle/URL entries (supports Twitter/X, LinkedIn, GitHub, etc.)
-  - **Notes**: freeform notes field
-- DB migration: added `social_media` (jsonb), `is_stale` (boolean), `notes` (text), `address_work_street/city/state/zip` columns
+- **Context tags on tasks** — `context text[]` column added to the `tasks` table. Tags can be added/removed from the new Context Tags section on the task detail page (`/tasks/:id`) and from the Context tab in the task modal. Tags also appear as `@tag` chips in the task list rows.
+- **Theme switcher** — Catppuccin Mocha (default) and GitHub Dark themes. Toggle in Settings → Appearance. Choice persists to `localStorage`.
 
 ### Changed
-- **Person detail page** fully rewritten into grouped sections (Identity, Contact Details, Addresses, Social Media, Notes)
-- **"Last Contact"** removed from UI (column kept in DB for data safety)
-- `PersonRow` subtitle now shows relationship, occupation, or company instead of last-contact date
-- `updatePerson` in `people.js` strips legacy field names (`phone`, `email`, `last_contact_at`) to prevent DB errors
-
-### Fixed
-- `people_contact_type_check` DB constraint (only allowed `Personal/Work/Services`) dropped — contact type field now accepts any value
+- **Sidebar layout** — user avatar and email moved to the top of the sidebar; "Celerity" label and Sign Out button moved to the bottom.
+- **Context tags UX** — dropdown combobox shows all tags used across your tasks as toggleable chips; free-text input for adding new tags. Tags save immediately on the full task page, and with the form on the modal.
 
 ---
 
-## 2026-05-26
+## Prior to changelog
 
-### Added
-- **Day navigation on the Daily page** — ‹ › chevrons around the day name let you browse any past or future date; a "↩ Back to Today" pill appears when you're not on today; navigating to a day without a note creates one automatically
-- **Settings page** (`/settings`) — manage Energy Levels, Priorities, and Areas directly in the app with no code changes or DB migrations needed
-  - **Energy Levels**: add/edit/delete, full color picker, live badge preview
-  - **Priorities**: add/edit/delete, badge color pickers, live preview; `tasks_priority_check` and `projects_priority_check` constraints dropped so new values can be added freely
-  - **Areas**: simple name list with add/rename/delete; shown as autocomplete suggestions (`<datalist>`) in task and project forms — free-text still allowed
-- Settings ⚙️ link added to sidebar above Sign out
-- `EnergyLevelsContext`, `PrioritiesContext`, `AreasContext` — each fetches from the DB once at app load and shares data app-wide via React context
-- Daily notes can now be **expanded** (Show more / Show less), **edited inline**, and **deleted** — pencil and trash icons on each note entry
-- **Errand** energy level added (purple badge, 🛒)
-- **Scrap it** button on Project pages — permanently deletes the project and all its tasks (cascade: junction tables → comments → tasks → project)
-- `deletePerson()` with full cascade (task_people, project_people, people_comments)
-
-### Changed
-- **Stat cards on Daily page**:
-  - Moved from above Top of Mind to directly below it
-  - Relabelled: Projects in Progress · Next Actions · Due Today · Tasks Waiting · Stalled Projects
-  - **Due Today** now includes: tasks with `due_date` on the viewed date, all scheduled tasks, urgent/STAT priority tasks (deduped, done excluded), and projects whose `end_date` falls on that day
-  - Cards reflect the currently viewed date when navigating between days
-- Stat chip numbers on **Tasks, Projects, and People** list pages changed to uniform white — removed per-status color coding
-- `EnergyBadge` and `PriorityBadge` now read label, icon, and colors from the database instead of hardcoded objects
-- Priority dropdowns in TaskPage, TaskDetail, ProjectPage, ProjectDetail now driven by `PrioritiesContext`
-- Area fields upgraded from plain text inputs to `<datalist>` (type freely or pick from managed list)
-- All "Edit" text buttons replaced with a pencil icon across Task, Project, Person, and Review pages
-- Delete buttons standardised to solid red with a trash icon only — consistent across tasks, projects, and people
-- "Actions" section renamed to **"What's Next?"** on Task, Project, and Person detail pages
-- Daily page: horizontal padding added; New buttons and Review buttons centred
-- Day-of-week text on Daily page: bold → normal weight (gold color and size unchanged)
-- Daily quote now reflects the day being viewed (not always today's quote)
-- `getDailyStats` accepts a date parameter; `refreshStats` in the hook uses the currently viewed date
-
-### Fixed
-- React hooks order violation on ProjectPage (`scrapping` useState was declared after early returns)
-
----
-
-## 2026-05-25
-
-### Added
-- Auto-rotating **daily quote** under the date header — seeded by day-of-year, changes each day, no API calls (75 curated quotes)
-- Inbox tab added to the task list on Project detail pages
-
-### Changed
-- Daily page: horizontal padding, centred New buttons bar, centred Review buttons bar
-- Day-of-week text: bold → normal weight
-
-### Fixed
-- `createTask` silently dropping `project_id` — tasks created from a project now correctly linked
-- `TaskPage` save: `description` missing from update payload; `duration` interval type mismatch corrected
-- `try/catch/finally` added to all detail-page save handlers so loading state always resets on error
-
----
-
-## 2026-05-25 — Major UX Redesign
-
-### Changed
-- Tasks, Projects, People: replaced modal-based detail views with full dedicated pages (`/tasks/:id`, `/projects/:id`, `/people/:id`)
-- Dashboard replaced by stat-card strip on the Daily page
-- Sidebar is now collapsible (icon-only mode)
-- All list pages show a stat summary row and navigate on row click
-
----
-
-## 2026-05-23 — Initial Build
-
-### Added
-- Project scaffold: Vite + React 18 + Tailwind CSS v4 + Supabase + React Router v6
-- Magic link authentication with custom SMTP via Resend
-- Core UI component library: Button, Modal, ConfirmDialog, StatusPill, PriorityBadge, EnergyBadge, DurationDisplay
-- **Daily page** — date header, top-of-mind, agenda, habit toggles, notes log, quick capture modals
-- **Tasks page** — full GTD lifecycle (Inbox → Next Action → Queued → Waiting → Someday → Done)
-- **Projects page** — tabbed by status, task list, comments, linked people
-- **People page** — contact lifecycle (Inbox → Active → Stale), linked tasks/projects, comments
-- **Habits page** — calendar heatmap, streaks, percentage bars, time-frame selector
-- **Reviews page** — Daily / Weekly / Monthly with autosave and suggestion cards
-- PWA: service worker (Workbox generateSW), app manifest, installable on mobile
-- GitHub Actions deploy: push to `main` → `npm run build` → Cloudflare Pages via Wrangler
-- Supabase RLS on all tables (`USING (true)`, `GRANT ALL TO authenticated`)
-
----
-
-## 2026-05-20
-
-- Initial file upload to repository
+See git log for history before 2026-06-01.
