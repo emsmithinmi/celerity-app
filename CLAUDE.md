@@ -163,7 +163,7 @@ All tables have RLS enabled with `USING (true) WITH CHECK (true)` + `GRANT ALL T
 | `calendar_events` | id (text PK), date, summary, start_time (timestamptz), end_time (timestamptz), all_day (bool), calendar_name, notes, synced_at |
 | `energy_levels` | id, value, label, icon, bg_color, text_color, sort_order |
 | `priorities` | id, value, label, bg_color, text_color, sort_order |
-| `areas` | id, name, sort_order |
+| `areas` | id, value, label, sort_order |
 | `habits` | (separate habit tracking table) |
 | `habit_history` | (per-date habit records) |
 | `task_comments` | id, task_id, body, created_at |
