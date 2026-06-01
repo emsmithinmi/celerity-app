@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Trash2, Pencil, Plus, X } from 'lucide-react'
+import { Plus, X } from 'lucide-react'
 import {
   getPerson, updatePerson, activatePerson, deletePerson,
   getPersonTasks, getPersonProjects, uploadPersonAvatar,
@@ -8,7 +8,7 @@ import {
 import AvatarCircle from '../components/ui/AvatarCircle'
 import Button from '../components/ui/Button'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
-import { StatusPill } from '../components/ui'
+import { StatusPill, PencilBtn, TrashBtn } from '../components/ui'
 import PersonComments from '../components/people/PersonComments'
 import { PEOPLE_STATUSES } from '../lib/constants'
 
@@ -19,36 +19,6 @@ const CONTACT_TYPES   = ['colleague', 'friend', 'family', 'client', 'vendor', 'm
 const SOCIAL_PLATFORMS = ['Twitter/X', 'LinkedIn', 'Instagram', 'Facebook', 'GitHub', 'YouTube', 'TikTok', 'Bluesky', 'Mastodon', 'Other']
 
 // ─── Small helpers ────────────────────────────────────────────────────────────
-
-function PencilBtn({ onClick, title = 'Edit' }) {
-  return (
-    <button
-      onClick={onClick}
-      title={title}
-      className="flex items-center justify-center rounded-md transition-colors duration-150"
-      style={{ width: 30, height: 30, backgroundColor: 'transparent', color: 'var(--text-secondary)' }}
-      onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }}
-      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
-    >
-      <Pencil size={14} />
-    </button>
-  )
-}
-
-function TrashBtn({ onClick, title = 'Remove contact' }) {
-  return (
-    <button
-      onClick={onClick}
-      title={title}
-      className="flex items-center justify-center rounded-md transition-colors duration-150"
-      style={{ width: 30, height: 30, backgroundColor: 'var(--danger)', color: '#fff' }}
-      onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--danger-hover)'}
-      onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--danger)'}
-    >
-      <Trash2 size={14} />
-    </button>
-  )
-}
 
 function ReadField({ label, value, fallback = '—', link }) {
   return (

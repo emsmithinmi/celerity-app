@@ -1,6 +1,5 @@
 ﻿import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Trash2, Pencil } from 'lucide-react'
 import {
   getTask, updateTask, completeTask, didIt,
   moveToNextAction, moveToQueued, moveToWaiting,
@@ -9,7 +8,7 @@ import {
 import { checkProjectStalled } from '../lib/api/projects'
 import Button from '../components/ui/Button'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
-import { StatusPill, PriorityBadge, EnergyBadge } from '../components/ui'
+import { StatusPill, PriorityBadge, EnergyBadge, PencilBtn, TrashBtn } from '../components/ui'
 import DurationInput from '../components/tasks/DurationInput'
 import { formatDuration } from '../components/ui/DurationDisplay'
 import WaitingModal from '../components/tasks/WaitingModal'
@@ -30,35 +29,6 @@ function isClarified(task) {
 const inputCls = 'w-full px-3 py-2 rounded-lg text-sm border outline-none bg-transparent'
 const inputStyle = { borderColor: 'var(--border)', color: 'var(--text-primary)' }
 
-function PencilBtn({ onClick, title = 'Edit' }) {
-  return (
-    <button
-      onClick={onClick}
-      title={title}
-      className="flex items-center justify-center rounded-md transition-colors duration-150"
-      style={{ width: 30, height: 30, backgroundColor: 'transparent', color: 'var(--text-secondary)' }}
-      onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }}
-      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
-    >
-      <Pencil size={14} />
-    </button>
-  )
-}
-
-function TrashBtn({ onClick, title = 'Scrap it' }) {
-  return (
-    <button
-      onClick={onClick}
-      title={title}
-      className="flex items-center justify-center rounded-md transition-colors duration-150"
-      style={{ width: 30, height: 30, backgroundColor: 'var(--danger)', color: '#fff' }}
-      onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--danger-hover)'}
-      onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--danger)'}
-    >
-      <Trash2 size={14} />
-    </button>
-  )
-}
 
 function ReadField({ label, value, fallback = '—' }) {
   return (

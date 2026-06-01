@@ -1,25 +1,11 @@
 ﻿import { useState } from 'react'
-import { Pencil, Plus, X } from 'lucide-react'
+import { Plus, X } from 'lucide-react'
 import { updateTask } from '../../lib/api/tasks'
 import Button from '../ui/Button'
+import { PencilBtn } from '../ui'
 
 function genId() {
   return Math.random().toString(36).slice(2, 10)
-}
-
-function PencilBtn({ onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      title="Edit subtasks"
-      className="flex items-center justify-center rounded-md transition-colors duration-150"
-      style={{ width: 30, height: 30, backgroundColor: 'transparent', color: 'var(--text-secondary)' }}
-      onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }}
-      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
-    >
-      <Pencil size={14} />
-    </button>
-  )
 }
 
 const inputCls = 'flex-1 px-2 py-1 rounded text-sm border outline-none bg-transparent'

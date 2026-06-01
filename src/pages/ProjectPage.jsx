@@ -1,6 +1,5 @@
 ﻿import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Trash2, Pencil } from 'lucide-react'
 import {
   getProject, updateProject, startPlanning, startProject,
   completeProject, archiveProject, highlightProject, scrapeProject,
@@ -9,7 +8,7 @@ import { supabase } from '../lib/supabase'
 import { useTasks } from '../hooks/useTasks'
 import Button from '../components/ui/Button'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
-import { StatusPill, PriorityBadge } from '../components/ui'
+import { StatusPill, PriorityBadge, PencilBtn, TrashBtn } from '../components/ui'
 import HighlightModal from '../components/tasks/HighlightModal'
 import ProjectComments from '../components/projects/ProjectComments'
 import ProjectTaskList from '../components/projects/ProjectTaskList'
@@ -17,35 +16,6 @@ import { PROJECT_ACTIONS } from '../lib/constants'
 import { usePriorities } from '../contexts/PrioritiesContext'
 import { useAreas }      from '../contexts/AreasContext'
 
-function PencilBtn({ onClick, title = 'Edit' }) {
-  return (
-    <button
-      onClick={onClick}
-      title={title}
-      className="flex items-center justify-center rounded-md transition-colors duration-150"
-      style={{ width: 30, height: 30, backgroundColor: 'transparent', color: 'var(--text-secondary)' }}
-      onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }}
-      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
-    >
-      <Pencil size={14} />
-    </button>
-  )
-}
-
-function TrashBtn({ onClick, title = 'Scrap it' }) {
-  return (
-    <button
-      onClick={onClick}
-      title={title}
-      className="flex items-center justify-center rounded-md transition-colors duration-150"
-      style={{ width: 30, height: 30, backgroundColor: 'var(--danger)', color: '#fff' }}
-      onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--danger-hover)'}
-      onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--danger)'}
-    >
-      <Trash2 size={14} />
-    </button>
-  )
-}
 
 const PLAN_REQUIRED = ['area', 'description', 'start_date', 'end_date']
 function isClarified(project) {
