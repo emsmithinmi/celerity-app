@@ -11,6 +11,8 @@ export async function getProjects(filters = {}) {
 
   if (filters.status) query = query.eq('status', filters.status)
   if (filters.area) query = query.eq('area', filters.area)
+  if (filters.end_date) query = query.eq('end_date', filters.end_date)
+  if (filters.start_date) query = query.eq('start_date', filters.start_date)
   if (filters.archived === false) query = query.is('archived_at', null)
   if (filters.archived === true) query = query.not('archived_at', 'is', null)
 
