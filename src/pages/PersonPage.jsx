@@ -617,7 +617,7 @@ export default function PersonPage() {
                 Send Email
               </Button>
             )}
-            <TrashBtn onClick={() => setShowDelete(true)} title="Remove contact" />
+            <span className="ml-auto"><TrashBtn onClick={() => setShowDelete(true)} title="Remove contact" /></span>
           </div>
         </section>
 

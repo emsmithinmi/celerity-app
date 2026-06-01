@@ -396,7 +396,7 @@ export default function ProjectPage() {
                     <Button variant="primary" size="sm" onClick={handleStartPlanning} disabled={!clarified}>
                       {PROJECT_ACTIONS.start_planning}
                     </Button>
-                    <TrashBtn onClick={() => setShowDiscard(true)} />
+                    <span className="ml-auto"><TrashBtn onClick={() => setShowDiscard(true)} /></span>
                   </>
                 )}
                 {project.status === 'planning' && (
@@ -405,7 +405,7 @@ export default function ProjectPage() {
                       {PROJECT_ACTIONS.start}
                     </Button>
                     <Button variant="secondary" size="sm" onClick={handleComplete}>{PROJECT_ACTIONS.complete}</Button>
-                    <TrashBtn onClick={() => setShowDiscard(true)} />
+                    <span className="ml-auto"><TrashBtn onClick={() => setShowDiscard(true)} /></span>
                   </>
                 )}
                 {project.status === 'in_progress' && (
@@ -413,7 +413,7 @@ export default function ProjectPage() {
                     <Button variant="success" size="sm" onClick={handleComplete} disabled={completing}>
                       {completing ? 'Completing…' : PROJECT_ACTIONS.complete}
                     </Button>
-                    <TrashBtn onClick={() => setShowDiscard(true)} />
+                    <span className="ml-auto"><TrashBtn onClick={() => setShowDiscard(true)} /></span>
                   </>
                 )}
                 {(project.status === 'stalled' || project.status === 'waiting') && (
@@ -423,7 +423,7 @@ export default function ProjectPage() {
                         ? 'Move a task to Next Actions to un-stall this project.'
                         : 'Clear blockers on waiting tasks to resume.'}
                     </p>
-                    <TrashBtn onClick={() => setShowDiscard(true)} />
+                    <span className="ml-auto"><TrashBtn onClick={() => setShowDiscard(true)} /></span>
                   </>
                 )}
               </div>
