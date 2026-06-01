@@ -107,8 +107,6 @@ function DateHeader({ dateStr, isToday, onPrev, onNext, onToday }) {
   )
 }
 
-}
-
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Daily() {
   const navigate = useNavigate()
