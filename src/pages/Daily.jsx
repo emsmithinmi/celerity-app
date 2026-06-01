@@ -205,6 +205,7 @@ export default function Daily() {
 
         {/* Agenda */}
         <AgendaSection
+          storedAgenda={note?.agenda ?? []}
           scheduledTasks={scheduledTasks}
           projectDates={projectDates}
         />
@@ -239,6 +240,7 @@ export default function Daily() {
         <ChallengeSection
           challenge={note?.code_challenge}
           onUpdate={handleChallengeUpdate}
+          onComplete={() => toggleHabit('habit_code_challenge', true)}
         />
         <Divider />
 

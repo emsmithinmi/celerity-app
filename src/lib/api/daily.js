@@ -47,6 +47,7 @@ export async function ensureNoteForDate(date) {
       habit_breathwork: false,
       habit_stretching: false,
       habit_health_tracking: false,
+      habit_code_challenge: false,
     })
     .select()
     .single()
@@ -79,7 +80,7 @@ export async function getHabitHistory(days = 30) {
 
   const { data, error } = await supabase
     .from('daily_notes')
-    .select('date, habit_morning_meds, habit_evening_meds, habit_journal, habit_meditation, habit_breathwork, habit_stretching, habit_health_tracking')
+    .select('date, habit_morning_meds, habit_evening_meds, habit_journal, habit_meditation, habit_breathwork, habit_stretching, habit_health_tracking, habit_code_challenge')
     .gte('date', sinceStr)
     .order('date', { ascending: true })
   if (error) throw error

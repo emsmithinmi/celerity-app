@@ -8,6 +8,17 @@ import { updateSuggestions } from '../../api/reviews'
 async function buildContext(reviewContent = {}) {
   const today = new Date().toISOString().split('T')[0]
 
+  // Fetch the most recent completed challenge for critique + progression
+  const recentChallengeRes = await supabase
+    .from('daily_notes')
+    .select('date, code_challenge')
+    .not('code_challenge', 'is', null)
+    .order('date', { ascending: false })
+    .limit(10)
+
+  const lastCompleted = (recentChallengeRes.data ?? [])
+    .find(n => n.code_challenge?.completed === true)
+
   const [projectsRes, activeTasksRes, inboxRes, notesRes, todayNoteRes] = await Promise.all([
     supabase
       .from('projects')
@@ -62,7 +73,7 @@ async function buildContext(reviewContent = {}) {
     health_tracking: todayNote.habit_health_tracking,
   } : {}
 
-  return { today, projects, activeTasks, inboxTasks, inboxCount: inboxTasks.length, recentNotes, stalledRisk, habits, reviewContent }
+  return { today, projects, activeTasks, inboxTasks, inboxCount: inboxTasks.length, recentNotes, stalledRisk, habits, reviewContent, lastCompletedChallenge: lastCompleted ?? null }
 }
 
 // ─── System Prompt ────────────────────────────────────────────────────────────
@@ -80,7 +91,7 @@ You must respond with valid JSON only — no markdown, no preamble, no explanati
 // ─── User Prompt Builder ──────────────────────────────────────────────────────
 
 function buildPrompt(ctx) {
-  const { today, projects, activeTasks, inboxCount, inboxTasks, recentNotes, stalledRisk, habits, reviewContent } = ctx
+  const { today, projects, activeTasks, inboxCount, inboxTasks, recentNotes, stalledRisk, habits, reviewContent, lastCompletedChallenge } = ctx
   const lines = []
 
   lines.push(`TODAY: ${today}`)
@@ -153,6 +164,20 @@ function buildPrompt(ctx) {
     lines.push('')
   }
 
+  // Challenge context — only include if there's a completed one to build from
+  if (lastCompletedChallenge) {
+    const c = lastCompletedChallenge.code_challenge
+    lines.push(`LAST COMPLETED CHALLENGE (${lastCompletedChallenge.date}):`)
+    lines.push(`Topic: ${c.topic} | Difficulty: ${c.difficulty}`)
+    lines.push(`Prompt: ${c.prompt}`)
+    if (c.user_response) lines.push(`Their answer: ${c.user_response.slice(0, 400)}`)
+    lines.push('Generate a NEW challenge that critiques their answer and builds on the same concept or progresses to the next idea.')
+    lines.push('')
+  } else {
+    lines.push('NO completed challenge exists yet. Generate a fresh beginner-friendly challenge.')
+    lines.push('')
+  }
+
   lines.push('---')
   lines.push('Respond with this exact JSON structure:')
   lines.push(`{
@@ -164,7 +189,8 @@ function buildPrompt(ctx) {
     "topic": "python|ai|llm|general",
     "difficulty": "beginner|intermediate|advanced",
     "prompt": "string",
-    "hint": "string"
+    "hint": "string",
+    "ai_feedback": "string or null — critique of their last answer if one exists, otherwise null"
   },
   "quote": { "text": "string", "author": "string" },
   "suggestions": [
@@ -175,7 +201,7 @@ function buildPrompt(ctx) {
 Rules:
 - top_of_mind: 3-5 items, reference actual project/task names
 - agenda: 3-8 time blocks for TOMORROW, prioritise urgent/due tasks
-- challenge: tailored to their current projects and interests from their notes
+- challenge: always generate one; if last was completed, critique it in ai_feedback and build the new prompt on it
 - quote: fitting to their current work or mindset, not generic
 - suggestions: 2-6 actionable observations, flag stalled projects, forgotten tasks, patterns`)
 
@@ -189,10 +215,12 @@ function parseResponse(raw) {
   const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
   const parsed = JSON.parse(cleaned)
 
+  const challenge = parsed.challenge ?? null
+
   return {
     top_of_mind: Array.isArray(parsed.top_of_mind) ? parsed.top_of_mind : [],
     agenda:      Array.isArray(parsed.agenda)       ? parsed.agenda      : [],
-    challenge:   parsed.challenge ?? null,
+    challenge:   challenge ? { ...challenge, completed: false, user_response: null } : null,
     quote:       parsed.quote     ?? null,
     suggestions: Array.isArray(parsed.suggestions)  ? parsed.suggestions : [],
   }

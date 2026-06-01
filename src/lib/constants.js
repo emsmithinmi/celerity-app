@@ -73,6 +73,7 @@ export const HABITS = [
   { key: 'habit_breathwork',      label: 'Breathwork',      icon: '🌬️' },
   { key: 'habit_stretching',      label: 'Stretching',      icon: '🤸' },
   { key: 'habit_health_tracking', label: 'Health Tracking', icon: '❤️' },
+  { key: 'habit_code_challenge',  label: 'Code Challenge',  icon: '💻' },
 ]
 
 // ─── Review Types ─────────────────────────────────────────────────────────────
