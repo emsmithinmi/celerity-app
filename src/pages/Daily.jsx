@@ -107,9 +107,6 @@ function DateHeader({ dateStr, isToday, onPrev, onNext, onToday }) {
   )
 }
 
-// ─── Divider ──────────────────────────────────────────────────────────────────
-function Divider() {
-  return <hr style={{ borderColor: 'var(--border)' }} />
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
@@ -177,7 +174,7 @@ export default function Daily() {
           onToday={goToday}
         />
         <DailyQuote note={note} dateStr={selectedDate} />
-        <Divider />
+
 
         {/* Quick action bar */}
         <div className="flex gap-2 flex-wrap justify-center">
@@ -206,7 +203,7 @@ export default function Daily() {
 
         {/* Stat cards — sit under Top of Mind */}
         <StatCards stats={stats} />
-        <Divider />
+
 
         {/* Agenda */}
         <AgendaSection
@@ -214,15 +211,15 @@ export default function Daily() {
           dueTasks={dueTasks}
           endingProjects={endingProjects}
         />
-        <Divider />
+
 
         {/* Projects */}
         <ProjectsSection />
-        <Divider />
+
 
         {/* Tasks */}
         <TasksSection onRefreshStats={refreshStats} />
-        <Divider />
+
 
         {/* Notes */}
         <NotesSection
@@ -231,7 +228,7 @@ export default function Daily() {
           onEdit={editNote}
           onDelete={deleteNote}
         />
-        <Divider />
+
 
         {/* Habits */}
         <HabitsSection
@@ -239,7 +236,7 @@ export default function Daily() {
           habitHistory={habitHistory}
           onToggle={toggleHabit}
         />
-        <Divider />
+
 
         {/* Daily Challenge */}
         <ChallengeSection
@@ -247,7 +244,7 @@ export default function Daily() {
           onUpdate={handleChallengeUpdate}
           onComplete={() => toggleHabit('habit_code_challenge', true)}
         />
-        <Divider />
+
 
         {/* Review buttons */}
         <div className="flex gap-3 flex-wrap justify-center pb-4">
