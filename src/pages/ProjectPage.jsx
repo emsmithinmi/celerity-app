@@ -278,8 +278,8 @@ export default function ProjectPage() {
                     <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Area</label>
                     <select value={d.area ?? ''} onChange={e => change('area', e.target.value)} className={inputCls} style={inputStyle}>
                       <option value="">Select…</option>
-                      {areas.map(a => <option key={a.id} value={a.name}>{a.name}</option>)}
-                      {d.area && !areas.find(a => a.name === d.area) && <option value={d.area}>{d.area}</option>}
+                      {areas.map(a => <option key={a.id} value={a.label}>{a.label}</option>)}
+                      {d.area && !areas.find(a => a.label === d.area) && <option value={d.area}>{d.area}</option>}
                     </select>
                   </div>
                 ) : (

@@ -268,8 +268,8 @@ export default function ProjectDetail({ project: initialProject, open, onClose, 
               <FormField label="Area" required>
                 <select value={project.area ?? ''} onChange={e => change('area', e.target.value)} className={inputCls} style={inputStyle}>
                   <option value="">Select…</option>
-                  {areas.map(a => <option key={a.id} value={a.name}>{a.name}</option>)}
-                  {project.area && !areas.find(a => a.name === project.area) && <option value={project.area}>{project.area}</option>}
+                  {areas.map(a => <option key={a.id} value={a.label}>{a.label}</option>)}
+                  {project.area && !areas.find(a => a.label === project.area) && <option value={project.area}>{project.area}</option>}
                 </select>
               </FormField>
             </div>
