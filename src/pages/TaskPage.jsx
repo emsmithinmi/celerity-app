@@ -4,7 +4,7 @@ import { Trash2, Pencil } from 'lucide-react'
 import {
   getTask, updateTask, completeTask, didIt,
   moveToNextAction, moveToQueued, moveToWaiting,
-  clearWaiting, highlightTask, clarifyTask,
+  clearWaiting, highlightTask, clarifyTask, getAllContextTags,
 } from '../lib/api/tasks'
 import { checkProjectStalled } from '../lib/api/projects'
 import Button from '../components/ui/Button'
@@ -88,6 +88,8 @@ export default function TaskPage() {
   const [showRoute,     setShowRoute]     = useState(false)
   const [showDidIt,     setShowDidIt]     = useState(false)
   const [showDiscard,   setShowDiscard]   = useState(false)
+  const [allTags,       setAllTags]       = useState([])
+  const [tagInput,      setTagInput]      = useState('')
 
   const load = async () => {
     setLoading(true)
@@ -100,6 +102,29 @@ export default function TaskPage() {
   }
 
   useEffect(() => { load() }, [id])
+  useEffect(() => { getAllContextTags().then(setAllTags).catch(() => {}) }, [id])
+
+  const saveContext = async (context) => {
+    setTask(prev => ({ ...prev, context }))
+    await updateTask(id, { context })
+    getAllContextTags().then(setAllTags).catch(() => {})
+  }
+
+  const addTag = (e) => {
+    if ((e.key === 'Enter' || e.key === ',') && tagInput.trim()) {
+      e.preventDefault()
+      const tag = tagInput.trim().replace(/^@/, '')
+      const current = task?.context ?? []
+      if (!current.includes(tag)) saveContext([...current, tag])
+      setTagInput('')
+    }
+  }
+
+  const removeTag = (tag) => saveContext((task?.context ?? []).filter(t => t !== tag))
+  const toggleTag = (tag) => {
+    const current = task?.context ?? []
+    current.includes(tag) ? removeTag(tag) : saveContext([...current, tag])
+  }
 
   if (loading) return (
     <div className="flex items-center justify-center h-full">
@@ -389,19 +414,6 @@ export default function TaskPage() {
                 <ReadField label="Project" value={task.projects?.title} />
               </div>
 
-              {/* Context tags */}
-              {task.context?.length > 0 && (
-                <div>
-                  <p className="text-xs font-medium mb-1" style={{ color: '#6c7086' }}>Context Tags</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {task.context.map(tag => (
-                      <span key={tag} className="px-2 py-0.5 rounded text-xs" style={{ backgroundColor: '#313244', color: '#cdd6f4' }}>
-                        @{tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* Linked people */}
               {task.task_people?.length > 0 && (
@@ -416,6 +428,98 @@ export default function TaskPage() {
                   </div>
                 </div>
               )}
+            </div>
+          </section>
+
+          {/* Context Tags section */}
+          <section>
+            <h2 className="text-base font-semibold mb-3" style={{ color: '#cdd6f4' }}>Context Tags</h2>
+            <div className="rounded-xl border p-4 space-y-4" style={{ backgroundColor: '#181825', borderColor: '#313244' }}>
+
+              {/* Existing tags across all tasks */}
+              {allTags.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium mb-2" style={{ color: '#6c7086' }}>Your tags</p>
+                  <div className="flex flex-wrap gap-2">
+                    {allTags.map(tag => {
+                      const active = task.context?.includes(tag)
+                      return (
+                        <button
+                          key={tag}
+                          onClick={() => toggleTag(tag)}
+                          className="px-2.5 py-1 rounded-lg text-xs font-medium transition-opacity hover:opacity-80"
+                          style={{
+                            backgroundColor: active ? '#1967D2' : '#313244',
+                            color: active ? '#ffffff' : '#cdd6f4',
+                          }}
+                        >
+                          @{tag}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Add new */}
+              <div>
+                <p className="text-xs font-medium mb-2" style={{ color: '#6c7086' }}>Add new</p>
+                <div className="flex gap-2">
+                  <input
+                    list="tp-tag-suggestions"
+                    type="text"
+                    value={tagInput}
+                    onChange={e => setTagInput(e.target.value)}
+                    onKeyDown={addTag}
+                    placeholder="Type a tag and press Enter…"
+                    className={`${inputCls} flex-1`}
+                    style={inputStyle}
+                  />
+                  <datalist id="tp-tag-suggestions">
+                    {allTags.filter(t => !task.context?.includes(t)).map(t => (
+                      <option key={t} value={t} />
+                    ))}
+                  </datalist>
+                  <button
+                    onClick={() => {
+                      if (tagInput.trim()) {
+                        const tag = tagInput.trim().replace(/^@/, '')
+                        const current = task?.context ?? []
+                        if (!current.includes(tag)) saveContext([...current, tag])
+                        setTagInput('')
+                      }
+                    }}
+                    className="px-3 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-80"
+                    style={{ backgroundColor: '#313244', color: '#cdd6f4' }}
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+
+              {/* Active tags */}
+              {task.context?.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium mb-2" style={{ color: '#6c7086' }}>On this task</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {task.context.map(tag => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
+                        style={{ backgroundColor: '#ffffff', color: '#1967D2' }}
+                      >
+                        @{tag}
+                        <button
+                          onClick={() => removeTag(tag)}
+                          className="ml-0.5 hover:opacity-70 leading-none"
+                          aria-label={`Remove ${tag}`}
+                        >×</button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
             </div>
           </section>
 

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import {
   updateTask, completeTask, didIt, moveToNextAction,
   moveToQueued, moveToWaiting, clearWaiting,
-  highlightTask, clarifyTask,
+  highlightTask, clarifyTask, getAllContextTags,
 } from '../../lib/api/tasks'
 import { checkProjectStalled } from '../../lib/api/projects'
 
@@ -58,8 +58,13 @@ export default function TaskDetail({ task: initialTask, open, onClose, onRefresh
   const [showDidIt,     setShowDidIt]     = useState(false)
   const [showDiscard,   setShowDiscard]   = useState(false)
   const [tagInput,      setTagInput]      = useState('')
+  const [allTags,       setAllTags]       = useState([])
 
   useEffect(() => { setTask(initialTask); setDirty(false) }, [initialTask])
+
+  useEffect(() => {
+    if (open) getAllContextTags().then(setAllTags).catch(() => {})
+  }, [open])
 
   if (!task) return null
 
@@ -238,7 +243,7 @@ export default function TaskDetail({ task: initialTask, open, onClose, onRefresh
 
         {/* ── Tabs ── */}
         <div className="flex gap-1 mb-5 border-b" style={{ borderColor: '#313244' }}>
-          {['details', 'comments'].map(t => (
+          {['details', 'context', 'comments'].map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -343,25 +348,6 @@ export default function TaskDetail({ task: initialTask, open, onClose, onRefresh
               </FormField>
             </div>
 
-            {/* Context tags */}
-            <FormField label="Context Tags">
-              <div
-                className="flex flex-wrap gap-1.5 p-2 rounded-lg border min-h-[40px]"
-                style={{ borderColor: '#313244' }}
-              >
-                <ContextTagList tags={task.context ?? []} onRemove={removeTag} />
-                <input
-                  type="text"
-                  value={tagInput}
-                  onChange={e => setTagInput(e.target.value)}
-                  onKeyDown={addTag}
-                  placeholder="Add tag… (Enter)"
-                  className="bg-transparent text-sm outline-none flex-1 min-w-[80px]"
-                  style={{ color: '#cdd6f4' }}
-                />
-              </div>
-            </FormField>
-
             {/* Notes */}
             <FormField label="Notes">
               <textarea
@@ -399,6 +385,85 @@ export default function TaskDetail({ task: initialTask, open, onClose, onRefresh
                 {task.highlight_note && (
                   <span className="text-sm" style={{ color: '#6c7086' }}>— {task.highlight_note}</span>
                 )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Context tab ── */}
+        {tab === 'context' && (
+          <div className="space-y-4">
+            <p className="text-sm" style={{ color: '#6c7086' }}>
+              Tag this task with contexts like <span style={{ color: '#89b4fa' }}>@phone</span>, <span style={{ color: '#89b4fa' }}>@computer</span>, <span style={{ color: '#89b4fa' }}>@errands</span>…
+            </p>
+
+            {/* Existing tag suggestions */}
+            {allTags.length > 0 && (
+              <div>
+                <p className="text-xs font-medium mb-2" style={{ color: '#6c7086' }}>Your tags</p>
+                <div className="flex flex-wrap gap-2">
+                  {allTags.map(tag => {
+                    const active = task.context?.includes(tag)
+                    return (
+                      <button
+                        key={tag}
+                        onClick={() => active ? removeTag(tag) : change('context', [...(task.context ?? []), tag])}
+                        className="px-2.5 py-1 rounded-lg text-xs font-medium transition-opacity hover:opacity-80"
+                        style={{
+                          backgroundColor: active ? '#1967D2' : '#313244',
+                          color: active ? '#ffffff' : '#cdd6f4',
+                        }}
+                      >
+                        @{tag}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Add new tag */}
+            <div>
+              <p className="text-xs font-medium mb-2" style={{ color: '#6c7086' }}>Add new</p>
+              <div className="flex gap-2">
+                <input
+                  list="ctx-tag-suggestions"
+                  type="text"
+                  value={tagInput}
+                  onChange={e => setTagInput(e.target.value)}
+                  onKeyDown={addTag}
+                  placeholder="Type a tag and press Enter…"
+                  className={`${inputCls} flex-1`}
+                  style={inputStyle}
+                />
+                <datalist id="ctx-tag-suggestions">
+                  {allTags.filter(t => !task.context?.includes(t)).map(t => (
+                    <option key={t} value={t} />
+                  ))}
+                </datalist>
+                <button
+                  onClick={() => {
+                    if (tagInput.trim()) {
+                      const tag = tagInput.trim().replace(/^@/, '')
+                      if (!task.context?.includes(tag)) {
+                        change('context', [...(task.context ?? []), tag])
+                      }
+                      setTagInput('')
+                    }
+                  }}
+                  className="px-3 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-80"
+                  style={{ backgroundColor: '#313244', color: '#cdd6f4' }}
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+
+            {/* Active tags on this task */}
+            {(task.context?.length ?? 0) > 0 && (
+              <div>
+                <p className="text-xs font-medium mb-2" style={{ color: '#6c7086' }}>On this task</p>
+                <ContextTagList tags={task.context} onRemove={removeTag} />
               </div>
             )}
           </div>

@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { ThemeProvider } from './contexts/ThemeContext'
 import { AuthProvider } from './contexts/AuthContext'
 import { EnergyLevelsProvider } from './contexts/EnergyLevelsContext'
 import { PrioritiesProvider }   from './contexts/PrioritiesContext'
@@ -20,6 +21,7 @@ import Settings from './pages/Settings'
 
 export default function App() {
   return (
+    <ThemeProvider>
     <AuthProvider>
       <EnergyLevelsProvider>
       <PrioritiesProvider>
@@ -48,5 +50,6 @@ export default function App() {
       </PrioritiesProvider>
       </EnergyLevelsProvider>
     </AuthProvider>
+    </ThemeProvider>
   )
 }

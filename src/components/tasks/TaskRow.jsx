@@ -1,4 +1,4 @@
-import { StatusPill, PriorityBadge, EnergyBadge, DurationDisplay } from '../ui'
+import { StatusPill, PriorityBadge, EnergyBadge, DurationDisplay, ContextTag } from '../ui'
 
 export default function TaskRow({ task, onClick }) {
   const isDone    = task.status === 'done'
@@ -31,6 +31,13 @@ export default function TaskRow({ task, onClick }) {
           <p className="text-xs truncate mt-0.5" style={{ color: '#6c7086' }}>
             📁 {task.projects.title}
           </p>
+        )}
+        {task.context?.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1">
+            {task.context.map(tag => (
+              <ContextTag key={tag} tag={`@${tag}`} />
+            ))}
+          </div>
         )}
       </div>
 

@@ -35,35 +35,52 @@ export default function Layout() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ backgroundColor: '#1e1e2e' }}>
+    <div className="flex h-screen overflow-hidden" style={{ backgroundColor: 'var(--app-bg)' }}>
       {/* Sidebar */}
       <aside
         className="flex flex-col shrink-0 border-r transition-all duration-200"
         style={{
-          backgroundColor: '#181825',
-          borderColor: '#313244',
+          backgroundColor: 'var(--pane-bg)',
+          borderColor: 'var(--border)',
           width: collapsed ? '56px' : '224px',
           minWidth: collapsed ? '56px' : '224px',
         }}
       >
-        {/* Logo + collapse toggle */}
+        {/* User + collapse toggle */}
         <div
           className="flex items-center border-b shrink-0"
           style={{
-            borderColor: '#313244',
-            padding: collapsed ? '16px 8px' : '16px 24px',
+            borderColor: 'var(--border)',
+            padding: collapsed ? '12px 8px' : '12px 16px',
             justifyContent: collapsed ? 'center' : 'space-between',
+            gap: '8px',
           }}
         >
-          {!collapsed && (
-            <div>
-              <h1 className="text-lg font-semibold" style={{ color: '#cdd6f4' }}>Celerity</h1>
+          {user && (
+            <div className={`flex items-center min-w-0 ${collapsed ? '' : 'flex-1 gap-2'}`}>
+              <AvatarCircle
+                src={user.user_metadata?.avatar_url}
+                name={user.email ?? ''}
+                size="sm"
+                canUpload
+                uploading={avatarUploading}
+                onFileSelect={handleUserAvatarUpload}
+              />
+              {!collapsed && (
+                <p
+                  className="text-xs truncate flex-1"
+                  style={{ color: 'var(--text-secondary)' }}
+                  title={user.email}
+                >
+                  {user.email}
+                </p>
+              )}
             </div>
           )}
           <button
             onClick={() => setCollapsed(c => !c)}
-            className="flex items-center justify-center rounded-lg text-xs transition-colors hover:opacity-80"
-            style={{ color: '#6c7086', backgroundColor: '#313244', width: '28px', height: '28px', flexShrink: 0 }}
+            className="flex items-center justify-center rounded-lg text-xs transition-colors hover:opacity-80 shrink-0"
+            style={{ color: 'var(--btn-muted-text)', backgroundColor: 'var(--btn-muted-bg)', width: '28px', height: '28px' }}
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {collapsed ? '▶' : '◀'}
@@ -86,8 +103,8 @@ export default function Layout() {
                 } ${isActive ? 'font-medium' : 'hover:opacity-80'}`
               }
               style={({ isActive }) => ({
-                backgroundColor: isActive ? '#313244' : 'transparent',
-                color: isActive ? '#cdd6f4' : '#6c7086',
+                backgroundColor: isActive ? 'var(--nav-active-bg)' : 'transparent',
+                color: isActive ? 'var(--nav-active-text)' : 'var(--nav-idle-text)',
                 padding: collapsed ? '8px' : '8px 12px',
               })}
             >
@@ -100,7 +117,7 @@ export default function Layout() {
         {/* Bottom nav (Settings, etc.) */}
         <div
           className="border-t pb-1"
-          style={{ borderColor: '#313244', padding: collapsed ? '8px 8px 4px' : '8px 12px 4px' }}
+          style={{ borderColor: 'var(--border)', padding: collapsed ? '8px 8px 4px' : '8px 12px 4px' }}
         >
           {BOTTOM_NAV.map(({ to, label, icon }) => (
             <NavLink
@@ -113,8 +130,8 @@ export default function Layout() {
                 } ${isActive ? 'font-medium' : 'hover:opacity-80'}`
               }
               style={({ isActive }) => ({
-                backgroundColor: isActive ? '#313244' : 'transparent',
-                color: isActive ? '#cdd6f4' : '#6c7086',
+                backgroundColor: isActive ? 'var(--nav-active-bg)' : 'transparent',
+                color: isActive ? 'var(--nav-active-text)' : 'var(--nav-idle-text)',
                 padding: collapsed ? '8px' : '8px 12px',
               })}
             >
@@ -124,40 +141,22 @@ export default function Layout() {
           ))}
         </div>
 
-        {/* User / Sign out */}
+        {/* App name + Sign out */}
         <div
           className="border-t"
-          style={{ borderColor: '#313244', padding: collapsed ? '12px 8px' : '12px 16px' }}
+          style={{ borderColor: 'var(--border)', padding: collapsed ? '12px 8px' : '12px 16px' }}
         >
-          {user && (
-            <div
-              className={`flex items-center mb-2 ${collapsed ? 'justify-center' : 'gap-2'}`}
-            >
-              <AvatarCircle
-                src={user.user_metadata?.avatar_url}
-                name={user.email ?? ''}
-                size="sm"
-                canUpload
-                uploading={avatarUploading}
-                onFileSelect={handleUserAvatarUpload}
-              />
-              {!collapsed && (
-                <p
-                  className="text-xs truncate flex-1"
-                  style={{ color: '#6c7086' }}
-                  title={user.email}
-                >
-                  {user.email}
-                </p>
-              )}
-            </div>
+          {!collapsed && (
+            <p className="text-xs font-semibold mb-2 px-1" style={{ color: 'var(--text-secondary)' }}>
+              Celerity
+            </p>
           )}
           <button
             onClick={signOut}
             className="w-full rounded-md text-xs transition-colors hover:opacity-80"
             style={{
-              color: '#6c7086',
-              backgroundColor: '#313244',
+              color: 'var(--btn-muted-text)',
+              backgroundColor: 'var(--btn-muted-bg)',
               padding: collapsed ? '6px' : '6px 8px',
               textAlign: collapsed ? 'center' : 'left',
             }}

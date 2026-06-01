@@ -1,6 +1,35 @@
 @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
+/* ─── Theme tokens ─────────────────────────────────────────────────────────── */
+:root {
+  --app-bg:           #1e1e2e;
+  --pane-bg:          #181825;
+  --border:           #313244;
+  --text-primary:     #cdd6f4;
+  --text-secondary:   #6c7086;
+  --link:             #89b4fa;
+  --nav-active-bg:    #313244;
+  --nav-active-text:  #cdd6f4;
+  --nav-idle-text:    #6c7086;
+  --btn-muted-bg:     #313244;
+  --btn-muted-text:   #6c7086;
+}
+
+[data-theme="github-dark"] {
+  --app-bg:           #0d1117;
+  --pane-bg:          #161b22;
+  --border:           #30363d;
+  --text-primary:     #ffffff;
+  --text-secondary:   #8b949e;
+  --link:             #58a6ff;
+  --nav-active-bg:    #21262d;
+  --nav-active-text:  #e6edf3;
+  --nav-idle-text:    #8b949e;
+  --btn-muted-bg:     #21262d;
+  --btn-muted-text:   #8b949e;
+}
+
 @theme {
   /* App Background */
   --color-app-bg: #1e1e2e;
@@ -88,8 +117,8 @@ html, body, #root {
 }
 
 body {
-  background-color: #1e1e2e;
-  color: #cdd6f4;
+  background-color: var(--app-bg);
+  color: var(--text-primary);
   font-family: 'Lexend', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

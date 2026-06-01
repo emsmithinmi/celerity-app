@@ -10,6 +10,7 @@ import { createPriority,   updatePriority,   deletePriority   } from '../lib/api
 import { createArea,       updateArea,       deleteArea       } from '../lib/api/areas'
 import { getAIConfig, saveAIConfig, getProviderPreset, PROVIDERS, PROVIDER_PRESETS } from '../lib/ai/config'
 import { testConnection } from '../lib/ai/client'
+import { useTheme } from '../contexts/ThemeContext'
 
 // ─── Inline editable row ──────────────────────────────────────────────────────
 function EnergyRow({ level, onSaved, onDelete }) {
@@ -759,6 +760,7 @@ export default function Settings() {
   const { levels,     loading: elLoading,   reload: reloadEL }   = useEnergyLevels()
   const { priorities, loading: priLoading,  reload: reloadPri }  = usePriorities()
   const { areas,      loading: areaLoading, reload: reloadArea }  = useAreas()
+  const { theme, setTheme, themes } = useTheme()
 
   const el  = useLocalList(levels,     reloadEL)
   const pri = useLocalList(priorities, reloadPri)
@@ -770,6 +772,31 @@ export default function Settings() {
         <h1 className="text-2xl font-bold mb-1" style={{ color: '#cdd6f4' }}>Settings</h1>
         <p className="text-sm" style={{ color: '#6c7086' }}>Manage reference data — no code changes needed.</p>
       </div>
+
+      {/* ── Appearance ── */}
+      <section>
+        <div className="mb-4">
+          <h2 className="text-base font-semibold" style={{ color: '#cdd6f4' }}>Appearance</h2>
+          <p className="text-sm mt-0.5" style={{ color: '#6c7086' }}>Choose your color theme.</p>
+        </div>
+        <div className="flex gap-3">
+          {themes.map(t => (
+            <button
+              key={t.id}
+              onClick={() => setTheme(t.id)}
+              className="flex-1 rounded-xl border px-4 py-3 text-sm font-medium transition-colors text-left"
+              style={{
+                borderColor: theme === t.id ? '#89b4fa' : '#313244',
+                backgroundColor: theme === t.id ? '#1a1f35' : '#181825',
+                color: theme === t.id ? '#89b4fa' : '#6c7086',
+              }}
+            >
+              <span className="block font-semibold mb-0.5" style={{ color: theme === t.id ? '#cdd6f4' : '#6c7086' }}>{t.label}</span>
+              <span className="text-xs">{theme === t.id ? 'Active' : 'Click to apply'}</span>
+            </button>
+          ))}
+        </div>
+      </section>
 
       {/* ── Energy Levels ── */}
       <section>
