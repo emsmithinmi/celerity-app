@@ -10,6 +10,13 @@ _Nothing pending — all changes committed and deployed._
 
 ---
 
+## 2026-06-01 (2)
+
+### Changed
+- **Comments → Notes** — all visible "Comments" labels and tab names renamed to "Notes" across TaskPage, ProjectPage, PersonPage, and their modal counterparts (TaskDetail, ProjectDetail, PersonDetail). Internal component and function names unchanged.
+
+---
+
 ## 2026-06-01
 
 ### Added
