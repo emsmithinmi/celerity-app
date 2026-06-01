@@ -10,6 +10,18 @@ _Nothing pending — all changes committed and deployed._
 
 ---
 
+## 2026-06-01 (5)
+
+### Added
+- **Google Calendar integration** — `calendar_events` table stores synced events. Agenda now shows real calendar data: all-day events at top, timed blocks (Morning Routine, Workday, Therapy, Guys Night, etc.) in chronological order below. Events synced via Claude Code MCP connection to Google Calendar.
+- Tasks due that day and project deadlines appear as dimmed all-day items alongside calendar entries, as discussed.
+- Daily Review AI now reads tomorrow's `calendar_events` as context; only real calendar times appear in the AI's agenda output — no more fabricated time blocks.
+
+### Note
+Calendar sync currently requires a manual Claude Code session to push new events to the DB. Automated daily sync via scheduled task is the next step.
+
+---
+
 ## 2026-06-01 (4)
 
 ### Fixed
