@@ -20,6 +20,20 @@ Single user app (emailemsmith@gmail.com). No multi-tenancy needed — RLS polici
 - **Cloudflare account ID:** `2e21f19b71235b0620cfdb8c91bf4156`
 - **Cloudflare Pages project:** `celerity-app` (domain: gtd-manager.pages.dev — permanent, tied to original project name)
 
+## Google Calendar
+
+Sync is done manually via Claude Code MCP (Google Calendar + Gmail tools available in Claude Code sessions). Run `getCalendarEvents` or ask Claude to "sync my calendar" to upsert new events into the `calendar_events` table.
+
+**Calendar IDs:**
+| Calendar | ID |
+|---|---|
+| Primary | `emailemsmith@gmail.com` |
+| Time Management | `6ea50d30fb9e21ca0e3794c2093541465c39add90e42f36571728ca5e65efb45@group.calendar.google.com` |
+| Family | `family15217148776896169650@group.calendar.google.com` |
+| US Holidays | `en.usa#holiday@group.v.calendar.google.com` |
+
+When syncing, fetch all four calendars for the target date range and upsert into `calendar_events (id, date, summary, start_time, end_time, all_day, calendar_name, notes)`. Use `ON CONFLICT (id) DO UPDATE` so reruns are safe.
+
 ## Changelog
 
 **Location:** `CHANGELOG.md` at the repo root.
