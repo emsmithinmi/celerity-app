@@ -162,6 +162,19 @@ export async function updateChallenge(noteId, challengeData) {
   return data
 }
 
+// ─── Calendar Events ──────────────────────────────────────────────────────────
+
+export async function getCalendarEvents(date) {
+  const { data, error } = await supabase
+    .from('calendar_events')
+    .select('*')
+    .eq('date', date)
+    .order('all_day', { ascending: false }) // all-day first
+    .order('start_time', { ascending: true })
+  if (error) throw error
+  return data ?? []
+}
+
 // ─── Stats (for stat cards) ───────────────────────────────────────────────────
 
 export async function getDailyStats(date) {

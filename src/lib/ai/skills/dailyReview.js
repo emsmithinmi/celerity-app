@@ -3,6 +3,16 @@ import { callAI } from '../client'
 import { ensureNoteForDate, updateTopOfMind, updateAgenda, updateChallenge } from '../../api/daily'
 import { updateSuggestions } from '../../api/reviews'
 
+async function getTomorrowCalendarEvents(tomorrowStr) {
+  const { data } = await supabase
+    .from('calendar_events')
+    .select('summary, start_time, end_time, all_day, calendar_name, notes')
+    .eq('date', tomorrowStr)
+    .order('all_day', { ascending: false })
+    .order('start_time', { ascending: true })
+  return data ?? []
+}
+
 // ─── Context Builder ──────────────────────────────────────────────────────────
 
 async function buildContext(reviewContent = {}) {
@@ -73,7 +83,13 @@ async function buildContext(reviewContent = {}) {
     health_tracking: todayNote.habit_health_tracking,
   } : {}
 
-  return { today, projects, activeTasks, inboxTasks, inboxCount: inboxTasks.length, recentNotes, stalledRisk, habits, reviewContent, lastCompletedChallenge: lastCompleted ?? null }
+  // Tomorrow's calendar events
+  const tomorrow = new Date(today + 'T12:00:00')
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  const tomorrowStr = tomorrow.toISOString().split('T')[0]
+  const calendarEvents = await getTomorrowCalendarEvents(tomorrowStr)
+
+  return { today, tomorrowStr, projects, activeTasks, inboxTasks, inboxCount: inboxTasks.length, recentNotes, stalledRisk, habits, reviewContent, lastCompletedChallenge: lastCompleted ?? null, calendarEvents }
 }
 
 // ─── System Prompt ────────────────────────────────────────────────────────────
@@ -91,11 +107,25 @@ You must respond with valid JSON only — no markdown, no preamble, no explanati
 // ─── User Prompt Builder ──────────────────────────────────────────────────────
 
 function buildPrompt(ctx) {
-  const { today, projects, activeTasks, inboxCount, inboxTasks, recentNotes, stalledRisk, habits, reviewContent, lastCompletedChallenge } = ctx
+  const { today, tomorrowStr, projects, activeTasks, inboxCount, inboxTasks, recentNotes, stalledRisk, habits, reviewContent, lastCompletedChallenge, calendarEvents } = ctx
   const lines = []
 
-  lines.push(`TODAY: ${today}`)
+  lines.push(`TODAY: ${today}  |  PLANNING FOR: ${tomorrowStr}`)
   lines.push('')
+
+  if (calendarEvents.length > 0) {
+    lines.push(`TOMORROW'S CALENDAR (${tomorrowStr}):`)
+    for (const e of calendarEvents) {
+      if (e.all_day) {
+        lines.push(`- [all day] ${e.summary}${e.calendar_name ? ` (${e.calendar_name})` : ''}`)
+      } else {
+        const start = e.start_time ? new Date(e.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' }) : '?'
+        const end   = e.end_time   ? new Date(e.end_time).toLocaleTimeString('en-US',   { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' }) : null
+        lines.push(`- ${start}${end ? ` – ${end}` : ''}: ${e.summary}${e.notes ? ` — ${e.notes}` : ''}`)
+      }
+    }
+    lines.push('')
+  }
 
   lines.push('ACTIVE PROJECTS:')
   if (projects.length === 0) {
@@ -200,7 +230,7 @@ function buildPrompt(ctx) {
 
 Rules:
 - top_of_mind: 3-5 items, reference actual project/task names
-- agenda: 3-8 time blocks for TOMORROW, prioritise urgent/due tasks
+- agenda: use TOMORROW'S CALENDAR as the backbone; only include times that are real calendar events; tasks/projects show as all-day items in the app separately so do not duplicate them here — only output actual calendar event time blocks
 - challenge: always generate one; if last was completed, critique it in ai_feedback and build the new prompt on it
 - quote: fitting to their current work or mindset, not generic
 - suggestions: 2-6 actionable observations, flag stalled projects, forgotten tasks, patterns`)
@@ -242,11 +272,7 @@ export async function runDailyReview(reviewId, reviewContent = {}) {
   const raw    = await callAI(messages, { temperature: 0.5 })
   const result = parseResponse(raw)
 
-  // Write to TOMORROW's daily note
-  const tomorrow = new Date(ctx.today + 'T12:00:00')
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  const tomorrowStr = tomorrow.toISOString().split('T')[0]
-
+  const { tomorrowStr } = ctx
   const tomorrowNote = await ensureNoteForDate(tomorrowStr)
 
   await Promise.all([

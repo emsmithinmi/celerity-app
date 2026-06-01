@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useDaily } from '../hooks/useDaily'
@@ -17,6 +17,8 @@ import NotesSection   from '../components/daily/NotesSection'
 import HabitsSection  from '../components/daily/HabitsSection'
 import ChallengeSection from '../components/daily/ChallengeSection'
 import Button         from '../components/ui/Button'
+
+import { getCalendarEvents } from '../lib/api/daily'
 
 import {
   CaptureTaskModal,
@@ -128,9 +130,14 @@ export default function Daily() {
   const { createTask }    = useTasksCapture({})
   const { createProject } = useProjectsCapture({})
 
-  // Agenda data — tasks due on this day (any status except done), projects ending on this day
-  const { tasks: dueTasks }       = useTasks({ due_date: selectedDate, not_status: 'done' })
-  const { projects: endOnDate }   = useProjects({ end_date: selectedDate })
+  // Agenda data
+  const { tasks: dueTasks }         = useTasks({ due_date: selectedDate, not_status: 'done' })
+  const { projects: endingProjects } = useProjects({ end_date: selectedDate })
+  const [calendarEvents, setCalendarEvents] = useState([])
+  useEffect(() => {
+    getCalendarEvents(selectedDate).then(setCalendarEvents).catch(() => {})
+  }, [selectedDate])
+
 
   // Modal state
   const [modal, setModal] = useState(null)
@@ -203,9 +210,9 @@ export default function Daily() {
 
         {/* Agenda */}
         <AgendaSection
-          storedAgenda={note?.agenda ?? []}
+          calendarEvents={calendarEvents}
           dueTasks={dueTasks}
-          endingProjects={endOnDate}
+          endingProjects={endingProjects}
         />
         <Divider />
 

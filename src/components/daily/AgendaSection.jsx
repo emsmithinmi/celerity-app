@@ -1,58 +1,59 @@
-function AllDayItem({ title, subtitle }) {
+function fmt(isoString) {
+  if (!isoString) return null
+  const d = new Date(isoString)
+  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+}
+
+function AllDayItem({ title, subtitle, dim }) {
   return (
     <div
       className="flex items-center gap-3 px-4 py-2 border-b last:border-b-0"
       style={{ borderColor: '#313244' }}
     >
-      <span className="text-xs font-mono shrink-0 w-12" style={{ color: '#45475a' }}>all day</span>
+      <span className="text-xs font-mono shrink-0 w-16" style={{ color: '#45475a' }}>all day</span>
       <div className="flex-1 min-w-0">
-        <p className="text-sm truncate" style={{ color: '#cdd6f4' }}>{title}</p>
+        <p className="text-sm truncate" style={{ color: dim ? '#6c7086' : '#cdd6f4' }}>{title}</p>
         {subtitle && (
-          <p className="text-xs mt-0.5 truncate" style={{ color: '#6c7086' }}>{subtitle}</p>
+          <p className="text-xs mt-0.5 truncate" style={{ color: '#45475a' }}>{subtitle}</p>
         )}
       </div>
     </div>
   )
 }
 
-function TimedItem({ time, title, notes }) {
+function TimedItem({ start, end, title, notes, calendarName }) {
+  const startFmt = fmt(start)
+  const endFmt   = fmt(end)
   return (
     <div
       className="flex items-start gap-3 px-4 py-2.5 border-b last:border-b-0"
       style={{ borderColor: '#313244' }}
     >
-      <span className="text-xs font-mono pt-0.5 shrink-0 w-12" style={{ color: '#89b4fa' }}>
-        {time}
-      </span>
+      <div className="shrink-0 w-16">
+        <span className="text-xs font-mono" style={{ color: '#89b4fa' }}>{startFmt}</span>
+        {endFmt && (
+          <span className="block text-xs font-mono" style={{ color: '#45475a' }}>{endFmt}</span>
+        )}
+      </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm truncate" style={{ color: '#cdd6f4' }}>{title}</p>
         {notes && (
           <p className="text-xs mt-0.5 leading-relaxed" style={{ color: '#6c7086' }}>{notes}</p>
+        )}
+        {calendarName && (
+          <p className="text-xs mt-0.5 truncate" style={{ color: '#45475a' }}>{calendarName}</p>
         )}
       </div>
     </div>
   )
 }
 
-export default function AgendaSection({ storedAgenda = [], dueTasks = [], endingProjects = [] }) {
-  // All-day items: tasks due today and projects ending today (no time attached)
-  const allDayItems = [
-    ...dueTasks.map(t => ({
-      id: `task-${t.id}`,
-      title: t.title,
-      subtitle: t.projects?.title ?? null,
-    })),
-    ...endingProjects.map(p => ({
-      id: `proj-${p.id}`,
-      title: p.title,
-      subtitle: 'Project deadline',
-    })),
-  ]
+export default function AgendaSection({ calendarEvents = [], dueTasks = [], endingProjects = [] }) {
+  const allDayCalendar = calendarEvents.filter(e => e.all_day)
+  const timedCalendar  = calendarEvents.filter(e => !e.all_day)
 
-  // Timed items: AI-generated agenda blocks that have a time
-  const timedItems = storedAgenda.filter(item => item.time)
-
-  const empty = allDayItems.length === 0 && timedItems.length === 0
+  const empty = allDayCalendar.length === 0 && timedCalendar.length === 0
+             && dueTasks.length === 0 && endingProjects.length === 0
 
   return (
     <div>
@@ -62,23 +63,34 @@ export default function AgendaSection({ storedAgenda = [], dueTasks = [], ending
         style={{ backgroundColor: '#181825', borderColor: '#313244' }}
       >
         {empty ? (
-          <p className="px-4 py-3 text-sm" style={{ color: '#6c7086' }}>
-            Nothing on the agenda.
-          </p>
+          <p className="px-4 py-3 text-sm" style={{ color: '#6c7086' }}>Nothing on the agenda.</p>
         ) : (
           <>
-            {allDayItems.map(item => (
-              <AllDayItem key={item.id} title={item.title} subtitle={item.subtitle} />
+            {/* All-day: calendar all-day events, tasks due, projects ending */}
+            {allDayCalendar.map(e => (
+              <AllDayItem key={e.id} title={e.summary} subtitle={e.calendar_name} />
             ))}
-            {timedItems.map((item, i) => (
-              <TimedItem key={i} time={item.time} title={item.title} notes={item.notes} />
+            {dueTasks.map(t => (
+              <AllDayItem key={`task-${t.id}`} title={t.title} subtitle={t.projects?.title ?? 'Task due today'} dim />
+            ))}
+            {endingProjects.map(p => (
+              <AllDayItem key={`proj-${p.id}`} title={p.title} subtitle="Project deadline" dim />
+            ))}
+
+            {/* Timed: real calendar events in order */}
+            {timedCalendar.map(e => (
+              <TimedItem
+                key={e.id}
+                start={e.start_time}
+                end={e.end_time}
+                title={e.summary}
+                notes={e.notes}
+                calendarName={e.calendar_name !== 'emailemsmith@gmail.com' ? e.calendar_name : null}
+              />
             ))}
           </>
         )}
       </div>
-      <p className="text-xs mt-1.5" style={{ color: '#6c7086' }}>
-        Google Calendar integration coming soon
-      </p>
     </div>
   )
 }
