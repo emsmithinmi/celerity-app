@@ -176,7 +176,7 @@ export default function Daily() {
           onNext={goForward}
           onToday={goToday}
         />
-        <DailyQuote dateStr={selectedDate} />
+        <DailyQuote note={note} dateStr={selectedDate} />
         <Divider />
 
         {/* Quick action bar */}

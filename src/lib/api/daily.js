@@ -149,6 +149,19 @@ export async function updateAgenda(noteId, agendaItems) {
   return data
 }
 
+// ─── Quote ────────────────────────────────────────────────────────────────────
+
+export async function updateQuote(noteId, text, author) {
+  const { data, error } = await supabase
+    .from('daily_notes')
+    .update({ quote: text, quote_author: author, updated_at: new Date().toISOString() })
+    .eq('id', noteId)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
 // ─── Challenge ────────────────────────────────────────────────────────────────
 
 export async function updateChallenge(noteId, challengeData) {

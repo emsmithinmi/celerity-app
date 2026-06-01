@@ -1,7 +1,8 @@
 import { supabase } from '../../supabase'
 import { callAI } from '../client'
-import { ensureNoteForDate, updateTopOfMind, updateAgenda, updateChallenge } from '../../api/daily'
+import { ensureNoteForDate, updateTopOfMind, updateAgenda, updateChallenge, updateQuote } from '../../api/daily'
 import { updateSuggestions } from '../../api/reviews'
+import { selectCandidates } from '../../quotes'
 
 async function getTomorrowCalendarEvents(tomorrowStr) {
   const { data } = await supabase
@@ -52,10 +53,10 @@ async function buildContext(reviewContent = {}) {
       .order('created_at', { ascending: false })
       .limit(20),
 
-    // Last 30 days of daily notes — this is the "memory"
+    // Last 30 days of daily notes — this is the "memory" + recent quotes
     supabase
       .from('daily_notes')
-      .select('date, notes, top_of_mind')
+      .select('date, notes, top_of_mind, quote')
       .order('date', { ascending: false })
       .limit(30),
 
@@ -89,7 +90,11 @@ async function buildContext(reviewContent = {}) {
   const tomorrowStr = tomorrow.toISOString().split('T')[0]
   const calendarEvents = await getTomorrowCalendarEvents(tomorrowStr)
 
-  return { today, tomorrowStr, projects, activeTasks, inboxTasks, inboxCount: inboxTasks.length, recentNotes, stalledRisk, habits, reviewContent, lastCompletedChallenge: lastCompleted ?? null, calendarEvents }
+  // Pre-select weighted quote candidates, excluding recently used quotes
+  const recentQuoteTexts = (notesRes.data ?? []).map(n => n.quote).filter(Boolean)
+  const quoteCandidates = selectCandidates(recentQuoteTexts, 30)
+
+  return { today, tomorrowStr, projects, activeTasks, inboxTasks, inboxCount: inboxTasks.length, recentNotes, stalledRisk, habits, reviewContent, lastCompletedChallenge: lastCompleted ?? null, calendarEvents, quoteCandidates }
 }
 
 // ─── System Prompt ────────────────────────────────────────────────────────────
@@ -107,7 +112,7 @@ You must respond with valid JSON only — no markdown, no preamble, no explanati
 // ─── User Prompt Builder ──────────────────────────────────────────────────────
 
 function buildPrompt(ctx) {
-  const { today, tomorrowStr, projects, activeTasks, inboxCount, inboxTasks, recentNotes, stalledRisk, habits, reviewContent, lastCompletedChallenge, calendarEvents } = ctx
+  const { today, tomorrowStr, projects, activeTasks, inboxCount, inboxTasks, recentNotes, stalledRisk, habits, reviewContent, lastCompletedChallenge, calendarEvents, quoteCandidates } = ctx
   const lines = []
 
   lines.push(`TODAY: ${today}  |  PLANNING FOR: ${tomorrowStr}`)
@@ -191,6 +196,16 @@ function buildPrompt(ctx) {
       const text = n.notes.map(e => e.body).join(' | ')
       lines.push(`[${n.date}] ${text}`)
     }
+    lines.push('')
+  }
+
+  // Quote candidates — weighted, recent-filtered selection from the pool
+  if (quoteCandidates.length > 0) {
+    lines.push('QUOTE CANDIDATES (pick the most contextually fitting one for tomorrow):')
+    quoteCandidates.forEach((q, i) => {
+      lines.push(`${i + 1}. [${q.category}] "${q.text}" — ${q.author}`)
+    })
+    lines.push('Return the chosen quote EXACTLY as written above (text and author must match precisely).')
     lines.push('')
   }
 
@@ -279,22 +294,14 @@ export async function runDailyReview(reviewId, reviewContent = {}) {
     result.top_of_mind.length > 0 && updateTopOfMind(tomorrowNote.id, result.top_of_mind),
     result.agenda.length > 0      && updateAgenda(tomorrowNote.id, result.agenda),
     result.challenge               && updateChallenge(tomorrowNote.id, result.challenge),
+    result.quote                   && updateQuote(tomorrowNote.id, result.quote.text, result.quote.author),
   ].filter(Boolean))
 
-  // Build suggestion list — includes the quote as an insight
-  const suggestions = [
-    ...result.suggestions.map(s => ({
-      ...s,
-      id: crypto.randomUUID(),
-      status: 'pending',
-    })),
-    result.quote && {
-      type: 'insight',
-      content: `Quote for tomorrow: "${result.quote.text}" — ${result.quote.author}`,
-      id: crypto.randomUUID(),
-      status: 'pending',
-    },
-  ].filter(Boolean)
+  const suggestions = result.suggestions.map(s => ({
+    ...s,
+    id: crypto.randomUUID(),
+    status: 'pending',
+  }))
 
   if (reviewId) {
     await updateSuggestions(reviewId, suggestions)

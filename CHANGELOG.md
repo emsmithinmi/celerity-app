@@ -6,6 +6,10 @@ All notable changes to Celerity are recorded here.
 
 ## [Unreleased]
 
+### Added
+- **AI-picked daily quotes** — 400-quote curated pool across 6 weighted categories (Stoicism 20%, Science 20%, Comedians 20%, Movies 15%, Software humor 15%, Motivational 10%). Daily review AI picks tomorrow's quote contextually from a weighted 30-candidate shortlist, avoiding repeats from the last 30 days. Quote persists in `daily_notes` so it survives refreshes.
+- **Skip quote button** — hover the quote on the Daily page to reveal a skip button. Picks a random replacement from the pool and writes it to the DB instantly. No reload needed.
+
 ### Changed
 - **Full color theme system** — theme switching now re-themes the entire app, not just the sidebar. Replaced ~300 hardcoded Catppuccin hex values across 45 files with CSS custom properties. Added 60+ new tokens covering surfaces, text tones, accent palette, state banners (warning/error/success/stalled/purple), challenge badges, review suggestion cards, habit calendar, and button variants. GitHub Dark theme fully mapped with equivalent values throughout.
 
