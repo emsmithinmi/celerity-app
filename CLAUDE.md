@@ -155,11 +155,12 @@ All tables have RLS enabled with `USING (true) WITH CHECK (true)` + `GRANT ALL T
 
 | Table | Key columns |
 |-------|-------------|
-| `tasks` | id, title, status, priority, due_date, project_id, area, energy_level, waiting_for, archived_at, subtasks (jsonb `[{id,text,done}]`) |
+| `tasks` | id, title, status, priority, due_date, project_id, area, energy_level, waiting_for, archived_at, subtasks (jsonb), context (text[]) |
 | `projects` | id, title, slug, status, priority, area, start_date, end_date, is_highlight, archived_at |
-| `people` | id, first_name, last_name, preferred_name, professional_title, relationship, contact_type, occupation, company, email_personal, email_work, phone_personal, phone_work, birthday, address_street, address_city, address_state, address_zip, address_work_street, address_work_city, address_work_state, address_work_zip, social_media (jsonb `[{platform,handle}]`), notes, is_stale, status, avatar_url (text) |
-| `daily_notes` | id, date, top_of_mind[], agenda jsonb, notes jsonb, habit_morning_meds, habit_evening_meds, habit_journal, habit_meditation, habit_breathwork, habit_stretching, habit_health_tracking, code_challenge jsonb, quote text, quote_author text |
+| `people` | id, first_name, last_name, preferred_name, professional_title, relationship, contact_type, occupation, company, email_personal, email_work, phone_personal, phone_work, birthday, address_street, address_city, address_state, address_zip, address_work_street, address_work_city, address_work_state, address_work_zip, social_media (jsonb), notes, is_stale, status, avatar_url |
+| `daily_notes` | id, date, top_of_mind[], agenda jsonb, notes jsonb, habit_morning_meds, habit_evening_meds, habit_journal, habit_meditation, habit_breathwork, habit_stretching, habit_health_tracking, habit_code_challenge, code_challenge jsonb, quote text, quote_author text |
 | `reviews` | id, type, date, status, content jsonb, suggestions jsonb, insights jsonb, summary text, updated_at |
+| `calendar_events` | id (text PK), date, summary, start_time (timestamptz), end_time (timestamptz), all_day (bool), calendar_name, notes, synced_at |
 | `energy_levels` | id, value, label, icon, bg_color, text_color, sort_order |
 | `priorities` | id, value, label, bg_color, text_color, sort_order |
 | `areas` | id, name, sort_order |
@@ -179,17 +180,19 @@ All tables have RLS enabled with `USING (true) WITH CHECK (true)` + `GRANT ALL T
 - **People:** inbox → active → stale (is_stale flag + status)
 
 ## React Context Pattern
-Three reference-data contexts are mounted at the App root level (outside BrowserRouter):
+Contexts mounted at App root (outside BrowserRouter):
 ```jsx
-<AuthProvider>
-  <EnergyLevelsProvider>
-    <PrioritiesProvider>
-      <AreasProvider>
-        <BrowserRouter>…</BrowserRouter>
-      </AreasProvider>
-    </PrioritiesProvider>
-  </EnergyLevelsProvider>
-</AuthProvider>
+<ThemeProvider>        // persists theme to localStorage, sets data-theme on <html>
+  <AuthProvider>
+    <EnergyLevelsProvider>
+      <PrioritiesProvider>
+        <AreasProvider>
+          <BrowserRouter>…</BrowserRouter>
+        </AreasProvider>
+      </PrioritiesProvider>
+    </EnergyLevelsProvider>
+  </AuthProvider>
+</ThemeProvider>
 ```
 - Each fetches from DB once on mount and exposes `{ data[], map{}, loading, reload }`
 - Components consume via `useEnergyLevels()`, `usePriorities()`, `useAreas()`
@@ -217,34 +220,33 @@ Three reference-data contexts are mounted at the App root level (outside Browser
 - Redirect URLs configured in Supabase: `https://gtd-manager.pages.dev` + `https://*.gtd-manager.pages.dev`
 
 ## Pages — Current State
-- **Daily** — date nav (← → chevrons + "↩ Back to Today" pill), daily quote, quick capture bar, top-of-mind, stat cards (5 metrics), agenda, projects section, tasks section, notes log, habit toggles, daily challenge, review buttons
+- **Daily** — date nav, daily quote, quick capture bar, top-of-mind, stat cards, agenda (Google Calendar events + all-day tasks/project deadlines), projects section, tasks section, notes log, habit toggles (7 habits, code challenge excluded), collapsible Challenge section (auto-marks habit on submit), review buttons
 - **Tasks** — tabbed by status, stat summary row, capture modal, click row → `/tasks/:id`
-- **TaskPage** — full detail: title, status, priority (from context), energy level (from context), area (datalist), due date, duration, waiting-for, description, subtask checklist (pencil-edit, check-off saves immediately), comments, linked people, archive/delete
+- **TaskPage** — full detail: title, status, priority, energy level, area, due date, duration, description, **Context Tags section** (toggleable chips + combobox input, saves immediately), subtask checklist, **Notes** (was Comments), linked people, archive/delete
 - **Projects** — tabbed by status, capture modal, click row → `/projects/:id`
-- **ProjectPage** — full detail: all fields, task list by status (incl. Inbox tab), comments, linked people, Scrap It (hard delete with cascade)
+- **ProjectPage** — full detail: all fields, task list by status, **Notes** (was Comments), linked people, Scrap It
 - **People** — tabbed by status, click row → `/people/:id`
-- **PersonPage** — avatar circle (72px, click-to-upload) above Identity fields; grouped sections: Identity (title, name, relationship, contact type, occupation, company), Contact Details (personal/work email+phone, birthday), Addresses (home + work structured), Social Media (dynamic platform+handle list), Notes; tasks, projects, comments, What's Next actions
-- **Habits** — calendar heatmap, streaks, % bars, time-frame selector
-- **Reviews** — Daily/Weekly/Monthly, autosave, suggestion cards, complete button. Daily Review has "Generate with AI" button that runs the daily review skill.
-- **Settings** — Energy Levels (full color picker + icon + badge preview), Priorities (color pickers + badge preview), Areas (name list); all DB-driven with add/edit/delete. AI Assistant section: provider dropdown (Anthropic/OpenAI/Gemini/Groq/Mistral/Ollama/Custom), base URL, model, API key, Save + Test Connection.
+- **PersonPage** — avatar, Identity, Contact Details, Addresses, Social Media, Notes; tasks, projects, **Notes** (was Comments), What's Next
+- **Habits** — calendar heatmap, streaks, % bars. Includes Code Challenge habit (💻) auto-marked when challenge submitted.
+- **Reviews** — Daily/Weekly/Monthly, autosave, suggestion cards. Daily Review has "Generate with AI" button.
+- **Settings** — Appearance (theme switcher: Catppuccin / GitHub Dark), Energy Levels, Priorities, Areas, AI Assistant config.
 
 ## AI Layer — Current State
 - **Architecture:** brand-agnostic. All calls route through `supabase/functions/ai-proxy` Edge Function to avoid CORS. Client sends `{ provider, apiKey, model, messages }` to the proxy.
 - **Config storage:** provider, model, baseUrl, apiKey stored in Supabase `auth.users.raw_user_meta_data`. Never in source bundle.
 - **Providers supported:** Anthropic (x-api-key header), all OpenAI-compatible (Bearer token).
 - **Daily Review skill** (`src/lib/ai/skills/dailyReview.js`):
-  - Pulls: all active projects, active tasks, last 30 daily notes (memory), inbox count, habit state, user's typed review notes
-  - Generates: top_of_mind[], agenda[], code_challenge, quote, suggestions[]
+  - Pulls: active projects, active tasks, last 30 daily notes (memory), inbox count, habit state, tomorrow's `calendar_events`, last completed challenge, user's typed review notes
+  - Generates: top_of_mind[], agenda (calendar-anchored, real times only), code_challenge (with ai_feedback critique if previous was completed), quote, suggestions[]
   - Writes to: tomorrow's `daily_notes` row (top_of_mind, agenda, code_challenge), today's `reviews` row (suggestions)
+  - **Challenge progression:** only generates a new challenge when the previous one has `completed: true`; includes the user's answer + AI critique (`ai_feedback`) in the next challenge
 - **Edge Function:** `supabase/functions/ai-proxy/index.ts` — deployed to Supabase, handles CORS, proxies to provider.
-- **Supabase schema fixes applied this session:** added `content`, `status`, `updated_at` to `reviews`; added `archived_at`, `waiting_for` to `tasks`; added `archived_at` to `projects`.
 
-## Next Session — Review Workflow
-Focus: improve the Daily Review workflow end-to-end.
-- Review UX when review is already marked complete (currently collapses content)
-- Make AI suggestions actionable — accept a suggestion should optionally write to DB (e.g. create the suggested task, update the project)
-- Weekly and Monthly review AI skills
-- Consider: should the AI Generate button be on the Daily page itself, not just in Reviews?
+## Next Session — Color Theme System
+The theme switcher (Catppuccin / GitHub Dark) currently only re-themes the sidebar chrome. The rest of the app uses hardcoded hex values. Next focus:
+- Extend CSS variable coverage to page content, modals, forms, cards, badges
+- Potentially add more themes
+- Consider a theme preview in Settings → Appearance
 
 ## Project Rename — Completed (2026-05-29)
 The project was officially renamed to **Celerity App**. All references updated:
