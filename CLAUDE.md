@@ -20,6 +20,21 @@ Single user app (emailemsmith@gmail.com). No multi-tenancy needed — RLS polici
 - **Cloudflare account ID:** `2e21f19b71235b0620cfdb8c91bf4156`
 - **Cloudflare Pages project:** `celerity-app` (domain: gtd-manager.pages.dev — permanent, tied to original project name)
 
+## Changelog
+
+**Location:** `CHANGELOG.md` at the repo root.
+
+**Rule: update `CHANGELOG.md` before every commit.** Add an entry under the current date (or the existing `[Unreleased]` block if the session isn't done yet). Format:
+
+```
+## YYYY-MM-DD
+
+### Added / Changed / Fixed
+- Short description of what changed and why it matters to the user.
+```
+
+Do not commit without a corresponding changelog entry. The changelog is the human-readable record of the project — keep it up to date so it never has to be backfilled again.
+
 ## Project Structure
 ```
 src/
