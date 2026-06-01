@@ -532,7 +532,7 @@ export default function TaskPage() {
 
           {/* Comments section */}
           <section>
-            <h2 className="text-base font-semibold mb-3" style={{ color: '#cdd6f4' }}>Comments</h2>
+            <h2 className="text-base font-semibold mb-3" style={{ color: '#cdd6f4' }}>Notes</h2>
             <div
               className="rounded-xl border p-4"
               style={{ backgroundColor: '#181825', borderColor: '#313244' }}

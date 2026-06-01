@@ -251,7 +251,7 @@ export default function PersonDetail({ person: initialPerson, open, onClose, onR
 
       {/* ── Tabs ── */}
       <div className="flex gap-1 mb-5 border-b" style={{ borderColor: '#313244' }}>
-        {['details', 'tasks', 'projects', 'comments'].map(t => (
+        {['details', 'tasks', 'projects', 'notes'].map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -332,7 +332,7 @@ export default function PersonDetail({ person: initialPerson, open, onClose, onR
       {tab === 'projects' && <PersonProjectsTab personId={person.id} />}
 
       {/* ── Comments tab ── */}
-      {tab === 'comments' && <PersonComments personId={person.id} />}
+      {tab === 'notes' && <PersonComments personId={person.id} />}
 
       {/* ── Action buttons ── */}
       <div className="mt-6 pt-5 border-t flex flex-wrap gap-2" style={{ borderColor: '#313244' }}>

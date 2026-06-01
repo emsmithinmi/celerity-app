@@ -47,7 +47,7 @@ export default function TaskDetail({ task: initialTask, open, onClose, onRefresh
   const { priorities, priorityMap } = usePriorities()
   const { areas }                   = useAreas()
   const [task,    setTask]    = useState(initialTask)
-  const [tab,     setTab]     = useState('details')  // details | comments
+  const [tab,     setTab]     = useState('details')  // details | context | notes
   const [saving,  setSaving]  = useState(false)
   const [dirty,   setDirty]   = useState(false)
 
@@ -243,7 +243,7 @@ export default function TaskDetail({ task: initialTask, open, onClose, onRefresh
 
         {/* ── Tabs ── */}
         <div className="flex gap-1 mb-5 border-b" style={{ borderColor: '#313244' }}>
-          {['details', 'context', 'comments'].map(t => (
+          {['details', 'context', 'notes'].map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -470,7 +470,7 @@ export default function TaskDetail({ task: initialTask, open, onClose, onRefresh
         )}
 
         {/* ── Comments tab ── */}
-        {tab === 'comments' && <TaskComments taskId={task.id} />}
+        {tab === 'notes' && <TaskComments taskId={task.id} />}
 
         {/* ── Action buttons ── */}
         {!isDone && (

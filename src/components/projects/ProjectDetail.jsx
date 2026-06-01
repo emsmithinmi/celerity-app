@@ -233,7 +233,7 @@ export default function ProjectDetail({ project: initialProject, open, onClose, 
 
         {/* ── Tabs ── */}
         <div className="flex gap-1 mb-5 border-b" style={{ borderColor: '#313244' }}>
-          {['details', 'tasks', 'comments'].map(t => (
+          {['details', 'tasks', 'notes'].map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -323,7 +323,7 @@ export default function ProjectDetail({ project: initialProject, open, onClose, 
         )}
 
         {/* ── Comments tab ── */}
-        {tab === 'comments' && <ProjectComments projectId={project.id} />}
+        {tab === 'notes' && <ProjectComments projectId={project.id} />}
 
         {/* ── Action buttons ── */}
         {!isCompleted && !isArchived && (
