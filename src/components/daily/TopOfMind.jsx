@@ -1,5 +1,6 @@
 ﻿import { useState } from 'react'
 import Button from '../ui/Button'
+import { PencilBtn } from '../ui'
 
 export default function TopOfMind({ items = [], onSave }) {
   const [editing, setEditing] = useState(false)
@@ -35,16 +36,7 @@ export default function TopOfMind({ items = [], onSave }) {
         <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
           Top of Mind
         </h3>
-        {!editing && (
-          <button
-            onClick={startEdit}
-            className="text-sm transition-opacity hover:opacity-70"
-            style={{ color: 'var(--text-secondary)' }}
-            title="Edit"
-          >
-            ✏️
-          </button>
-        )}
+        {!editing && <PencilBtn onClick={startEdit} title="Edit Top of Mind" />}
       </div>
 
       <div
@@ -104,7 +96,7 @@ export default function TopOfMind({ items = [], onSave }) {
           </ul>
         ) : (
           <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-            Nothing added yet. Click ✏️ to add items.
+            Nothing added yet. Click the pencil to add items.
           </p>
         )}
       </div>
