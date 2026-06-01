@@ -10,6 +10,13 @@ _Nothing pending — all changes committed and deployed._
 
 ---
 
+## 2026-06-01 (4)
+
+### Fixed
+- **Agenda filtering** — tasks now only appear on their `due_date`; projects only appear on their `end_date` (start date removed). All-day items (tasks, project deadlines) render at the top of the card with an "all day" label. AI-generated timed blocks from the Daily Review render below them — only real calendar times are shown.
+
+---
+
 ## 2026-06-01 (3)
 
 ### Fixed
