@@ -8,6 +8,11 @@ All notable changes to Celerity are recorded here.
 
 _Nothing pending — all changes committed and deployed._
 
+## 2026-06-01 (6)
+
+### Fixed
+- **Agenda showing wrong projects** — `end_date` and `start_date` filters were silently ignored in `getProjects`, causing all projects to appear. Now correctly filters to projects whose end date matches the viewed day.
+
 ---
 
 ## 2026-06-01 (5)
