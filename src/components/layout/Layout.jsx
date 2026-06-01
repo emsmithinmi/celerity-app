@@ -91,8 +91,8 @@ export default function Layout() {
               transition: 'padding 200ms ease',
             }}
           >
-            {expanded && user && (
-              <div className="flex items-center min-w-0 flex-1 gap-2">
+            {user && (
+              <div className={`flex items-center min-w-0 ${expanded ? 'flex-1 gap-2' : ''}`}>
                 <AvatarCircle
                   src={user.user_metadata?.avatar_url}
                   name={user.email ?? ''}
@@ -101,25 +101,29 @@ export default function Layout() {
                   uploading={avatarUploading}
                   onFileSelect={handleUserAvatarUpload}
                 />
-                <p
-                  className="text-xs truncate flex-1"
-                  style={{ color: 'var(--text-secondary)' }}
-                  title={user.email}
-                >
-                  {user.email}
-                </p>
+                {expanded && (
+                  <p
+                    className="text-xs truncate flex-1"
+                    style={{ color: 'var(--text-secondary)' }}
+                    title={user.email}
+                  >
+                    {user.email}
+                  </p>
+                )}
               </div>
             )}
-            <button
-              onClick={toggleLock}
-              className="flex items-center justify-center rounded-lg transition-colors shrink-0"
-              style={{ color: 'var(--text-secondary)', backgroundColor: 'transparent', width: '28px', height: '28px' }}
-              onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }}
-              onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
-              title={locked ? 'Unpin sidebar' : 'Pin sidebar open'}
-            >
-              {locked ? <Pin size={13} /> : <PinOff size={13} />}
-            </button>
+            {expanded && (
+              <button
+                onClick={toggleLock}
+                className="flex items-center justify-center rounded-lg transition-colors shrink-0"
+                style={{ color: 'var(--text-secondary)', backgroundColor: 'transparent', width: '28px', height: '28px' }}
+                onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }}
+                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
+                title={locked ? 'Unpin sidebar' : 'Pin sidebar open'}
+              >
+                {locked ? <Pin size={13} /> : <PinOff size={13} />}
+              </button>
+            )}
           </div>
 
           {/* Nav */}
