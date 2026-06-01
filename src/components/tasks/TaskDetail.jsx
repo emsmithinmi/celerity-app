@@ -300,17 +300,10 @@ export default function TaskDetail({ task: initialTask, open, onClose, onRefresh
 
             {/* Area */}
             <FormField label="Area" required>
-              <input
-                list="td-areas-list"
-                value={task.area ?? ''}
-                onChange={e => change('area', e.target.value)}
-                placeholder="Select or type…"
-                className={inputCls}
-                style={inputStyle}
-              />
-              <datalist id="td-areas-list">
-                {areas.map(a => <option key={a.id} value={a.value} />)}
-              </datalist>
+              <select value={task.area ?? ''} onChange={e => change('area', e.target.value)} className={inputCls} style={inputStyle}>
+                <option value="">Select…</option>
+                {areas.map(a => <option key={a.id} value={a.name}>{a.name}</option>)}
+              </select>
             </FormField>
 
             {/* Description */}

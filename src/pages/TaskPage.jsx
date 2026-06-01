@@ -325,17 +325,10 @@ export default function TaskPage() {
                 {editing ? (
                   <div>
                     <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Area</label>
-                    <input
-                      list="areas-list"
-                      value={d.area ?? ''}
-                      onChange={e => change('area', e.target.value)}
-                      className={inputCls}
-                      style={inputStyle}
-                      placeholder="Select or type…"
-                    />
-                    <datalist id="areas-list">
-                      {areas.map(a => <option key={a.id} value={a.value} />)}
-                    </datalist>
+                    <select value={d.area ?? ''} onChange={e => change('area', e.target.value)} className={inputCls} style={inputStyle}>
+                      <option value="">Select…</option>
+                      {areas.map(a => <option key={a.id} value={a.name}>{a.name}</option>)}
+                    </select>
                   </div>
                 ) : (
                   <ReadField label="Area" value={task.area} />

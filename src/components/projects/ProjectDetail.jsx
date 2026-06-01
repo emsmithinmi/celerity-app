@@ -266,13 +266,10 @@ export default function ProjectDetail({ project: initialProject, open, onClose, 
               </FormField>
 
               <FormField label="Area" required>
-                <input list="pd-areas-list" value={project.area ?? ''}
-                  onChange={e => change('area', e.target.value)}
-                  placeholder="Select or type…"
-                  className={inputCls} style={inputStyle} />
-                <datalist id="pd-areas-list">
-                  {areas.map(a => <option key={a.id} value={a.value} />)}
-                </datalist>
+                <select value={project.area ?? ''} onChange={e => change('area', e.target.value)} className={inputCls} style={inputStyle}>
+                  <option value="">Select…</option>
+                  {areas.map(a => <option key={a.id} value={a.name}>{a.name}</option>)}
+                </select>
               </FormField>
             </div>
 
