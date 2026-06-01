@@ -10,6 +10,20 @@ _Nothing pending — all changes committed and deployed._
 
 ---
 
+## 2026-06-01 (3)
+
+### Fixed
+- **Agenda not showing** — `AgendaSection` was ignoring `daily_notes.agenda` entirely; now renders AI-generated timed items from the stored agenda alongside live scheduled tasks and project dates.
+
+### Added
+- **`habit_code_challenge`** column on `daily_notes`; added to the Habits list (💻 Code Challenge). Submitting a challenge answer auto-marks it complete.
+
+### Changed
+- **Challenge section** is now collapsed by default — click to expand. Renamed from "Daily Challenge" to "Challenge". Quiet, always visible as a header row.
+- **Daily Review AI** now fetches the most recent completed challenge, passes the prompt + user answer to the AI for critique (`ai_feedback`), and generates a new challenge that builds on the last. If no completed challenge exists, generates a fresh beginner one. New challenges always start with `completed: false`.
+
+---
+
 ## 2026-06-01 (2)
 
 ### Changed
