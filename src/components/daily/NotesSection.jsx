@@ -1,22 +1,22 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { Pencil, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import Button from '../ui/Button'
 
 const PREVIEW_LINES = 3
 
 function NoteEntry({ entry, onEdit, onDelete }) {
-  const [expanded, setExpanded]   = useState(false)
-  const [editing,  setEditing]    = useState(false)
-  const [draft,    setDraft]      = useState(entry.body)
-  const [saving,   setSaving]     = useState(false)
+  const [expanded, setExpanded] = useState(false)
+  const [editing,  setEditing]  = useState(false)
+  const [draft,    setDraft]    = useState(entry.body)
+  const [saving,   setSaving]   = useState(false)
 
   const date    = new Date(entry.timestamp)
   const timeStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     + ' · '
     + date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
 
-  const lines      = entry.body.split('\n')
-  const isLong     = lines.length > PREVIEW_LINES || entry.body.length > 240
+  const lines       = entry.body.split('\n')
+  const isLong      = lines.length > PREVIEW_LINES || entry.body.length > 240
   const displayBody = (!expanded && isLong)
     ? lines.slice(0, PREVIEW_LINES).join('\n').slice(0, 240)
     : entry.body
@@ -29,16 +29,14 @@ function NoteEntry({ entry, onEdit, onDelete }) {
     setEditing(false)
   }
 
-  const handleCancel = () => {
-    setDraft(entry.body)
-    setEditing(false)
-  }
-
-  const handleDelete = () => onDelete(entry.timestamp)
+  const handleCancel = () => { setDraft(entry.body); setEditing(false) }
 
   return (
-    <div className="px-4 py-3 border-b last:border-b-0" style={{ borderColor: 'var(--border)' }}>
-      {/* Header row: timestamp + action icons */}
+    <div
+      className="rounded-lg px-3 py-2.5 border"
+      style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)' }}
+    >
+      {/* Header: timestamp + actions */}
       <div className="flex items-center justify-between mb-1">
         <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{timeStr}</p>
         {!editing && (
@@ -47,27 +45,27 @@ function NoteEntry({ entry, onEdit, onDelete }) {
               onClick={() => { setDraft(entry.body); setEditing(true); setExpanded(true) }}
               title="Edit note"
               className="flex items-center justify-center rounded transition-colors duration-150"
-              style={{ width: 24, height: 24, backgroundColor: 'transparent', color: 'var(--text-secondary)' }}
+              style={{ width: 22, height: 22, backgroundColor: 'transparent', color: 'var(--text-dim)' }}
               onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }}
-              onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-dim)' }}
             >
-              <Pencil size={12} />
+              <Pencil size={11} />
             </button>
             <button
-              onClick={handleDelete}
+              onClick={() => onDelete(entry.timestamp)}
               title="Delete note"
               className="flex items-center justify-center rounded transition-colors duration-150"
-              style={{ width: 24, height: 24, backgroundColor: 'transparent', color: 'var(--text-secondary)' }}
-              onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--delete-hover-bg)'; e.currentTarget.style.color = 'var(--state-error-text)' }}
-              onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
+              style={{ width: 22, height: 22, backgroundColor: 'transparent', color: 'var(--text-dim)' }}
+              onMouseEnter={e => { e.currentTarget.style.color = 'var(--danger)' }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-dim)' }}
             >
-              <Trash2 size={12} />
+              <Trash2 size={11} />
             </button>
           </div>
         )}
       </div>
 
-      {/* Body: edit mode or read mode */}
+      {/* Body */}
       {editing ? (
         <div className="space-y-2">
           <textarea
@@ -119,12 +117,15 @@ export default function NotesSection({ notes = [], onAdd, onEdit, onDelete }) {
   const [saving, setSaving] = useState(false)
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e?.preventDefault()
     if (!body.trim()) return
     setSaving(true)
-    await onAdd(body.trim())
-    setBody('')
-    setSaving(false)
+    try {
+      await onAdd(body.trim())
+      setBody('')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -133,52 +134,35 @@ export default function NotesSection({ notes = [], onAdd, onEdit, onDelete }) {
         Notes
       </h3>
 
-      {/* Existing entries — newest first */}
-      {notes.length > 0 && (
-        <div
-          className="rounded-xl border overflow-hidden mb-3"
-          style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
-        >
-          {[...notes].reverse().map((entry) => (
-            <NoteEntry
-              key={entry.timestamp}
-              entry={entry}
-              onEdit={onEdit}
-              onDelete={onDelete}
-            />
-          ))}
-        </div>
-      )}
+      <div className="space-y-2">
+        {/* Existing entries — newest first */}
+        {notes.length === 0 && (
+          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>No notes yet.</p>
+        )}
+        {[...notes].reverse().map(entry => (
+          <NoteEntry key={entry.timestamp} entry={entry} onEdit={onEdit} onDelete={onDelete} />
+        ))}
 
-      {/* Add note form */}
-      <form onSubmit={handleSubmit}>
-        <div
-          className="rounded-xl border overflow-hidden"
-          style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
-        >
+        {/* Add note */}
+        <form onSubmit={handleSubmit} className="space-y-2">
           <textarea
             value={body}
             onChange={e => setBody(e.target.value)}
-            onKeyDown={e => {
-              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSubmit(e)
-            }}
-            placeholder="Add a note… (Ctrl+Enter to save)"
-            rows={3}
-            className="w-full bg-transparent px-4 pt-3 pb-2 text-sm outline-none resize-none"
-            style={{ color: 'var(--text-primary)' }}
+            onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSubmit(e) }}
+            placeholder="Add a note… (Ctrl+Enter)"
+            rows={2}
+            className="w-full px-3 py-2 rounded-lg text-sm border outline-none resize-none"
+            style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+            onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+            onBlur={e => e.target.style.borderColor = 'var(--border)'}
           />
-          <div className="flex justify-end px-3 pb-3">
-            <Button
-              type="submit"
-              size="sm"
-              variant="primary"
-              disabled={!body.trim() || saving}
-            >
+          <div className="flex justify-end">
+            <Button type="submit" size="sm" variant="secondary" disabled={!body.trim() || saving}>
               {saving ? 'Saving…' : 'Add Note'}
             </Button>
           </div>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   )
 }

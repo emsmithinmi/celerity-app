@@ -54,7 +54,9 @@ export function useDaily(date) {
 
   const handleAddNote = async (body) => {
     if (!note) return
-    const updated = await addNoteEntry(note.id, body)
+    const newEntry = { timestamp: new Date().toISOString(), body }
+    const updatedNotes = [...(note.notes ?? []), newEntry]
+    const updated = await updateNotesArray(note.id, updatedNotes)
     setNote(updated)
   }
 
