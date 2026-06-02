@@ -6,7 +6,7 @@ import { updateSuggestions } from '../../api/reviews'
 // ─── Context Builder ──────────────────────────────────────────────────────────
 
 export async function buildReflectContext() {
-  const today = new Date().toISOString().split('T')[0]
+  const today = new Date().toLocaleDateString('en-CA')
 
   const [projectsRes, activeTasksRes, inboxRes, notesRes, todayNoteRes] = await Promise.all([
     supabase
@@ -194,9 +194,9 @@ Rules:
 // ─── Write Results to DB ──────────────────────────────────────────────────────
 
 export async function writeReflectResults(reviewId, result) {
-  const tomorrow = new Date(new Date().toISOString().split('T')[0] + 'T12:00:00')
+  const tomorrow = new Date(new Date().toLocaleDateString('en-CA') + 'T12:00:00')
   tomorrow.setDate(tomorrow.getDate() + 1)
-  const tomorrowStr = tomorrow.toISOString().split('T')[0]
+  const tomorrowStr = tomorrow.toLocaleDateString('en-CA')
 
   const tomorrowNote = await ensureNoteForDate(tomorrowStr)
 

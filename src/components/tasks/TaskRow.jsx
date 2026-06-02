@@ -3,7 +3,7 @@
 export default function TaskRow({ task, onClick }) {
   const isDone    = task.status === 'done'
   const isWaiting = task.status === 'waiting'
-  const today     = new Date().toISOString().split('T')[0]
+  const today     = new Date().toLocaleDateString('en-CA')
   const overdue   = task.due_date && task.due_date < today && !isDone
 
   return (

@@ -174,7 +174,7 @@ export default function PersonDetail({ person: initialPerson, open, onClose, onR
     const updated = await updatePerson(person.id, {
       status: 'active',
       is_stale: false,
-      last_contact_at: new Date().toISOString().split('T')[0],
+      last_contact_at: new Date().toLocaleDateString('en-CA'),
     })
     setPerson(prev => ({ ...prev, ...updated }))
     onRefresh?.()

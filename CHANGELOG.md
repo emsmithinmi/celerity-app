@@ -4,9 +4,14 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
-## [Unreleased]
+## 2026-06-01 (Session 3)
 
-_Nothing pending._
+### Fixed
+- **UTC date bug (global sweep)** — `toISOString().split('T')[0]` returns UTC date, which was rolling to tomorrow for US timezones after ~8pm. Replaced with `toLocaleDateString('en-CA')` (YYYY-MM-DD local) across all 11 affected files: Daily, Reviews, Habits, HabitPage, TasksSection, TaskRow, ProjectRow, PersonDetail, daily.js, dailyReview.js, reflectReview.js.
+- **Daily page showing tomorrow** — "Back to Today" button was always visible because `todayStr()` returned the UTC date. Now correctly uses local date.
+- **Reviews date** — review session was loading/creating tomorrow's record instead of today's.
+- **Generate Tomorrow's Plan silent fail** — "Review record missing" error was caused by a race condition in `ensureReview`: two rapid calls (React StrictMode double-invoke) both passed the existence check and raced to insert, the second threw a unique constraint violation, the error was swallowed, and `review` was left null. Fixed with: (1) retry-fetch on insert error in `ensureReview`, (2) unique constraint `(type, date)` added to `reviews` table replacing the plain index, (3) visible error state + Retry button in Reviews page instead of silent swallow.
+- **Duplicate review row** — cleaned up existing duplicate `daily / 2026-06-02` row left by the race condition.
 
 ## 2026-06-01 (Session 2)
 

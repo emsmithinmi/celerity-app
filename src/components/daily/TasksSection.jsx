@@ -38,7 +38,7 @@ function TaskRow({ task }) {
           <span
             className="text-xs"
             style={{
-              color: task.due_date <= new Date().toISOString().split('T')[0]
+              color: task.due_date <= new Date().toLocaleDateString('en-CA')
                 ? 'var(--danger)'
                 : 'var(--text-secondary)',
             }}

@@ -17,7 +17,7 @@ async function getTomorrowCalendarEvents(tomorrowStr) {
 // ─── Context Builder ──────────────────────────────────────────────────────────
 
 async function buildContext(reviewContent = {}) {
-  const today = new Date().toISOString().split('T')[0]
+  const today = new Date().toLocaleDateString('en-CA')
 
   // Fetch the most recent completed challenge for critique + progression
   const recentChallengeRes = await supabase
@@ -87,7 +87,7 @@ async function buildContext(reviewContent = {}) {
   // Tomorrow's calendar events
   const tomorrow = new Date(today + 'T12:00:00')
   tomorrow.setDate(tomorrow.getDate() + 1)
-  const tomorrowStr = tomorrow.toISOString().split('T')[0]
+  const tomorrowStr = tomorrow.toLocaleDateString('en-CA')
   const calendarEvents = await getTomorrowCalendarEvents(tomorrowStr)
 
   // Pre-select weighted quote candidates, excluding recently used quotes

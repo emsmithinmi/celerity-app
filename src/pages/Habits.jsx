@@ -17,7 +17,7 @@ function computeCurrentStreak(dateMap, habitKey) {
   for (let i = 0; i < 365; i++) {
     const d = new Date(today)
     d.setDate(d.getDate() - i)
-    const dateStr = d.toISOString().split('T')[0]
+    const dateStr = d.toLocaleDateString('en-CA')
     const row = dateMap[dateStr]
     if (!row || !row[habitKey]) break
     streak++
@@ -31,7 +31,7 @@ function computePercent(dateMap, habitKey, days) {
   for (let i = 0; i < days; i++) {
     const d = new Date(today)
     d.setDate(d.getDate() - i)
-    const dateStr = d.toISOString().split('T')[0]
+    const dateStr = d.toLocaleDateString('en-CA')
     const row = dateMap[dateStr]
     if (row) { total++; if (row[habitKey]) completed++ }
   }
@@ -43,7 +43,7 @@ function getLast7Days(dateMap, habitKey) {
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(today)
     d.setDate(d.getDate() - (6 - i))
-    const dateStr = d.toISOString().split('T')[0]
+    const dateStr = d.toLocaleDateString('en-CA')
     const row = dateMap[dateStr]
     return { date: dateStr, done: !!(row && row[habitKey]) }
   })

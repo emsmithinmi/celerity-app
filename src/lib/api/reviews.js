@@ -38,7 +38,13 @@ export async function ensureReview(type, date) {
     .insert({ type, date, status: 'draft', content: {}, suggestions: [] })
     .select()
     .single()
-  if (error) throw error
+
+  if (error) {
+    // Race condition: row was created between our read and insert — re-fetch
+    const retry = await getReviewByDate(type, date)
+    if (retry) return retry
+    throw error
+  }
   return data
 }
 

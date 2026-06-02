@@ -3,7 +3,7 @@ import { supabase } from '../supabase'
 // ─── Fetch ────────────────────────────────────────────────────────────────────
 
 export async function getTodayNote() {
-  const today = new Date().toISOString().split('T')[0]
+  const today = new Date().toLocaleDateString('en-CA')
   return getNoteByDate(today)
 }
 
@@ -57,7 +57,7 @@ export async function ensureNoteForDate(date) {
 
 // Convenience wrapper kept for any callers outside the Daily page
 export async function ensureTodayNote() {
-  return ensureNoteForDate(new Date().toISOString().split('T')[0])
+  return ensureNoteForDate(new Date().toLocaleDateString('en-CA'))
 }
 
 // ─── Habits ───────────────────────────────────────────────────────────────────
@@ -76,7 +76,7 @@ export async function toggleHabit(noteId, habitKey, value) {
 export async function getHabitHistory(days = 30) {
   const since = new Date()
   since.setDate(since.getDate() - days)
-  const sinceStr = since.toISOString().split('T')[0]
+  const sinceStr = since.toLocaleDateString('en-CA')
 
   const { data, error } = await supabase
     .from('daily_notes')
@@ -191,7 +191,7 @@ export async function getCalendarEvents(date) {
 // ─── Stats (for stat cards) ───────────────────────────────────────────────────
 
 export async function getDailyStats(date) {
-  const d = date ?? new Date().toISOString().split('T')[0]
+  const d = date ?? new Date().toLocaleDateString('en-CA')
 
   const [inProgress, nextActions, waiting, stalled, dueTodayTasks, dueTodayProjects] = await Promise.all([
     // Projects in progress

@@ -2,7 +2,7 @@
 
 export default function ProjectRow({ project, onClick }) {
   const isArchived  = !!project.archived_at
-  const today       = new Date().toISOString().split('T')[0]
+  const today       = new Date().toLocaleDateString('en-CA')
   const overdue     = project.end_date && project.end_date < today
     && project.status !== 'completed' && !isArchived
 

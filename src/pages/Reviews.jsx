@@ -369,7 +369,7 @@ function CaptureStep({ onNext, todayNoteId }) {
 // ─── STEP 2: CLARIFY ──────────────────────────────────────────────────────────
 
 function ClarifyStep({ onNext, onBack }) {
-  const today = new Date().toISOString().split('T')[0]
+  const today = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD in local time
   const [inboxTasks,    setInboxTasks]    = useState([])
   const [inboxProjects, setInboxProjects] = useState([])
   const [inboxPeople,   setInboxPeople]   = useState([])
@@ -646,7 +646,7 @@ function ReflectStep({ review, onComplete, onBack }) {
       setTyping(true)
       setTimeout(() => {
         setTyping(false)
-        addBubble('ai', `✨ Tomorrow's plan is set for <strong>${new Date(new Date().toISOString().split('T')[0] + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</strong>. Top of mind, agenda, and challenge are written to your Daily page. Review the suggestions below when you complete.`)
+        addBubble('ai', `✨ Tomorrow's plan is set for <strong>${new Date(new Date().toLocaleDateString('en-CA') + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</strong>. Top of mind, agenda, and challenge are written to your Daily page. Review the suggestions below when you complete.`)
       }, 800)
     } catch (err) {
       addBubble('ai', `Something went wrong generating the plan: ${err.message}`)
@@ -803,18 +803,21 @@ function ReflectStep({ review, onComplete, onBack }) {
 export default function Reviews() {
   const { type: urlType } = useParams()
   const navigate = useNavigate()
-  const today = new Date().toISOString().split('T')[0]
+  const today = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD in local time
 
   const activeType = ['daily', 'weekly', 'monthly'].includes(urlType) ? urlType : 'daily'
 
   const [step,        setStep]        = useState(0)
   const [review,      setReview]      = useState(null)
   const [loading,     setLoading]     = useState(true)
+  const [loadError,   setLoadError]   = useState(null)
+  const [retryCount,  setRetryCount]  = useState(0)
   const [todayNoteId, setTodayNoteId] = useState(null)
 
   useEffect(() => {
     setStep(0)
     setLoading(true)
+    setLoadError(null)
     Promise.all([
       ensureReview(activeType, today),
       supabase.from('daily_notes').select('id').eq('date', today).maybeSingle(),
@@ -823,10 +826,11 @@ export default function Reviews() {
       setTodayNoteId(noteRes.data?.id ?? null)
     }).catch(err => {
       console.error('Reviews load error:', err)
+      setLoadError(err.message ?? 'Failed to load review session.')
     }).finally(() => {
       setLoading(false)
     })
-  }, [activeType, today])
+  }, [activeType, today, retryCount])
 
   const REVIEW_TYPES = [
     { key: 'daily',   label: '📋 Daily'   },
@@ -871,6 +875,12 @@ export default function Reviews() {
         {loading ? (
           <div className="flex items-center justify-center h-32">
             <p className="text-sm" style={S.muted}>Loading…</p>
+          </div>
+        ) : loadError ? (
+          <div className="flex flex-col items-center justify-center h-32 gap-2">
+            <p className="text-sm font-medium" style={S.red}>Failed to start review session.</p>
+            <p className="text-xs" style={S.muted}>{loadError}</p>
+            <button className="text-xs mt-2 underline" style={S.blue} onClick={() => setRetryCount(c => c + 1)}>Retry</button>
           </div>
         ) : activeType === 'daily' ? (
           <>

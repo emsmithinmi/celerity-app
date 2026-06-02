@@ -18,7 +18,7 @@ function buildCalendarGrid(year, month) {
   const days = []
   for (let i = 0; i < startDow; i++) days.push(null)
   for (let d = 1; d <= lastDay.getDate(); d++) {
-    days.push(new Date(year, month, d).toISOString().split('T')[0])
+    days.push(new Date(year, month, d).toLocaleDateString('en-CA'))
   }
   while (days.length % 7 !== 0) days.push(null)
   return days
@@ -30,7 +30,7 @@ function computeCurrentStreak(dateMap, habitKey) {
   for (let i = 0; i < 365; i++) {
     const d = new Date(today)
     d.setDate(d.getDate() - i)
-    const dateStr = d.toISOString().split('T')[0]
+    const dateStr = d.toLocaleDateString('en-CA')
     const row = dateMap[dateStr]
     if (!row || !row[habitKey]) break
     streak++
@@ -62,7 +62,7 @@ function computePercent(dateMap, habitKey, days) {
   for (let i = 0; i < days; i++) {
     const d = new Date(today)
     d.setDate(d.getDate() - i)
-    const dateStr = d.toISOString().split('T')[0]
+    const dateStr = d.toLocaleDateString('en-CA')
     const row = dateMap[dateStr]
     if (row) { total++; if (row[habitKey]) completed++ }
   }
@@ -82,7 +82,7 @@ const TIMEFRAMES = [
 
 function HabitCalendar({ habitKey, calYear, calMonth, dateMap, onPrev, onNext }) {
   const grid  = useMemo(() => buildCalendarGrid(calYear, calMonth), [calYear, calMonth])
-  const today = new Date().toISOString().split('T')[0]
+  const today = new Date().toLocaleDateString('en-CA')
 
   return (
     <div className="rounded-xl border p-4" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>

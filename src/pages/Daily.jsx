@@ -35,14 +35,14 @@ const DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Sat
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
 
 function todayStr() {
-  return new Date().toISOString().split('T')[0]
+  return new Date().toLocaleDateString('en-CA') // YYYY-MM-DD in local time
 }
 
 function shiftDate(dateStr, days) {
   // Use noon local time to avoid daylight-saving edge cases
   const d = new Date(dateStr + 'T12:00:00')
   d.setDate(d.getDate() + days)
-  return d.toISOString().split('T')[0]
+  return d.toLocaleDateString('en-CA')
 }
 
 // ─── Date header with navigation ─────────────────────────────────────────────
