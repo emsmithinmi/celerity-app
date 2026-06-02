@@ -636,7 +636,8 @@ function ReflectStep({ review, onComplete, onBack }) {
   }
 
   const handleGenerate = async () => {
-    if (!ctx || !review?.id) return
+    if (!ctx) { addBubble('ai', 'Context not loaded yet — please wait a moment and try again.'); return }
+    if (!review?.id) { addBubble('ai', 'Review record missing — try refreshing the page.'); return }
     setGenerating(true)
     try {
       const result = await generateReflectPlan(ctx, conversation, scratchpad)
