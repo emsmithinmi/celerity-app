@@ -1,20 +1,36 @@
 # Changelog
 
-All notable changes to Celerity are recorded here.
+All notable changes to Focus Flow are recorded here.
 
 ---
 
 ## [Unreleased]
 
-### Changed
-- **App renamed to Focus Flow** — all UI labels, AI prompts, PWA manifest, page title, and package name updated. GitHub repo and Cloudflare URL unchanged (celerity-app / gtd-manager.pages.dev).
+_Nothing pending._
+
+## 2026-06-01 (Session 2)
 
 ### Added
-- **AI-picked daily quotes** — 400-quote curated pool across 6 weighted categories (Stoicism 20%, Science 20%, Comedians 20%, Movies 15%, Software humor 15%, Motivational 10%). Daily review AI picks tomorrow's quote contextually from a weighted 30-candidate shortlist, avoiding repeats from the last 30 days. Quote persists in `daily_notes` so it survives refreshes.
-- **Skip quote button** — hover the quote on the Daily page to reveal a skip button. Picks a random replacement from the pool and writes it to the DB instantly. No reload needed.
+- **Focus Flow rebrand** — app renamed from Celerity to Focus Flow. FF icon added as favicon, PWA icon, and sidebar logo mark.
+- **AI-picked daily quotes** — 400-quote curated pool (Stoicism 20%, Science 20%, Comedians 20%, Movies 15%, Software humor 15%, Motivational 10%). AI picks contextually from a weighted 30-candidate shortlist, avoiding last 30 days of repeats. Writes to `daily_notes.quote` for persistence.
+- **Quote skip button** — hover the quote to reveal a skip button. Picks a random pool replacement and writes to DB instantly.
+- **Sidebar pin/unpin** — pin locks sidebar open at 224px; unpin collapses to 56px icon strip and hovers out as an overlay with drop shadow. State persists to localStorage.
+- **PencilBtn / TrashBtn** — centralized in `src/components/ui/IconBtn.jsx`, exported from the UI barrel. Eliminates copy-paste drift across pages.
 
 ### Changed
-- **Full color theme system** — theme switching now re-themes the entire app, not just the sidebar. Replaced ~300 hardcoded Catppuccin hex values across 45 files with CSS custom properties. Added 60+ new tokens covering surfaces, text tones, accent palette, state banners (warning/error/success/stalled/purple), challenge badges, review suggestion cards, habit calendar, and button variants. GitHub Dark theme fully mapped with equivalent values throughout.
+- **Full color theme system** — theme switching now re-themes the entire app. ~300 hardcoded hex values replaced with CSS custom properties across 45 files. 60+ tokens added covering all surfaces, text tones, accent palette, state banners, challenge badges, review cards, and button variants. GitHub Dark fully mapped.
+- **Trash button** — moved to far right (ml-auto) on all What's Next action bars (Task, Project, Person).
+- **Area field** — converted from `<input list>/<datalist>` to `<select>` in all 4 locations. Matches Priority and Energy Level visually. Fixes silent bug where `a.value` was used instead of `a.label`.
+- **Themed select dropdowns** — all `<select>` elements get dark background and custom chevron via global CSS.
+- **Daily section dividers** — removed horizontal lines between sections. Spacing handles the separation.
+- **Daily notes** — individual card stack matching task notes style. Fixed save bug where second note could be silently dropped (re-fetching DB instead of using local state).
+- **TopOfMind edit button** — replaced ✏️ emoji with standard PencilBtn component.
+- **CLAUDE.md** — corrected areas table schema (`value, label, sort_order` — not `name`).
+
+### Fixed
+- **GTD inbox flow** — inbox tasks with a project assigned now offer "Queue it" instead of "Put Me in Coach". Correct GTD order: inbox → queue → next action.
+- **Assign to Project** — hidden in What's Next when a project is already assigned (inbox and next_action status).
+- **Sidebar avatar/pin overlap** — avatar only shows when sidebar is expanded; pin button appears on hover only, transparent at rest.
 
 ## 2026-06-01 (7)
 
