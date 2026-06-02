@@ -536,7 +536,9 @@ function ClarifyStep({ onNext, onBack }) {
 // ─── STEP 3: REFLECT ─────────────────────────────────────────────────────────
 
 function ReflectStep({ review, onComplete, onBack }) {
-  const { configured: aiConfigured } = useAIConfig()
+  const { configured: aiConfigured, loading: aiLoading } = useAIConfig()
+  const aiConfiguredRef = useRef(false)
+  useEffect(() => { aiConfiguredRef.current = aiConfigured }, [aiConfigured])
   const [ctx,          setCtx]          = useState(null)
   const [questions,    setQuestions]    = useState([])
   const [conversation, setConversation] = useState([])
@@ -589,7 +591,7 @@ function ReflectStep({ review, onComplete, onBack }) {
 
       setTyping(true)
       setTimeout(async () => {
-        if (aiConfigured) {
+        if (aiConfiguredRef.current) {
           try {
             const qs = await generateReflectQuestions(ctxData)
             setQuestions(qs)
@@ -606,7 +608,7 @@ function ReflectStep({ review, onComplete, onBack }) {
           setTyping(false)
           addBubble('ai', "Set up an AI provider in <a href='/settings' style='color:var(--accent);text-decoration:underline;'>Settings</a> to enable the AI interview. You can still complete the review below.")
         }
-      }, 800)
+      }, 1500)
     }
     init()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
