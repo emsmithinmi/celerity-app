@@ -379,35 +379,40 @@ function ClarifyStep({ onNext, onBack }) {
 
   useEffect(() => {
     async function load() {
-      const [tasksRes, projectsRes, peopleRes, activeTasksRes] = await Promise.all([
-        supabase.from('tasks').select('id, title, due_date').eq('status', 'inbox').is('archived_at', null).order('created_at', { ascending: false }),
-        supabase.from('projects').select('id, title').eq('status', 'inbox').is('archived_at', null).order('created_at', { ascending: false }),
-        supabase.from('people').select('id, first_name, last_name').eq('status', 'inbox').order('last_name', { ascending: true }),
-        supabase.from('tasks').select('id, project_id').in('status', ['next_action', 'waiting', 'scheduled', 'queued']).is('archived_at', null),
-      ])
+      try {
+        const [tasksRes, projectsRes, peopleRes, activeTasksRes] = await Promise.all([
+          supabase.from('tasks').select('id, title, due_date').eq('status', 'inbox').is('archived_at', null).order('created_at', { ascending: false }),
+          supabase.from('projects').select('id, title').eq('status', 'inbox').is('archived_at', null).order('created_at', { ascending: false }),
+          supabase.from('people').select('id, first_name, last_name').eq('status', 'inbox').order('last_name', { ascending: true }),
+          supabase.from('tasks').select('id, project_id').in('status', ['next_action', 'waiting', 'scheduled', 'queued']).is('archived_at', null),
+        ])
 
-      const activeProjectIds = new Set((activeTasksRes.data ?? []).filter(t => t.project_id).map(t => t.project_id))
+        const activeProjectIds = new Set((activeTasksRes.data ?? []).filter(t => t.project_id).map(t => t.project_id))
 
-      const stalledRes = await supabase
-        .from('projects')
-        .select('id, title')
-        .eq('status', 'in_progress')
-        .is('archived_at', null)
+        const stalledRes = await supabase
+          .from('projects')
+          .select('id, title')
+          .eq('status', 'in_progress')
+          .is('archived_at', null)
 
-      const overdueRes = await supabase
-        .from('tasks')
-        .select('id, title, due_date')
-        .in('status', ['next_action', 'waiting', 'scheduled', 'queued'])
-        .lt('due_date', today)
-        .is('archived_at', null)
-        .order('due_date', { ascending: true })
+        const overdueRes = await supabase
+          .from('tasks')
+          .select('id, title, due_date')
+          .in('status', ['next_action', 'waiting', 'scheduled', 'queued'])
+          .lt('due_date', today)
+          .is('archived_at', null)
+          .order('due_date', { ascending: true })
 
-      setInboxTasks(tasksRes.data ?? [])
-      setInboxProjects(projectsRes.data ?? [])
-      setInboxPeople(peopleRes.data ?? [])
-      setStalled((stalledRes.data ?? []).filter(p => !activeProjectIds.has(p.id)))
-      setOverdue(overdueRes.data ?? [])
-      setLoading(false)
+        setInboxTasks(tasksRes.data ?? [])
+        setInboxProjects(projectsRes.data ?? [])
+        setInboxPeople(peopleRes.data ?? [])
+        setStalled((stalledRes.data ?? []).filter(p => !activeProjectIds.has(p.id)))
+        setOverdue(overdueRes.data ?? [])
+      } catch (err) {
+        console.error('ClarifyStep load error:', err)
+      } finally {
+        setLoading(false)
+      }
     }
     load()
   }, [today])
@@ -813,6 +818,9 @@ export default function Reviews() {
     ]).then(([r, noteRes]) => {
       setReview(r)
       setTodayNoteId(noteRes.data?.id ?? null)
+    }).catch(err => {
+      console.error('Reviews load error:', err)
+    }).finally(() => {
       setLoading(false)
     })
   }, [activeType, today])
