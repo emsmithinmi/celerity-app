@@ -7,26 +7,46 @@ export default function AuthCallback() {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    const handleCallback = async () => {
-      const params = new URLSearchParams(window.location.search)
-      const code = params.get('code')
-      const errorParam = params.get('error')
-      const errorDescription = params.get('error_description')
+    // Check for OAuth errors in the URL
+    const params = new URLSearchParams(window.location.search)
+    const errorParam = params.get('error')
+    const errorDescription = params.get('error_description')
 
-      if (errorParam) {
-        setError(errorDescription || errorParam)
-        return
+    if (errorParam) {
+      setError(errorDescription || errorParam)
+      return
+    }
+
+    // Supabase auto-handles the PKCE code exchange via detectSessionInUrl.
+    // We just listen for the SIGNED_IN event and redirect.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        subscription.unsubscribe()
+        navigate('/daily', { replace: true })
       }
-
-      if (code) {
-        const { error } = await supabase.auth.exchangeCodeForSession(code)
-        if (error) {
-          setError(error.message)
-          return
-        }
+      if (event === 'SIGNED_OUT') {
+        subscription.unsubscribe()
+        setError('Sign in was cancelled or failed.')
       }
+    })
 
-      navigate('/daily', { replace: true })
+    // Also check if session already exists (in case event fired before listener attached)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        subscription.unsubscribe()
+        navigate('/daily', { replace: true })
+      }
+    })
+
+    // Timeout fallback
+    const timeout = setTimeout(() => {
+      subscription.unsubscribe()
+      setError('Sign in timed out. Please try again.')
+    }, 15000)
+
+    return () => {
+      subscription.unsubscribe()
+      clearTimeout(timeout)
     }
 
     handleCallback()
