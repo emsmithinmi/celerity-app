@@ -5,13 +5,27 @@ import { updateSuggestions } from '../../api/reviews'
 import { selectCandidates } from '../../quotes'
 
 async function getTomorrowCalendarEvents(tomorrowStr) {
-  const { data } = await supabase
-    .from('calendar_events')
-    .select('summary, start_time, end_time, all_day, calendar_name, notes')
-    .eq('date', tomorrowStr)
-    .order('all_day', { ascending: false })
-    .order('start_time', { ascending: true })
-  return data ?? []
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return []
+
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+    const res = await fetch(`${supabaseUrl}/functions/v1/google-calendar`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ date: tomorrowStr }),
+    })
+
+    if (!res.ok) return []
+    const { events, error } = await res.json()
+    if (error === 'no_integration') return [] // user hasn't connected Google yet
+    return events ?? []
+  } catch {
+    return []
+  }
 }
 
 // ─── Context Builder ──────────────────────────────────────────────────────────

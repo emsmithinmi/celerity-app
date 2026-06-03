@@ -4,6 +4,13 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-03 (Session 4 continued)
+
+### Added
+- **Google Calendar edge function** — new `supabase/functions/google-calendar` fetches live events from the Focus Flow calendar using stored OAuth tokens. Auto-refreshes access token if expired.
+- **Live calendar in daily review** — `dailyReview.js` now calls the edge function instead of querying the static `calendar_events` table. Falls back gracefully if no Google integration exists.
+- **Edge function secrets** — `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` stored in Supabase secrets.
+
 ## 2026-06-02 (Session 4)
 
 ### Added
