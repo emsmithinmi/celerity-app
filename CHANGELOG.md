@@ -4,6 +4,14 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-02 (Session 4)
+
+### Added
+- **Google Sign-In** — Login page now has a "Continue with Google" button alongside magic link. OAuth flow requests Calendar + Gmail scopes so Google APIs are available post-login.
+- **`user_integrations` table** — stores Google OAuth access/refresh tokens per user. Auto-populated by AuthContext after any Google sign-in.
+- **`user_settings` table** — per-user settings including `google_calendar_id` (pre-seeded with Focus Flow calendar ID) and `theme`. Replaces localStorage for cross-device persistence.
+- **AuthContext token persistence** — after Google OAuth callback, provider tokens are automatically saved to `user_integrations` for use by edge functions.
+
 ## 2026-06-01 (Session 3)
 
 ### Fixed

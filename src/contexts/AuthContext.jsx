@@ -10,11 +10,13 @@ export function AuthProvider({ children }) {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
+      if (session) saveGoogleTokens(session)
     })
 
-    // Listen for auth changes (magic link clicks, logouts, etc.)
+    // Listen for auth changes (magic link clicks, logouts, Google OAuth callbacks, etc.)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
+      if (session) saveGoogleTokens(session)
     })
 
     return () => subscription.unsubscribe()
@@ -28,6 +30,26 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider value={{ session, user: session?.user ?? null, signOut, loading: session === undefined }}>
       {children}
     </AuthContext.Provider>
+  )
+}
+
+// When a user signs in with Google, Supabase surfaces the provider tokens
+// on the session. We persist them to user_integrations so edge functions
+// can use them server-side without needing the client session.
+async function saveGoogleTokens(session) {
+  const providerToken = session?.provider_token
+  const providerRefreshToken = session?.provider_refresh_token
+  if (!providerToken) return // not a Google OAuth session
+
+  await supabase.from('user_integrations').upsert(
+    {
+      user_id: session.user.id,
+      provider: 'google',
+      access_token: providerToken,
+      refresh_token: providerRefreshToken ?? null,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'user_id,provider' }
   )
 }
 
