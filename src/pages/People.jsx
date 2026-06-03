@@ -6,10 +6,10 @@ import Button from '../components/ui/Button'
 import { CapturePersonModal } from '../components/daily/QuickCaptureModals'
 
 const TABS = [
-  { key: 'all',    label: 'All'    },
   { key: 'inbox',  label: 'Inbox'  },
   { key: 'active', label: 'Active' },
   { key: 'stale',  label: 'Stale'  },
+  { key: 'all',    label: 'All'    },
 ]
 
 function StatChip({ label, count }) {
@@ -26,7 +26,7 @@ function StatChip({ label, count }) {
 
 export default function People() {
   const navigate = useNavigate()
-  const [activeTab,   setActiveTab]   = useState('all')
+  const [activeTab,   setActiveTab]   = useState('inbox')
   const [showCapture, setShowCapture] = useState(false)
   const [search,      setSearch]      = useState('')
 
@@ -46,6 +46,11 @@ export default function People() {
     active: people.filter(p => p.status === 'active').length,
     inbox:  people.filter(p => p.status === 'inbox').length,
     stale:  people.filter(p => p.status === 'stale' || p.is_stale).length,
+  }
+
+  const tabCount = (key) => {
+    if (key === 'all') return people.length
+    return people.filter(p => p.status === key).length
   }
 
   const handleCapture = async ({ first_name, last_name }) => {
@@ -91,19 +96,33 @@ export default function People() {
           className="flex gap-1 px-4 pb-2 overflow-x-auto shrink-0"
           style={{ borderBottom: '1px solid var(--border)' }}
         >
-          {TABS.map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors shrink-0"
-              style={{
-                backgroundColor: activeTab === tab.key ? 'var(--border)' : 'transparent',
-                color: activeTab === tab.key ? 'var(--text-primary)' : 'var(--text-secondary)',
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
+          {TABS.map(tab => {
+            const count = tabCount(tab.key)
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors shrink-0"
+                style={{
+                  backgroundColor: activeTab === tab.key ? 'var(--border)' : 'transparent',
+                  color: activeTab === tab.key ? 'var(--text-primary)' : 'var(--text-secondary)',
+                }}
+              >
+                {tab.label}
+                {count > 0 && (
+                  <span
+                    className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold leading-none"
+                    style={{
+                      backgroundColor: activeTab === tab.key ? 'var(--text-secondary)' : 'var(--border)',
+                      color: activeTab === tab.key ? 'var(--pane-bg)' : 'var(--text-secondary)',
+                    }}
+                  >
+                    {count}
+                  </span>
+                )}
+              </button>
+            )
+          })}
         </div>
 
         {/* People list */}

@@ -6,6 +6,7 @@ import { PrioritiesProvider }   from './contexts/PrioritiesContext'
 import { AreasProvider }        from './contexts/AreasContext'
 import ProtectedRoute from './components/layout/ProtectedRoute'
 import Layout from './components/layout/Layout'
+import ReloadPrompt from './components/ui/ReloadPrompt'
 import Login from './pages/Login'
 import AuthCallback from './pages/AuthCallback'
 import Daily from './pages/Daily'
@@ -48,6 +49,7 @@ export default function App() {
             </Route>
           </Routes>
         </BrowserRouter>
+        <ReloadPrompt />
       </AreasProvider>
       </PrioritiesProvider>
       </EnergyLevelsProvider>

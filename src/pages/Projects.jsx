@@ -6,7 +6,6 @@ import Button from '../components/ui/Button'
 import { CaptureProjectModal } from '../components/daily/QuickCaptureModals'
 
 const TABS = [
-  { key: 'all',         label: 'All Active'  },
   { key: 'inbox',       label: 'Inbox'       },
   { key: 'planning',    label: 'Planning'    },
   { key: 'in_progress', label: 'In Progress' },
@@ -14,6 +13,7 @@ const TABS = [
   { key: 'stalled',     label: 'Stalled'     },
   { key: 'completed',   label: 'Completed'   },
   { key: 'archived',    label: 'Archived'    },
+  { key: 'all',         label: 'All Active'  },
 ]
 
 const ALL_ACTIVE_STATUSES = ['inbox', 'planning', 'in_progress', 'waiting', 'stalled']
@@ -32,7 +32,7 @@ function StatChip({ label, count }) {
 
 export default function Projects() {
   const navigate = useNavigate()
-  const [activeTab,   setActiveTab]   = useState('all')
+  const [activeTab,   setActiveTab]   = useState('inbox')
   const [showCapture, setShowCapture] = useState(false)
   const [search,      setSearch]      = useState('')
 
@@ -56,6 +56,13 @@ export default function Projects() {
     in_progress: projects.filter(p => p.status === 'in_progress' && !p.archived_at).length,
     stalled:     projects.filter(p => p.status === 'stalled' && !p.archived_at).length,
     waiting:     projects.filter(p => p.status === 'waiting' && !p.archived_at).length,
+  }
+
+  const tabCount = (key) => {
+    if (key === 'all') return projects.filter(p => ALL_ACTIVE_STATUSES.includes(p.status) && !p.archived_at).length
+    if (key === 'archived') return projects.filter(p => !!p.archived_at).length
+    if (key === 'completed') return projects.filter(p => p.status === 'completed').length
+    return projects.filter(p => p.status === key && !p.archived_at).length
   }
 
   const handleCapture = async (title) => {
@@ -101,19 +108,33 @@ export default function Projects() {
           className="flex gap-1 px-4 pb-2 overflow-x-auto shrink-0"
           style={{ borderBottom: '1px solid var(--border)' }}
         >
-          {TABS.map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors shrink-0"
-              style={{
-                backgroundColor: activeTab === tab.key ? 'var(--border)' : 'transparent',
-                color: activeTab === tab.key ? 'var(--text-primary)' : 'var(--text-secondary)',
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
+          {TABS.map(tab => {
+            const count = tabCount(tab.key)
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors shrink-0"
+                style={{
+                  backgroundColor: activeTab === tab.key ? 'var(--border)' : 'transparent',
+                  color: activeTab === tab.key ? 'var(--text-primary)' : 'var(--text-secondary)',
+                }}
+              >
+                {tab.label}
+                {count > 0 && (
+                  <span
+                    className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold leading-none"
+                    style={{
+                      backgroundColor: activeTab === tab.key ? 'var(--text-secondary)' : 'var(--border)',
+                      color: activeTab === tab.key ? 'var(--pane-bg)' : 'var(--text-secondary)',
+                    }}
+                  >
+                    {count}
+                  </span>
+                )}
+              </button>
+            )
+          })}
         </div>
 
         {/* Project list */}

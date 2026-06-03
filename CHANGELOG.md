@@ -4,6 +4,21 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-03 (Session 6)
+
+### Changed
+- **Tab order** — Tasks, Projects, and People now open to Inbox by default; "All Active" / "All" tab moved to the far right.
+
+---
+
+## 2026-06-03 (Session 5)
+
+### Added
+- **Tab counts** — Tasks, Projects, and People tab bars now show item counts as badges on every tab (hidden when zero).
+- **PWA reload prompt** — a "New version available" toast appears at the bottom of the screen when a new service worker is ready, letting you update on demand instead of having to manually refresh.
+
+---
+
 ## 2026-06-03 (Session 4 continued)
 
 ### Added
