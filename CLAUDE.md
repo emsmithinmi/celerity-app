@@ -2,12 +2,12 @@
 
 ## What This Is
 Focus Flow — a personal GTD (Getting Things Done) productivity PWA built with React + Vite + Supabase.
-Single user app (emailemsmith@gmail.com). No multi-tenancy needed — RLS policies use `USING (true)`.
+App supports multiple users via RLS (scoped per `auth.uid()`). Primary user: emailemsmith@gmail.com.
 
 ## Stack
 - **Frontend:** React 18, Vite, Tailwind CSS v4 (`@tailwindcss/vite`)
 - **Backend:** Supabase (Postgres + Auth + RLS)
-- **Auth:** Magic link email (no passwords)
+- **Auth:** Google OAuth (primary) + Magic link email fallback
 - **Hosting:** Cloudflare Pages
 - **PWA:** `vite-plugin-pwa` (Workbox, generateSW mode)
 - **Router:** React Router DOM v6
@@ -19,12 +19,17 @@ Single user app (emailemsmith@gmail.com). No multi-tenancy needed — RLS polici
 - **Supabase project ID:** `egxbhglczkslnskxorlf`
 - **Cloudflare account ID:** `2e21f19b71235b0620cfdb8c91bf4156`
 - **Cloudflare Pages project:** `celerity-app` (domain: gtd-manager.pages.dev — permanent, tied to original project name)
+- **Google Cloud Project ID:** `focus-flow-20260602`
 
-## Google Calendar
+## Google OAuth & Calendar
 
-Sync is done manually via Claude Code MCP (Google Calendar + Gmail tools available in Claude Code sessions). Run `getCalendarEvents` or ask Claude to "sync my calendar" to upsert new events into the `calendar_events` table.
+Google sign-in requests Calendar + Gmail scopes at login (`access_type: offline, prompt: consent`).
+Tokens stored in `user_integrations` table. Edge function `google-calendar` fetches live events.
 
-**Calendar IDs:**
+**Focus Flow Calendar ID (hardcoded):**
+`858f646b41576c785a734cbe4e63df27da29487b4b59ce8f1ed435e9cd7f3d7a@group.calendar.google.com`
+
+**Other Calendar IDs (for reference/manual sync):**
 | Calendar | ID |
 |---|---|
 | Primary | `emailemsmith@gmail.com` |
