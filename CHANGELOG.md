@@ -4,6 +4,13 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-03 (Session 9)
+
+### Changed
+- **Agenda — rolling 4-hour timeline** — the Agenda section now shows a live timeline from now to 4 hours ahead, always visible even with no events. Hour markers tick forward in real time. Calendar events appear as blocks at their correct position. Empty time reads "open time."
+
+---
+
 ## 2026-06-03 (Session 8)
 
 ### Changed
