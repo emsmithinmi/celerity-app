@@ -18,7 +18,28 @@ import HabitsSection  from '../components/daily/HabitsSection'
 import ChallengeSection from '../components/daily/ChallengeSection'
 import Button         from '../components/ui/Button'
 
-import { getCalendarEvents } from '../lib/api/daily'
+import { supabase } from '../lib/supabase'
+
+async function fetchCalendarEventsForDate(dateStr) {
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return []
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+    const res = await fetch(`${supabaseUrl}/functions/v1/google-calendar`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ date: dateStr }),
+    })
+    if (!res.ok) return []
+    const { events } = await res.json()
+    return events ?? []
+  } catch {
+    return []
+  }
+}
 
 import {
   CaptureTaskModal,
@@ -130,7 +151,7 @@ export default function Daily() {
   const { projects: endingProjects } = useProjects({ end_date: selectedDate })
   const [calendarEvents, setCalendarEvents] = useState([])
   useEffect(() => {
-    getCalendarEvents(selectedDate).then(setCalendarEvents).catch(() => {})
+    fetchCalendarEventsForDate(selectedDate).then(setCalendarEvents).catch(() => {})
   }, [selectedDate])
 
 

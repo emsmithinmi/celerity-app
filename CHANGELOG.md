@@ -4,6 +4,13 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-03 (Session 7)
+
+### Fixed
+- **Daily Agenda** — was pulling from the static `calendar_events` table (all calendars); now calls the `google-calendar` edge function so only Focus Flow calendar events appear, consistent with the AI review.
+
+---
+
 ## 2026-06-03 (Session 6)
 
 ### Changed
