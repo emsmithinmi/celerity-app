@@ -9,7 +9,8 @@ export async function getProjects(filters = {}) {
     .select('*, project_people(person_id, people(id, first_name, last_name))')
     .order('created_at', { ascending: false })
 
-  if (filters.status) query = query.eq('status', filters.status)
+  if (filters.statuses) query = query.in('status', filters.statuses)
+  else if (filters.status) query = query.eq('status', filters.status)
   if (filters.area) query = query.eq('area', filters.area)
   if (filters.end_date) query = query.eq('end_date', filters.end_date)
   if (filters.start_date) query = query.eq('start_date', filters.start_date)

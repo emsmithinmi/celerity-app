@@ -8,7 +8,8 @@ export async function getTasks(filters = {}) {
     .select('*, projects(id, title), task_people(person_id, people(id, first_name, last_name))')
     .order('created_at', { ascending: false })
 
-  if (filters.status) query = query.eq('status', filters.status)
+  if (filters.statuses) query = query.in('status', filters.statuses)
+  else if (filters.status) query = query.eq('status', filters.status)
   if (filters.project_id) query = query.eq('project_id', filters.project_id)
   if (filters.priority) query = query.eq('priority', filters.priority)
   if (filters.area) query = query.eq('area', filters.area)

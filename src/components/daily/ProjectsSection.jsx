@@ -1,8 +1,11 @@
-﻿import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useProjects } from '../../hooks/useProjects'
 import { StatusPill, PriorityBadge } from '../ui'
 
+const ACTIVE_STATUSES = ['inbox', 'planning', 'in_progress', 'waiting', 'stalled']
+
 const TABS = [
+  { key: 'inbox',       label: 'Inbox'       },
   { key: 'in_progress', label: 'In Progress' },
   { key: 'planning',    label: 'Planning'    },
   { key: 'waiting',     label: 'Waiting'     },
@@ -38,8 +41,11 @@ function ProjectRow({ project }) {
 }
 
 export default function ProjectsSection() {
-  const [activeTab, setActiveTab] = useState('in_progress')
-  const { projects, loading } = useProjects({ status: activeTab, archived: false })
+  const [activeTab, setActiveTab] = useState('inbox')
+  const { projects: allProjects, loading } = useProjects({ statuses: ACTIVE_STATUSES, archived: false })
+
+  const projects = useMemo(() => allProjects.filter(p => p.status === activeTab), [allProjects, activeTab])
+  const tabCount = (key) => allProjects.filter(p => p.status === key).length
 
   return (
     <div>
@@ -49,19 +55,33 @@ export default function ProjectsSection() {
 
       {/* Filter tabs */}
       <div className="flex gap-1 mb-3">
-        {TABS.map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
-            style={{
-              backgroundColor: activeTab === tab.key ? 'var(--border)' : 'transparent',
-              color: activeTab === tab.key ? 'var(--text-primary)' : 'var(--text-secondary)',
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
+        {TABS.map(tab => {
+          const count = tabCount(tab.key)
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+              style={{
+                backgroundColor: activeTab === tab.key ? 'var(--border)' : 'transparent',
+                color: activeTab === tab.key ? 'var(--text-primary)' : 'var(--text-secondary)',
+              }}
+            >
+              {tab.label}
+              {count > 0 && (
+                <span
+                  className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold leading-none"
+                  style={{
+                    backgroundColor: activeTab === tab.key ? 'var(--text-secondary)' : 'var(--border)',
+                    color: activeTab === tab.key ? 'var(--pane-bg)' : 'var(--text-secondary)',
+                  }}
+                >
+                  {count}
+                </span>
+              )}
+            </button>
+          )
+        })}
       </div>
 
       <div

@@ -1,10 +1,12 @@
-﻿import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useTasks } from '../../hooks/useTasks'
 import { PriorityBadge, EnergyBadge } from '../ui'
 
+const ACTIVE_STATUSES = ['inbox', 'next_action', 'queued', 'waiting', 'scheduled']
+
 const TABS = [
-  { key: 'next_action', label: 'Next Actions' },
   { key: 'inbox',       label: 'Inbox'        },
+  { key: 'next_action', label: 'Next Actions' },
   { key: 'queued',      label: 'Queued'       },
   { key: 'waiting',     label: 'Waiting'      },
   { key: 'scheduled',   label: 'Scheduled'    },
@@ -56,8 +58,11 @@ function TaskRow({ task }) {
 }
 
 export default function TasksSection({ onRefreshStats }) {
-  const [activeTab, setActiveTab] = useState('next_action')
-  const { tasks, loading } = useTasks({ status: activeTab })
+  const [activeTab, setActiveTab] = useState('inbox')
+  const { tasks: allTasks, loading } = useTasks({ statuses: ACTIVE_STATUSES })
+
+  const tasks    = useMemo(() => allTasks.filter(t => t.status === activeTab), [allTasks, activeTab])
+  const tabCount = (key) => allTasks.filter(t => t.status === key).length
 
   return (
     <div>
@@ -67,19 +72,33 @@ export default function TasksSection({ onRefreshStats }) {
 
       {/* Filter tabs */}
       <div className="flex gap-1 mb-3 flex-wrap">
-        {TABS.map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
-            style={{
-              backgroundColor: activeTab === tab.key ? 'var(--border)' : 'transparent',
-              color: activeTab === tab.key ? 'var(--text-primary)' : 'var(--text-secondary)',
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
+        {TABS.map(tab => {
+          const count = tabCount(tab.key)
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+              style={{
+                backgroundColor: activeTab === tab.key ? 'var(--border)' : 'transparent',
+                color: activeTab === tab.key ? 'var(--text-primary)' : 'var(--text-secondary)',
+              }}
+            >
+              {tab.label}
+              {count > 0 && (
+                <span
+                  className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold leading-none"
+                  style={{
+                    backgroundColor: activeTab === tab.key ? 'var(--text-secondary)' : 'var(--border)',
+                    color: activeTab === tab.key ? 'var(--pane-bg)' : 'var(--text-secondary)',
+                  }}
+                >
+                  {count}
+                </span>
+              )}
+            </button>
+          )
+        })}
       </div>
 
       <div

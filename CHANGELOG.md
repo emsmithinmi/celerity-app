@@ -7,7 +7,8 @@ All notable changes to Focus Flow are recorded here.
 ## 2026-06-03 (Session 6)
 
 ### Changed
-- **Tab order** — Tasks, Projects, and People now open to Inbox by default; "All Active" / "All" tab moved to the far right.
+- **Tab order** — Tasks, Projects, and People pages now open to Inbox by default; "All Active" / "All" tab moved to the far right.
+- **Daily page tabs** — Projects and Tasks sections on the Daily page now also show count badges, default to Inbox, and include the full status set (Projects gains an Inbox tab).
 
 ---
 
