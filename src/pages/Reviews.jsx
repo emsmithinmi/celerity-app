@@ -577,6 +577,7 @@ function ReflectStep({ review, onComplete, onBack }) {
 
   // Load context + reference lists on mount
   useEffect(() => {
+    if (aiLoading) return // wait until AI config is resolved before starting
     async function init() {
       const [ctxData, nextRes, projRes] = await Promise.all([
         buildReflectContext(),
@@ -591,7 +592,7 @@ function ReflectStep({ review, onComplete, onBack }) {
 
       setTyping(true)
       setTimeout(async () => {
-        if (aiConfiguredRef.current) {
+        if (aiConfigured) {
           try {
             const qs = await generateReflectQuestions(ctxData)
             setQuestions(qs)
@@ -611,7 +612,7 @@ function ReflectStep({ review, onComplete, onBack }) {
       }, 1500)
     }
     init()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [aiLoading]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSend = () => {
     const val = inputVal.trim()
