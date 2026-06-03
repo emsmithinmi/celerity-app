@@ -33,12 +33,10 @@ async function fetchCalendarEventsForDate(dateStr) {
       },
       body: JSON.stringify({ date: dateStr }),
     })
-    if (!res.ok) { console.warn('[Calendar] edge function error', res.status); return [] }
-    const body = await res.json()
-    console.log('[Calendar] response:', body)
-    return body.events ?? []
-  } catch (err) {
-    console.error('[Calendar] fetch failed', err)
+    if (!res.ok) return []
+    const { events } = await res.json()
+    return events ?? []
+  } catch {
     return []
   }
 }
