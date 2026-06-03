@@ -4,6 +4,13 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-03 (Session 8)
+
+### Changed
+- **AI personality** — Review interview and daily plan AI prompts now have a warmer, more conversational tone. Less corporate performance-review, more "colleague grabbing coffee after work." UI copy updated to match.
+
+---
+
 ## 2026-06-03 (Session 7)
 
 ### Fixed

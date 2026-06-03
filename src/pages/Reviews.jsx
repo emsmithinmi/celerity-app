@@ -602,7 +602,7 @@ function ReflectStep({ review, onComplete, onBack }) {
             setTimeout(() => inputRef.current?.focus(), 50)
           } catch {
             setTyping(false)
-            addBubble('ai', "Let's talk about your day. What was your biggest win today?")
+            addBubble('ai', "Alright, let's do this. What was the highlight of your day — something that actually went well?")
             setInputActive(true)
           }
         } else {
@@ -647,7 +647,7 @@ function ReflectStep({ review, onComplete, onBack }) {
       setTyping(true)
       setTimeout(() => {
         setTyping(false)
-        addBubble('ai', `✨ Tomorrow's plan is set for <strong>${new Date(new Date().toLocaleDateString('en-CA') + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</strong>. Top of mind, agenda, and challenge are written to your Daily page. Review the suggestions below when you complete.`)
+        addBubble('ai', `✨ Alright — tomorrow's plan is locked in for <strong>${new Date(new Date().toLocaleDateString('en-CA') + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</strong>. Top of mind, agenda, and your code challenge are all waiting on the Daily page. Go enjoy your evening — you've earned it.`)
       }, 800)
     } catch (err) {
       addBubble('ai', `Something went wrong generating the plan: ${err.message}`)
@@ -673,11 +673,11 @@ function ReflectStep({ review, onComplete, onBack }) {
     <div className="max-w-2xl mx-auto px-6 py-6">
       <div className="mb-4">
         <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={S.muted}>Step 3 of 3</p>
-        <h2 className="text-2xl font-semibold mb-2" style={S.text}>Let's talk about your day.</h2>
+        <h2 className="text-2xl font-semibold mb-2" style={S.text}>How'd it go today?</h2>
         <p className="text-sm" style={S.muted}>
           {aiConfigured
-            ? "The AI has read your tasks, projects, habits, and last 30 days of notes. Answer honestly — it's using everything."
-            : "Reflect on your day and complete your review."}
+            ? "Your AI sidekick has been snooping through your tasks, projects, and last 30 days of notes. Answer however feels right — no wrong answers here."
+            : "Take a few minutes to reflect on your day and wrap it up."}
         </p>
       </div>
 
