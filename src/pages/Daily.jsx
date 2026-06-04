@@ -92,11 +92,12 @@ function DateHeader({ dateStr, isToday, onPrev, onNext, onToday }) {
 
         <button
           onClick={onNext}
+          disabled={isToday}
           className="flex items-center justify-center rounded-lg transition-colors"
-          style={{ width: 32, height: 32, color: 'var(--text-secondary)', backgroundColor: 'var(--border)' }}
-          onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--text-dim)'; e.currentTarget.style.color = 'var(--text-primary)' }}
-          onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
-          title="Next day"
+          style={{ width: 32, height: 32, color: isToday ? 'var(--text-dim)' : 'var(--text-secondary)', backgroundColor: 'var(--border)', cursor: isToday ? 'default' : 'pointer', opacity: isToday ? 0.4 : 1 }}
+          onMouseEnter={e => { if (!isToday) { e.currentTarget.style.backgroundColor = 'var(--text-dim)'; e.currentTarget.style.color = 'var(--text-primary)' } }}
+          onMouseLeave={e => { if (!isToday) { e.currentTarget.style.backgroundColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)' } }}
+          title={isToday ? 'No future dates' : 'Next day'}
         >
           <ChevronRight size={18} />
         </button>
@@ -155,6 +156,24 @@ export default function Daily() {
   }, [selectedDate])
 
 
+  // ── Morning gate: block if yesterday's review wasn't completed ──
+  const [gateChecked, setGateChecked] = useState(false)
+  const [showGate,    setShowGate]    = useState(false)
+  useEffect(() => {
+    const yesterday = shiftDate(todayStr(), -1)
+    supabase
+      .from('reviews')
+      .select('status')
+      .eq('type', 'daily')
+      .eq('date', yesterday)
+      .maybeSingle()
+      .then(({ data }) => {
+        setShowGate(!data || data.status !== 'completed')
+        setGateChecked(true)
+      })
+      .catch(() => setGateChecked(true)) // don't block on error
+  }, [])
+
   // Modal state
   const [modal, setModal] = useState(null)
 
@@ -175,6 +194,30 @@ export default function Daily() {
     return (
       <div className="flex items-center justify-center h-full">
         <p className="text-sm" style={{ color: 'var(--danger)' }}>Error: {error}</p>
+      </div>
+    )
+  }
+
+  if (gateChecked && showGate) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-6 px-6 text-center">
+        <p className="text-5xl">📋</p>
+        <div>
+          <h2 className="text-2xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Yesterday's review isn't done.</h2>
+          <p className="text-sm max-w-sm mx-auto" style={{ color: 'var(--text-secondary)' }}>
+            Complete your review before starting today. Inbox zero is non-negotiable.
+          </p>
+        </div>
+        <Button variant="primary" onClick={() => navigate('/reviews/daily?gate=today')}>
+          Run Yesterday's Review →
+        </Button>
+        <button
+          className="text-xs underline"
+          style={{ color: 'var(--text-dim)' }}
+          onClick={() => setShowGate(false)}
+        >
+          Skip for now
+        </button>
       </div>
     )
   }

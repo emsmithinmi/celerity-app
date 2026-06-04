@@ -4,6 +4,19 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-04 (Session 11 continued)
+
+### Added
+- **Morning gate** — Daily page now checks if yesterday's review was completed on load. If not, a blocking prompt appears before any daily content with a "Run Yesterday's Review" button. Skip link available for flexibility.
+- **Review targets correct day** — Reviews triggered by the morning gate write to today's daily note instead of tomorrow's. Voluntary evening reviews continue to write to tomorrow. Works for both the Daily Review and Reflect flows.
+- **Review state persists in DB** — Step position, conversation, questions, Q index, scratchpad, and scratchpad visibility are all saved to `reviews.content` on every change. Navigate away, come back on any device — it's exactly where you left it.
+- **Inline clarify actions** — Inbox tasks and overdue tasks in the Clarify step now show the full What's Next button set inline. Actions that need extra info (Schedule → date picker, Waiting → blocker reason, Assign to Project → project picker) expand an inline prompt instead of a modal or disabling the button.
+
+### Fixed
+- **No future dates on Daily page** — Forward navigation is now disabled at today. The chevron grays out; no future browsing.
+
+---
+
 ## 2026-06-04 (Session 11)
 
 ### Fixed

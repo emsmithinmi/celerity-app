@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useCallback, useRef } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { Pencil } from 'lucide-react'
 import { ensureReview, updateReviewContent, completeReview, updateSuggestions } from '../lib/api/reviews'
 import { buildReflectContext, generateReflectQuestions, generateReflectPlan, writeReflectResults } from '../lib/ai/skills/reflectReview'
@@ -68,7 +68,181 @@ function StepBar({ current, onNavigate }) {
   )
 }
 
-// ─── Clarify row ──────────────────────────────────────────────────────────────
+// ─── Clarify action button (compact) ─────────────────────────────────────────
+
+const ACTION_STYLES = {
+  success:   { bg: 'var(--state-success-bg)',  border: 'var(--accent-green)',  text: 'var(--accent-green)'  },
+  primary:   { bg: 'var(--card-task-bg)',       border: 'var(--accent)',        text: 'var(--accent)'        },
+  warning:   { bg: 'var(--card-reminder-bg)',   border: 'var(--accent-yellow)', text: 'var(--accent-yellow)' },
+  secondary: { bg: 'var(--border)',             border: 'var(--text-dim)',      text: 'var(--text-secondary)'},
+  ghost:     { bg: 'transparent',              border: 'var(--border)',        text: 'var(--text-secondary)'},
+  danger:    { bg: 'var(--state-error-bg)',     border: 'var(--accent-red)',    text: 'var(--accent-red)'    },
+}
+
+function ActionBtn({ variant = 'ghost', onClick, disabled, children }) {
+  const s = ACTION_STYLES[variant] ?? ACTION_STYLES.ghost
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="px-2 py-1 rounded text-xs font-medium border transition-colors"
+      style={{ backgroundColor: s.bg, borderColor: s.border, color: s.text, opacity: disabled ? 0.4 : 1, cursor: disabled ? 'default' : 'pointer' }}
+      onMouseEnter={e => { if (!disabled) { e.currentTarget.style.backgroundColor = s.border; e.currentTarget.style.color = 'var(--app-bg)' } }}
+      onMouseLeave={e => { if (!disabled) { e.currentTarget.style.backgroundColor = s.bg;     e.currentTarget.style.color = s.text } }}
+    >
+      {children}
+    </button>
+  )
+}
+
+// ─── Clarify task row (full What's Next actions inline) ───────────────────────
+
+function ClarifyTaskRow({ task }) {
+  const [resolved,        setResolved]        = useState(false)
+  const [resolvedLabel,   setResolvedLabel]   = useState('')
+  const [prompt,          setPrompt]          = useState(null) // 'schedule' | 'waiting' | 'route'
+  const [promptValue,     setPromptValue]     = useState('')
+  const [projects,        setProjects]        = useState([])
+  const [selectedProject, setSelectedProject] = useState(null)
+  const [saving,          setSaving]          = useState(false)
+
+  const resolve = async (fn, label) => {
+    setSaving(true)
+    try { await fn() } finally { setSaving(false) }
+    setResolvedLabel(label)
+    setResolved(true)
+  }
+
+  const openPrompt = (type) => {
+    setPromptValue('')
+    setSelectedProject(null)
+    if (type === 'route') {
+      supabase.from('projects').select('id, title').in('status', ['planning', 'in_progress', 'stalled']).is('archived_at', null)
+        .then(({ data }) => setProjects(data ?? []))
+    }
+    setPrompt(type)
+  }
+
+  if (resolved) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 rounded-lg border mb-1.5 opacity-40" style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--accent-green)33' }}>
+        <span className="flex-1 text-sm truncate line-through" style={{ color: 'var(--text-secondary)' }}>{task.title}</span>
+        <span className="text-xs shrink-0" style={{ color: 'var(--accent-green)' }}>{resolvedLabel}</span>
+      </div>
+    )
+  }
+
+  const status = task.status
+
+  return (
+    <div className="rounded-lg border mb-1.5 overflow-hidden" style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)' }}>
+      {/* Title row */}
+      <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5">
+        <span className="flex-1 text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{task.title}</span>
+        {task.due_date && <span className="text-xs shrink-0" style={{ color: 'var(--accent-yellow)' }}>{task.due_date}</span>}
+        <Link to={`/tasks/${task.id}`} className="text-xs shrink-0 hover:underline" style={{ color: 'var(--text-dim)' }}>open →</Link>
+      </div>
+
+      {/* Inline prompts */}
+      {prompt === 'schedule' && (
+        <div className="px-3 pb-2.5 flex items-center gap-2">
+          <input
+            type="date" value={promptValue} onChange={e => setPromptValue(e.target.value)}
+            autoFocus className="flex-1 px-2 py-1 rounded border text-xs outline-none"
+            style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--accent)', color: 'var(--text-primary)' }}
+          />
+          <ActionBtn variant="warning" disabled={!promptValue || saving} onClick={() => resolve(() => updateTask(task.id, { status: 'scheduled', due_date: promptValue }), 'Scheduled').then(() => setPrompt(null))}>Set</ActionBtn>
+          <ActionBtn variant="ghost" onClick={() => setPrompt(null)}>✕</ActionBtn>
+        </div>
+      )}
+      {prompt === 'waiting' && (
+        <div className="px-3 pb-2.5 flex items-center gap-2">
+          <input
+            type="text" value={promptValue} onChange={e => setPromptValue(e.target.value)}
+            placeholder="What's blocking this?" autoFocus
+            className="flex-1 px-2 py-1 rounded border text-xs outline-none"
+            style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--accent)', color: 'var(--text-primary)' }}
+            onKeyDown={e => e.key === 'Enter' && promptValue.trim() && resolve(() => updateTask(task.id, { status: 'waiting', waiting_for: promptValue.trim() }), 'Waiting').then(() => setPrompt(null))}
+          />
+          <ActionBtn variant="danger" disabled={!promptValue.trim() || saving} onClick={() => resolve(() => updateTask(task.id, { status: 'waiting', waiting_for: promptValue.trim() }), 'Waiting').then(() => setPrompt(null))}>Set</ActionBtn>
+          <ActionBtn variant="ghost" onClick={() => setPrompt(null)}>✕</ActionBtn>
+        </div>
+      )}
+      {prompt === 'route' && (
+        <div className="px-3 pb-2.5 space-y-1.5">
+          <div className="space-y-1 max-h-28 overflow-y-auto">
+            {projects.length === 0
+              ? <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>No active projects found.</p>
+              : projects.map(p => (
+                <button key={p.id} onClick={() => setSelectedProject(p.id)}
+                  className="w-full text-left px-2 py-1.5 rounded border text-xs"
+                  style={{ backgroundColor: selectedProject === p.id ? 'var(--border)' : 'transparent', borderColor: selectedProject === p.id ? 'var(--accent)' : 'var(--border)', color: 'var(--text-primary)' }}
+                >{p.title}</button>
+              ))
+            }
+          </div>
+          <div className="flex gap-2">
+            <ActionBtn variant="primary" disabled={!selectedProject || saving} onClick={() => resolve(() => updateTask(task.id, { status: 'queued', project_id: selectedProject }), 'Queued').then(() => setPrompt(null))}>Queue It</ActionBtn>
+            <ActionBtn variant="ghost" onClick={() => setPrompt(null)}>✕</ActionBtn>
+          </div>
+        </div>
+      )}
+
+      {/* What's Next buttons */}
+      {!prompt && (
+        <div className="px-3 pb-2.5 flex flex-wrap gap-1.5">
+          {status === 'inbox' && !task.project_id && (
+            <>
+              <ActionBtn variant="success"   onClick={() => resolve(() => updateTask(task.id, { status: 'done' }),         'All Done')}>All Done</ActionBtn>
+              <ActionBtn variant="primary"   onClick={() => resolve(() => updateTask(task.id, { status: 'next_action' }),  'In Coach')}>Put Me in Coach</ActionBtn>
+              <ActionBtn variant="warning"   onClick={() => openPrompt('schedule')}>Let's Schedule This</ActionBtn>
+              <ActionBtn variant="secondary" onClick={() => openPrompt('route')}>Assign to Project →</ActionBtn>
+              <ActionBtn variant="ghost"     onClick={() => resolve(() => updateTask(task.id, { status: 'someday' }),      'Someday')}>Another Day</ActionBtn>
+              <ActionBtn variant="danger"    onClick={() => resolve(() => updateTask(task.id, { archived_at: new Date().toISOString() }), 'Scrapped')}>Scrap This</ActionBtn>
+            </>
+          )}
+          {status === 'inbox' && task.project_id && (
+            <>
+              <ActionBtn variant="success"   onClick={() => resolve(() => updateTask(task.id, { status: 'done' }),    'All Done')}>All Done</ActionBtn>
+              <ActionBtn variant="primary"   onClick={() => resolve(() => updateTask(task.id, { status: 'queued' }), 'Queued')}>Ready to Queue Up</ActionBtn>
+              <ActionBtn variant="warning"   onClick={() => openPrompt('schedule')}>Let's Schedule This</ActionBtn>
+              <ActionBtn variant="ghost"     onClick={() => resolve(() => updateTask(task.id, { status: 'someday' }), 'Someday')}>Another Day</ActionBtn>
+              <ActionBtn variant="danger"    onClick={() => resolve(() => updateTask(task.id, { archived_at: new Date().toISOString() }), 'Scrapped')}>Scrap This</ActionBtn>
+            </>
+          )}
+          {status === 'next_action' && (
+            <>
+              <ActionBtn variant="success" onClick={() => resolve(() => updateTask(task.id, { status: 'done' }),    'All Done')}>All Done</ActionBtn>
+              <ActionBtn variant="danger"  onClick={() => openPrompt('waiting')}>There is a Holdup</ActionBtn>
+              <ActionBtn variant="warning" onClick={() => openPrompt('schedule')}>Let's Schedule This</ActionBtn>
+              <ActionBtn variant="ghost"   onClick={() => resolve(() => updateTask(task.id, { archived_at: new Date().toISOString() }), 'Scrapped')}>Scrap This</ActionBtn>
+            </>
+          )}
+          {status === 'queued' && (
+            <ActionBtn variant="primary" onClick={() => resolve(() => updateTask(task.id, { status: 'next_action' }), 'In Coach')}>Put Me in Coach</ActionBtn>
+          )}
+          {status === 'waiting' && (
+            <ActionBtn variant="primary" onClick={() => resolve(() => updateTask(task.id, { status: 'next_action', waiting_for: null }), 'Unblocked')}>Clear Blocker</ActionBtn>
+          )}
+          {status === 'scheduled' && (
+            <>
+              <ActionBtn variant="success"   onClick={() => resolve(() => updateTask(task.id, { status: 'done' }),          'All Done')}>All Done</ActionBtn>
+              <ActionBtn variant="secondary" onClick={() => resolve(() => updateTask(task.id, { status: 'next_action' }),   'In Coach')}>Put Me in Coach</ActionBtn>
+            </>
+          )}
+          {status === 'someday' && (
+            <>
+              <ActionBtn variant="primary" onClick={() => resolve(() => updateTask(task.id, { status: 'next_action' }), 'In Coach')}>Put Me in Coach</ActionBtn>
+              <ActionBtn variant="danger"  onClick={() => resolve(() => updateTask(task.id, { archived_at: new Date().toISOString() }), 'Scrapped')}>Scrap This</ActionBtn>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Clarify row (projects / people — simpler) ────────────────────────────────
 
 function ClarifyRow({ item, linkTo, onDone, onScrap, meta }) {
   const [state, setState] = useState('pending')
@@ -449,13 +623,7 @@ function ClarifyStep({ onNext, onBack }) {
             <div className="rounded-xl border p-4" style={S.card}>
               <h3 className="text-xs font-semibold uppercase tracking-wide mb-3" style={S.blue}>📥 Inbox Tasks</h3>
               {inboxTasks.map(item => (
-                <ClarifyRow
-                  key={item.id}
-                  item={item}
-                  linkTo={`/tasks/${item.id}`}
-                  onDone={() => updateTask(item.id, { status: 'done' })}
-                  onScrap={() => updateTask(item.id, { archived_at: new Date().toISOString() })}
-                />
+                <ClarifyTaskRow key={item.id} task={item} />
               ))}
             </div>
           )}
@@ -511,14 +679,7 @@ function ClarifyStep({ onNext, onBack }) {
               <h3 className="text-xs font-semibold uppercase tracking-wide mb-1" style={S.red}>🔴 Overdue Tasks</h3>
               <p className="text-xs mb-3" style={S.muted}>Past due date, not completed</p>
               {overdue.map(item => (
-                <ClarifyRow
-                  key={item.id}
-                  item={item}
-                  linkTo={`/tasks/${item.id}`}
-                  meta={daysDiff(item.due_date)}
-                  onDone={() => updateTask(item.id, { status: 'done' })}
-                  onScrap={() => updateTask(item.id, { archived_at: new Date().toISOString() })}
-                />
+                <ClarifyTaskRow key={item.id} task={item} />
               ))}
             </div>
           )}
@@ -535,19 +696,20 @@ function ClarifyStep({ onNext, onBack }) {
 
 // ─── STEP 3: REFLECT ─────────────────────────────────────────────────────────
 
-function ReflectStep({ review, onComplete, onBack }) {
+function ReflectStep({ review, onComplete, onBack, onSaveState, targetDate }) {
   const { configured: aiConfigured, loading: aiLoading } = useAIConfig()
   const aiConfiguredRef = useRef(false)
   useEffect(() => { aiConfiguredRef.current = aiConfigured }, [aiConfigured])
+  const saved = review?.content ?? {}
   const [ctx,          setCtx]          = useState(null)
-  const [questions,    setQuestions]    = useState([])
-  const [conversation, setConversation] = useState([])
-  const [qIndex,       setQIndex]       = useState(0)
+  const [questions,    setQuestions]    = useState(saved.questions ?? [])
+  const [conversation, setConversation] = useState(saved.conversation ?? [])
+  const [qIndex,       setQIndex]       = useState(saved.qIndex ?? 0)
   const [typing,       setTyping]       = useState(false)
   const [inputVal,     setInputVal]     = useState('')
   const [inputActive,  setInputActive]  = useState(false)
-  const [scratchpad,   setScratchpad]   = useState('')
-  const [showScratch,  setShowScratch]  = useState(false)
+  const [scratchpad,   setScratchpad]   = useState(saved.scratchpad ?? '')
+  const [showScratch,  setShowScratch]  = useState(saved.showScratch ?? false)
   const [generating,   setGenerating]   = useState(false)
   const [suggestions,  setSuggestions]  = useState(review?.suggestions ?? [])
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -556,6 +718,20 @@ function ReflectStep({ review, onComplete, onBack }) {
   const [inProgress,   setInProgress]   = useState([])
   const chatRef = useRef(null)
   const inputRef = useRef(null)
+
+  // Persist conversation + question state to DB on change
+  useEffect(() => {
+    if (conversation.length === 0) return
+    onSaveState?.({ conversation, qIndex })
+  }, [conversation, qIndex]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Persist scratchpad to DB (debounced)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (scratchpad || showScratch) onSaveState?.({ scratchpad, showScratch })
+    }, 600)
+    return () => clearTimeout(t)
+  }, [scratchpad, showScratch]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const scrollChat = () => setTimeout(() => chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: 'smooth' }), 50)
 
@@ -590,12 +766,24 @@ function ReflectStep({ review, onComplete, onBack }) {
 
       if (review?.status === 'completed') return
 
+      // Rehydrate — if we have a saved conversation, restore UI state and skip question generation
+      if (saved.conversation?.length > 0) {
+        const qs = saved.questions ?? []
+        const qi = saved.qIndex ?? 0
+        if (qi < qs.length) {
+          setInputActive(true)
+          setTimeout(() => inputRef.current?.focus(), 50)
+        }
+        return
+      }
+
       setTyping(true)
       setTimeout(async () => {
         if (aiConfigured) {
           try {
             const qs = await generateReflectQuestions(ctxData)
             setQuestions(qs)
+            onSaveState?.({ questions: qs })
             setTyping(false)
             addBubble('ai', qs[0])
             setInputActive(true)
@@ -642,7 +830,7 @@ function ReflectStep({ review, onComplete, onBack }) {
     setGenerating(true)
     try {
       const result = await generateReflectPlan(ctx, conversation, scratchpad)
-      const { suggestions: newSuggestions } = await writeReflectResults(review.id, result)
+      const { suggestions: newSuggestions } = await writeReflectResults(review.id, result, targetDate)
       setSuggestions(newSuggestions)
       setTyping(true)
       setTimeout(() => {
@@ -804,7 +992,10 @@ function ReflectStep({ review, onComplete, onBack }) {
 export default function Reviews() {
   const { type: urlType } = useParams()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const today = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD in local time
+  // gate=today means this review was triggered by the morning gate — write to today, not tomorrow
+  const targetDate = searchParams.get('gate') === 'today' ? today : null
 
   const activeType = ['daily', 'weekly', 'monthly'].includes(urlType) ? urlType : 'daily'
 
@@ -815,6 +1006,19 @@ export default function Reviews() {
   const [retryCount,  setRetryCount]  = useState(0)
   const [todayNoteId, setTodayNoteId] = useState(null)
 
+  const contentRef = useRef({})
+  const reviewRef  = useRef(null)
+  const saveContent = useCallback(async (patch) => {
+    if (!reviewRef.current?.id) return
+    contentRef.current = { ...contentRef.current, ...patch }
+    await updateReviewContent(reviewRef.current.id, contentRef.current).catch(() => {})
+  }, [])
+
+  const goToStep = useCallback((n) => {
+    setStep(n)
+    saveContent({ step: n })
+  }, [saveContent])
+
   useEffect(() => {
     setStep(0)
     setLoading(true)
@@ -823,7 +1027,10 @@ export default function Reviews() {
       ensureReview(activeType, today),
       supabase.from('daily_notes').select('id').eq('date', today).maybeSingle(),
     ]).then(([r, noteRes]) => {
+      reviewRef.current = r
+      contentRef.current = r.content ?? {}
       setReview(r)
+      setStep(r.content?.step ?? 0)
       setTodayNoteId(noteRes.data?.id ?? null)
     }).catch(err => {
       console.error('Reviews load error:', err)
@@ -868,7 +1075,7 @@ export default function Reviews() {
 
       {/* Step bar — daily only */}
       {activeType === 'daily' && (
-        <StepBar current={step} onNavigate={i => i < step && setStep(i)} />
+        <StepBar current={step} onNavigate={i => i < step && goToStep(i)} />
       )}
 
       {/* Body */}
@@ -885,9 +1092,9 @@ export default function Reviews() {
           </div>
         ) : activeType === 'daily' ? (
           <>
-            {step === 0 && <CaptureStep onNext={() => setStep(1)} todayNoteId={todayNoteId} />}
-            {step === 1 && <ClarifyStep onNext={() => setStep(2)} onBack={() => setStep(0)} />}
-            {step === 2 && <ReflectStep review={review} onComplete={() => {}} onBack={() => setStep(1)} />}
+            {step === 0 && <CaptureStep onNext={() => goToStep(1)} todayNoteId={todayNoteId} />}
+            {step === 1 && <ClarifyStep onNext={() => goToStep(2)} onBack={() => goToStep(0)} />}
+            {step === 2 && <ReflectStep review={review} onComplete={() => {}} onBack={() => goToStep(1)} onSaveState={saveContent} targetDate={targetDate} />}
           </>
         ) : (
           <div className="max-w-2xl mx-auto px-6 py-12 text-center">

@@ -198,10 +198,15 @@ Rules:
 
 // ─── Write Results to DB ──────────────────────────────────────────────────────
 
-export async function writeReflectResults(reviewId, result) {
-  const tomorrow = new Date(new Date().toLocaleDateString('en-CA') + 'T12:00:00')
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  const tomorrowStr = tomorrow.toLocaleDateString('en-CA')
+export async function writeReflectResults(reviewId, result, targetDate = null) {
+  let tomorrowStr
+  if (targetDate) {
+    tomorrowStr = targetDate
+  } else {
+    const tomorrow = new Date(new Date().toLocaleDateString('en-CA') + 'T12:00:00')
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    tomorrowStr = tomorrow.toLocaleDateString('en-CA')
+  }
 
   const tomorrowNote = await ensureNoteForDate(tomorrowStr)
 

@@ -30,7 +30,7 @@ async function getTomorrowCalendarEvents(tomorrowStr) {
 
 // ─── Context Builder ──────────────────────────────────────────────────────────
 
-async function buildContext(reviewContent = {}) {
+async function buildContext(reviewContent = {}, targetDate = null) {
   const today = new Date().toLocaleDateString('en-CA')
 
   // Fetch the most recent completed challenge for critique + progression
@@ -113,10 +113,15 @@ async function buildContext(reviewContent = {}) {
     health_tracking: todayNote.habit_health_tracking,
   } : {}
 
-  // Tomorrow's calendar events
-  const tomorrow = new Date(today + 'T12:00:00')
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  const tomorrowStr = tomorrow.toLocaleDateString('en-CA')
+  // Target date: explicit override (e.g. gate-triggered morning review → today) or default to tomorrow
+  let tomorrowStr
+  if (targetDate) {
+    tomorrowStr = targetDate
+  } else {
+    const tomorrow = new Date(today + 'T12:00:00')
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    tomorrowStr = tomorrow.toLocaleDateString('en-CA')
+  }
   const calendarEvents = await getTomorrowCalendarEvents(tomorrowStr)
 
   // Pre-select weighted quote candidates, excluding recently used quotes
@@ -309,8 +314,8 @@ function parseResponse(raw) {
 // reviewId: the reviews.id to write suggestions into (may be null)
 // reviewContent: user's typed notes { wins, reflections, tasks_notes, ... }
 // Returns { result, tomorrowStr, suggestions }
-export async function runDailyReview(reviewId, reviewContent = {}) {
-  const ctx = await buildContext(reviewContent)
+export async function runDailyReview(reviewId, reviewContent = {}, targetDate = null) {
+  const ctx = await buildContext(reviewContent, targetDate)
 
   const messages = [
     { role: 'system', content: SYSTEM_PROMPT },
