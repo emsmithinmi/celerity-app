@@ -4,6 +4,15 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-04 (Session 11 continued — AI layer)
+
+### Added
+- **Gmail integration in review** — new `gmail-context` Edge Function fetches your `@Action 🚨` and `@Waiting⌛` label threads (with age in days) plus recent unread email (last 48h). Both the Daily Review and Reflect flows receive this data and can suggest turning stale action items into tasks, flagging people to add, or noting emails worth acting on.
+- **7-day calendar lookahead** — review AI now sees the full week ahead instead of just tomorrow. Suggests prep tasks for upcoming events, respects a packed calendar when building the agenda.
+- **AI personality upgrade** — all three review prompts (question generator, plan builder, daily review) rewritten with a warmer, wittier voice. Referencing real email subjects, calendar events, and project names by name. Completion message updated to match.
+
+---
+
 ## 2026-06-04 (Session 11 continued)
 
 ### Added

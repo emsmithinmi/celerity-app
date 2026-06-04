@@ -3,6 +3,44 @@ import { callAI } from '../client'
 import { ensureNoteForDate, updateTopOfMind, updateAgenda, updateChallenge, updateQuote } from '../../api/daily'
 import { updateSuggestions } from '../../api/reviews'
 
+async function getSessionToken() {
+  const { data: { session } } = await supabase.auth.getSession()
+  return session?.access_token ?? null
+}
+
+async function getCalendarEvents(startDate, endDate) {
+  try {
+    const token = await getSessionToken()
+    if (!token) return []
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+    const res = await fetch(`${supabaseUrl}/functions/v1/google-calendar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ date: startDate, endDate }),
+    })
+    if (!res.ok) return []
+    const { events, error } = await res.json()
+    if (error === 'no_integration') return []
+    return events ?? []
+  } catch { return [] }
+}
+
+async function getGmailContext() {
+  try {
+    const token = await getSessionToken()
+    if (!token) return { actionThreads: [], waitingThreads: [], recentUnread: [] }
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+    const res = await fetch(`${supabaseUrl}/functions/v1/gmail-context`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    })
+    if (!res.ok) return { actionThreads: [], waitingThreads: [], recentUnread: [] }
+    const data = await res.json()
+    if (data.error === 'no_integration') return { actionThreads: [], waitingThreads: [], recentUnread: [] }
+    return data
+  } catch { return { actionThreads: [], waitingThreads: [], recentUnread: [] } }
+}
+
 // ─── Context Builder ──────────────────────────────────────────────────────────
 
 export async function buildReflectContext() {
@@ -61,26 +99,38 @@ export async function buildReflectContext() {
     health_tracking: todayNote.habit_health_tracking,
   } : {}
 
-  return { today, projects, activeTasks, inboxTasks, recentNotes, stalledProjects, overdueTasks, habits }
+  const tomorrow = new Date(today + 'T12:00:00')
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  const tomorrowStr = tomorrow.toLocaleDateString('en-CA')
+  const weekEnd = new Date(tomorrowStr + 'T12:00:00')
+  weekEnd.setDate(weekEnd.getDate() + 6)
+  const weekEndStr = weekEnd.toLocaleDateString('en-CA')
+
+  const [calendarEvents, gmail] = await Promise.all([
+    getCalendarEvents(tomorrowStr, weekEndStr),
+    getGmailContext(),
+  ])
+
+  return { today, tomorrowStr, weekEndStr, projects, activeTasks, inboxTasks, recentNotes, stalledProjects, overdueTasks, habits, calendarEvents, gmail }
 }
 
 // ─── Generate Opening Questions ───────────────────────────────────────────────
 
-const QUESTIONS_SYSTEM = `You are the AI sidekick inside Focus Flow, a personal GTD system. Your job is to run a friendly end-of-day check-in — like a curious, supportive colleague grabbing a coffee with the user after work.
+const QUESTIONS_SYSTEM = `You are the AI sidekick inside Focus Flow — part trusted co-pilot, part that friend who remembers everything and isn't afraid to ask the real question. Your job: run a real end-of-day check-in. Not a form, not a survey — a conversation.
 
-Generate 4-5 interview questions for today's daily review. Pull from their actual project names, task titles, and note history — make it feel personal, not generic. Mix it up: some questions can be practical ("did X actually happen today?"), some reflective, maybe one a little playful if the data gives you an opening.
+Generate 4-5 interview questions for today's review. You have their projects, tasks, email queue, upcoming calendar, and recent notes — use them. Make it personal. Reference actual names. If something's been sitting in @Action email for a week, ask about it. If a project went quiet, poke at it. If tomorrow looks brutal on the calendar, acknowledge it.
 
-Keep questions conversational — they should feel like something a real person would ask, not a corporate performance review form. No bullet points, no "Please describe your..." phrasing. Just talk to them.
+Mix it up: some practical ("did the thing with X actually happen?"), some reflective, one that catches them off guard in a good way. Keep it human — the kind of question a sharp friend asks, not a manager running a quarterly review.
 
-Last question should always check on their energy/headspace going into tomorrow.
+Last question always checks in on energy and headspace going into tomorrow. That one matters.
 
 Respond with valid JSON only: { "questions": ["string", ...] }`
 
 export async function generateReflectQuestions(ctx) {
-  const { today, projects, activeTasks, stalledProjects, overdueTasks, habits, recentNotes } = ctx
+  const { today, tomorrowStr, weekEndStr, projects, activeTasks, stalledProjects, overdueTasks, habits, recentNotes, calendarEvents = [], gmail = {} } = ctx
   const lines = []
 
-  lines.push(`TODAY: ${today}`)
+  lines.push(`TODAY: ${today}  |  PLANNING FOR: ${tomorrowStr}  |  LOOKAHEAD THROUGH: ${weekEndStr}`)
   lines.push('')
   lines.push('ACTIVE PROJECTS:')
   projects.slice(0, 8).forEach(p => {
@@ -117,9 +167,25 @@ export async function generateReflectQuestions(ctx) {
       lines.push(`[${n.date}] ${n.notes.map(e => e.body).join(' | ')}`)
     })
   }
+  if (calendarEvents.length > 0) {
+    lines.push('')
+    lines.push('UPCOMING CALENDAR:')
+    calendarEvents.forEach(e => lines.push(`- [${e.date ?? ''}] ${e.summary}`))
+  }
+  const { actionThreads = [], waitingThreads = [] } = gmail
+  if (actionThreads.length > 0) {
+    lines.push('')
+    lines.push('EMAIL @ACTION:')
+    actionThreads.forEach(t => lines.push(`- "${t.subject}" (${t.age_days}d in queue)`))
+  }
+  if (waitingThreads.length > 0) {
+    lines.push('')
+    lines.push('EMAIL @WAITING:')
+    waitingThreads.forEach(t => lines.push(`- "${t.subject}" (${t.age_days}d waiting)`))
+  }
 
   lines.push('')
-  lines.push('Generate 4-5 personalized interview questions. Reference actual project/task names. Last question should always be about energy/mindset going into tomorrow.')
+  lines.push('Generate 4-5 personalized interview questions. Reference actual names, email threads, and calendar events where relevant. Last question is always about energy and headspace going into tomorrow.')
 
   const messages = [
     { role: 'system', content: QUESTIONS_SYSTEM },
@@ -134,18 +200,20 @@ export async function generateReflectQuestions(ctx) {
 
 // ─── Generate Final Plan ──────────────────────────────────────────────────────
 
-const PLAN_SYSTEM = `You are the AI sidekick inside Focus Flow, a personal GTD system. The user just finished their daily review chat — now it's time to turn what they said into tomorrow's plan.
+const PLAN_SYSTEM = `You are the AI sidekick inside Focus Flow. The user just finished their daily review — now you're going to take everything they said and build them a tomorrow worth showing up for.
 
-Be specific and grounded in their actual data: real project names, real task titles, real patterns from the interview. Don't be generic. If something came up in the conversation, reflect it in the plan.
+Be specific. Use real names, real project titles, real tasks from the conversation. If they mentioned something matters, it goes in the plan. If they mentioned something is stuck, flag it. If their calendar is packed, don't pile on — protect the space.
 
-Tone: warm, direct, like you actually paid attention to what they said. No corporate-speak.
+You also have their email @Action and @Waiting queues and a 7-day calendar view. If something's been sitting in @Action for too long, suggest turning it into a task. If a big event is coming up this week, suggest prep. Be the person who thought of things they hadn't yet.
+
+Tone: warm, a little wit, zero filler. You stayed up to do your homework — make it count.
 Respond with valid JSON only — no markdown, no preamble.`
 
 export async function generateReflectPlan(ctx, conversation, scratchpadNote) {
-  const { today, projects, activeTasks, stalledProjects, recentNotes } = ctx
+  const { today, tomorrowStr, weekEndStr, projects, activeTasks, stalledProjects, recentNotes, calendarEvents = [], gmail = {} } = ctx
   const lines = []
 
-  lines.push(`TODAY: ${today}`)
+  lines.push(`TODAY: ${today}  |  PLANNING FOR: ${tomorrowStr}  |  LOOKAHEAD THROUGH: ${weekEndStr}`)
   lines.push('')
   lines.push('ACTIVE PROJECTS:')
   projects.slice(0, 8).forEach(p => lines.push(`- [${p.status}] ${p.title}${p.end_date ? ` (due ${p.end_date})` : ''}`))
@@ -156,6 +224,30 @@ export async function generateReflectPlan(ctx, conversation, scratchpadNote) {
     lines.push('')
     lines.push('STALLED PROJECTS:')
     stalledProjects.forEach(p => lines.push(`- ${p.title}`))
+  }
+  if (calendarEvents.length > 0) {
+    lines.push('')
+    lines.push('UPCOMING CALENDAR:')
+    calendarEvents.forEach(e => {
+      const time = e.all_day ? '[all day]' : (e.start_time ? new Date(e.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' }) : '')
+      lines.push(`- [${e.date ?? ''}] ${time} ${e.summary}`)
+    })
+  }
+  const { actionThreads = [], waitingThreads = [], recentUnread = [] } = gmail
+  if (actionThreads.length > 0) {
+    lines.push('')
+    lines.push('EMAIL @ACTION (items sitting in inbox needing a decision):')
+    actionThreads.forEach(t => lines.push(`- "${t.subject}" from ${t.sender} — ${t.age_days}d in queue. "${t.snippet?.slice(0, 100) ?? ''}"`))
+  }
+  if (waitingThreads.length > 0) {
+    lines.push('')
+    lines.push('EMAIL @WAITING (things waiting on others):')
+    waitingThreads.forEach(t => lines.push(`- "${t.subject}" from ${t.sender} — ${t.age_days}d waiting`))
+  }
+  if (recentUnread.length > 0) {
+    lines.push('')
+    lines.push('RECENT UNREAD EMAIL (last 48h — flag anything worth acting on):')
+    recentUnread.forEach(t => lines.push(`- "${t.subject}" from ${t.sender}: "${t.snippet?.slice(0, 100) ?? ''}"`))
   }
   lines.push('')
   lines.push('INTERVIEW CONVERSATION:')

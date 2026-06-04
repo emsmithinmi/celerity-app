@@ -835,7 +835,7 @@ function ReflectStep({ review, onComplete, onBack, onSaveState, targetDate }) {
       setTyping(true)
       setTimeout(() => {
         setTyping(false)
-        addBubble('ai', `✨ Alright — tomorrow's plan is locked in for <strong>${new Date(new Date().toLocaleDateString('en-CA') + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</strong>. Top of mind, agenda, and your code challenge are all waiting on the Daily page. Go enjoy your evening — you've earned it.`)
+        addBubble('ai', `✨ Done. Tomorrow's locked in — top of mind, agenda, quote, and your code challenge are all sitting on the Daily page ready for you. I checked your email queue and the calendar too, so the suggestions below are worth a look. Now close the laptop and go do something fun. You put in the work.`)
       }, 800)
     } catch (err) {
       addBubble('ai', `Something went wrong generating the plan: ${err.message}`)

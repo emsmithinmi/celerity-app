@@ -29,17 +29,17 @@ async function refreshAccessToken(refreshToken: string): Promise<string | null> 
   return json.access_token ?? null
 }
 
-async function fetchCalendarEvents(accessToken: string, dateStr: string) {
-  // Fetch events for the given date (full day window in UTC)
+async function fetchCalendarEvents(accessToken: string, dateStr: string, endDateStr?: string) {
+  // Support single-day or date-range queries
   const timeMin = `${dateStr}T00:00:00Z`
-  const timeMax = `${dateStr}T23:59:59Z`
+  const timeMax = `${endDateStr ?? dateStr}T23:59:59Z`
 
   const url = new URL(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(FOCUS_FLOW_CALENDAR_ID)}/events`)
   url.searchParams.set('timeMin', timeMin)
   url.searchParams.set('timeMax', timeMax)
   url.searchParams.set('singleEvents', 'true')
   url.searchParams.set('orderBy', 'startTime')
-  url.searchParams.set('maxResults', '20')
+  url.searchParams.set('maxResults', '50')
 
   const res = await fetch(url.toString(), {
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -60,6 +60,7 @@ async function fetchCalendarEvents(accessToken: string, dateStr: string) {
       all_day:    allDay,
       start_time: start?.dateTime ?? start?.date ?? null,
       end_time:   end?.dateTime   ?? end?.date   ?? null,
+      date:       start?.date ?? start?.dateTime?.split('T')[0] ?? dateStr,
       notes:      (item.description as string | undefined) ?? null,
     }
   })
@@ -94,8 +95,8 @@ Deno.serve(async (req: Request) => {
       })
     }
 
-    // Get the date to fetch (defaults to tomorrow)
-    const { date } = await req.json().catch(() => ({}))
+    // Get the date range to fetch (defaults to tomorrow only)
+    const { date, endDate } = await req.json().catch(() => ({}))
     const targetDate = date ?? (() => {
       const tomorrow = new Date()
       tomorrow.setDate(tomorrow.getDate() + 1)
@@ -126,7 +127,7 @@ Deno.serve(async (req: Request) => {
     // Try fetching — if 401, refresh the token and retry
     let events
     try {
-      events = await fetchCalendarEvents(accessToken, targetDate)
+      events = await fetchCalendarEvents(accessToken, targetDate, endDate)
     } catch (err) {
       if (String(err).includes('401') && integration.refresh_token) {
         const newToken = await refreshAccessToken(integration.refresh_token)
@@ -139,7 +140,7 @@ Deno.serve(async (req: Request) => {
           .eq('user_id', user.id)
           .eq('provider', 'google')
 
-        events = await fetchCalendarEvents(newToken, targetDate)
+        events = await fetchCalendarEvents(newToken, targetDate, endDate)
       } else {
         throw err
       }

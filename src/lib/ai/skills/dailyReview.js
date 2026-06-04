@@ -4,27 +4,45 @@ import { ensureNoteForDate, updateTopOfMind, updateAgenda, updateChallenge, upda
 import { updateSuggestions } from '../../api/reviews'
 import { selectCandidates } from '../../quotes'
 
-async function getTomorrowCalendarEvents(tomorrowStr) {
-  try {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return []
+async function getSessionToken() {
+  const { data: { session } } = await supabase.auth.getSession()
+  return session?.access_token ?? null
+}
 
+async function getCalendarEvents(startDate, endDate) {
+  try {
+    const token = await getSessionToken()
+    if (!token) return []
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
     const res = await fetch(`${supabaseUrl}/functions/v1/google-calendar`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({ date: tomorrowStr }),
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ date: startDate, endDate }),
     })
-
     if (!res.ok) return []
     const { events, error } = await res.json()
-    if (error === 'no_integration') return [] // user hasn't connected Google yet
+    if (error === 'no_integration') return []
     return events ?? []
   } catch {
     return []
+  }
+}
+
+async function getGmailContext() {
+  try {
+    const token = await getSessionToken()
+    if (!token) return { actionThreads: [], waitingThreads: [], recentUnread: [] }
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+    const res = await fetch(`${supabaseUrl}/functions/v1/gmail-context`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    })
+    if (!res.ok) return { actionThreads: [], waitingThreads: [], recentUnread: [] }
+    const data = await res.json()
+    if (data.error === 'no_integration') return { actionThreads: [], waitingThreads: [], recentUnread: [] }
+    return data
+  } catch {
+    return { actionThreads: [], waitingThreads: [], recentUnread: [] }
   }
 }
 
@@ -122,44 +140,81 @@ async function buildContext(reviewContent = {}, targetDate = null) {
     tomorrow.setDate(tomorrow.getDate() + 1)
     tomorrowStr = tomorrow.toLocaleDateString('en-CA')
   }
-  const calendarEvents = await getTomorrowCalendarEvents(tomorrowStr)
+
+  // 7-day calendar lookahead + Gmail context — fetch in parallel
+  const weekEnd = new Date(tomorrowStr + 'T12:00:00')
+  weekEnd.setDate(weekEnd.getDate() + 6)
+  const weekEndStr = weekEnd.toLocaleDateString('en-CA')
+
+  const [calendarEvents, gmail] = await Promise.all([
+    getCalendarEvents(tomorrowStr, weekEndStr),
+    getGmailContext(),
+  ])
 
   // Pre-select weighted quote candidates, excluding recently used quotes
   const recentQuoteTexts = (notesRes.data ?? []).map(n => n.quote).filter(Boolean)
   const quoteCandidates = selectCandidates(recentQuoteTexts, 30)
 
-  return { today, tomorrowStr, projects, activeTasks, inboxTasks, inboxCount: inboxTasks.length, recentNotes, stalledRisk, habits, reviewContent, lastCompletedChallenge: lastCompleted ?? null, calendarEvents, quoteCandidates, staleSomeday }
+  return { today, tomorrowStr, weekEndStr, projects, activeTasks, inboxTasks, inboxCount: inboxTasks.length, recentNotes, stalledRisk, habits, reviewContent, lastCompletedChallenge: lastCompleted ?? null, calendarEvents, gmail, quoteCandidates, staleSomeday }
 }
 
 // ─── System Prompt ────────────────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are the AI sidekick inside Focus Flow, a personal GTD system. Your job is to help the user wrap up their day and set up a good tomorrow.
+const SYSTEM_PROMPT = `You are the AI sidekick inside Focus Flow — part trusted co-pilot, part that friend who remembers everything and calls you on your nonsense. Your job: help the user close out today clean and set up a tomorrow worth waking up for.
 
-You have their projects, tasks, habits, and the last 30 days of daily notes to work with. Use them — make it personal, reference real names, notice patterns. Nobody wants generic advice from someone who clearly wasn't paying attention.
+You have the full picture — projects, tasks, habits, 30 days of notes, their inbox, their email action list, what's coming up on the calendar. Use all of it. Reference real names, real projects, real patterns. If something's been sitting in their @Action email folder for two weeks, say so. If a project has gone quiet, flag it. If tomorrow has a brutal calendar day, acknowledge it and plan accordingly.
 
-Tone: warm, direct, a little human. Like a sharp friend who actually knows their work. Not a corporate productivity bot.
+Tone: warm, a little witty, zero corporate-speak. Like a sharp friend who did their homework before sitting down with you. You can be a little playful when the situation allows — but you're always here to get the job done, not just to make conversation. The user has real things to accomplish; help them win.
 
 Respond with valid JSON only — no markdown, no preamble, no explanation outside the JSON.`
 
 // ─── User Prompt Builder ──────────────────────────────────────────────────────
 
 function buildPrompt(ctx) {
-  const { today, tomorrowStr, projects, activeTasks, inboxCount, inboxTasks, recentNotes, stalledRisk, habits, reviewContent, lastCompletedChallenge, calendarEvents, quoteCandidates, staleSomeday } = ctx
+  const { today, tomorrowStr, weekEndStr, projects, activeTasks, inboxCount, inboxTasks, recentNotes, stalledRisk, habits, reviewContent, lastCompletedChallenge, calendarEvents, gmail, quoteCandidates, staleSomeday } = ctx
   const lines = []
 
-  lines.push(`TODAY: ${today}  |  PLANNING FOR: ${tomorrowStr}`)
+  lines.push(`TODAY: ${today}  |  PLANNING FOR: ${tomorrowStr}  |  CALENDAR LOOKAHEAD THROUGH: ${weekEndStr}`)
   lines.push('')
 
   if (calendarEvents.length > 0) {
-    lines.push(`TOMORROW'S CALENDAR (${tomorrowStr}):`)
+    lines.push(`UPCOMING CALENDAR (${tomorrowStr} – ${weekEndStr}):`)
     for (const e of calendarEvents) {
+      const dateLabel = e.date ?? ''
       if (e.all_day) {
-        lines.push(`- [all day] ${e.summary}${e.calendar_name ? ` (${e.calendar_name})` : ''}`)
+        lines.push(`- [${dateLabel}] [all day] ${e.summary}`)
       } else {
         const start = e.start_time ? new Date(e.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' }) : '?'
         const end   = e.end_time   ? new Date(e.end_time).toLocaleTimeString('en-US',   { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' }) : null
-        lines.push(`- ${start}${end ? ` – ${end}` : ''}: ${e.summary}${e.notes ? ` — ${e.notes}` : ''}`)
+        lines.push(`- [${dateLabel}] ${start}${end ? ` – ${end}` : ''}: ${e.summary}${e.notes ? ` — ${e.notes}` : ''}`)
       }
+    }
+    lines.push('')
+  }
+
+  // Gmail context
+  const { actionThreads = [], waitingThreads = [], recentUnread = [] } = gmail ?? {}
+  if (actionThreads.length > 0) {
+    lines.push('📨 EMAIL @ACTION FOLDER (items needing a response or decision):')
+    for (const t of actionThreads) {
+      lines.push(`- "${t.subject}" from ${t.sender} — ${t.age_days}d in queue`)
+      if (t.snippet) lines.push(`  "${t.snippet.slice(0, 120)}"`)
+    }
+    lines.push('')
+  }
+  if (waitingThreads.length > 0) {
+    lines.push('⌛ EMAIL @WAITING FOLDER (things you're waiting on others for):')
+    for (const t of waitingThreads) {
+      lines.push(`- "${t.subject}" from ${t.sender} — ${t.age_days}d waiting`)
+      if (t.snippet) lines.push(`  "${t.snippet.slice(0, 120)}"`)
+    }
+    lines.push('')
+  }
+  if (recentUnread.length > 0) {
+    lines.push('📬 RECENT UNREAD EMAIL (last 48h — flag anything worth acting on or adding to calendar):')
+    for (const t of recentUnread) {
+      lines.push(`- "${t.subject}" from ${t.sender}`)
+      if (t.snippet) lines.push(`  "${t.snippet.slice(0, 100)}"`)
     }
     lines.push('')
   }
