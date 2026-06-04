@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { RefreshCw } from 'lucide-react'
 
 function fmt(date) {
   return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
@@ -8,8 +9,16 @@ function fmtHour(date) {
   return date.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true })
 }
 
-export default function AgendaSection({ calendarEvents = [], dueTasks = [], endingProjects = [] }) {
+export default function AgendaSection({ calendarEvents = [], dueTasks = [], endingProjects = [], onRefresh }) {
   const [now, setNow] = useState(new Date())
+  const [spinning, setSpinning] = useState(false)
+
+  const handleRefresh = async () => {
+    if (!onRefresh || spinning) return
+    setSpinning(true)
+    await onRefresh()
+    setSpinning(false)
+  }
 
   // Tick every 60 seconds so the window drifts forward in real time
   useEffect(() => {
@@ -53,7 +62,21 @@ export default function AgendaSection({ calendarEvents = [], dueTasks = [], endi
 
   return (
     <div>
-      <h3 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Agenda</h3>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Agenda</h3>
+        {onRefresh && (
+          <button
+            onClick={handleRefresh}
+            title="Refresh calendar"
+            className="flex items-center justify-center rounded-md transition-colors"
+            style={{ width: 26, height: 26, color: 'var(--text-secondary)', background: 'transparent' }}
+            onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent)' }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-secondary)' }}
+          >
+            <RefreshCw size={13} style={{ animation: spinning ? 'spin 0.7s linear infinite' : 'none' }} />
+          </button>
+        )}
+      </div>
 
       {/* All-day / due items */}
       {allDayItems.length > 0 && (

@@ -272,6 +272,7 @@ export default function Daily() {
           calendarEvents={calendarEvents}
           dueTasks={dueTasks}
           endingProjects={endingProjects}
+          onRefresh={() => fetchCalendarEventsForDate(selectedDate).then(setCalendarEvents).catch(() => {})}
         />
 
 

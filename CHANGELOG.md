@@ -4,6 +4,13 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-04 (Session 11 continued — AI layer + agenda refresh)
+
+### Added
+- **Agenda refresh button** — small refresh icon next to the Agenda header. Spins while fetching, re-pulls calendar events for the current date without a full page reload.
+
+---
+
 ## 2026-06-04 (Session 11 continued — AI layer)
 
 ### Added
