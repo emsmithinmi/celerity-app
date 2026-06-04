@@ -2,6 +2,7 @@
 import {
   updateProject, startPlanning, startProject,
   completeProject, archiveProject, highlightProject,
+  deferToSomeday, markSomedayReviewed,
 } from '../../lib/api/projects'
 import { supabase } from '../../lib/supabase'
 import { useTasks } from '../../hooks/useTasks'
@@ -60,6 +61,14 @@ export default function ProjectDetail({ project: initialProject, open, onClose, 
 
   useEffect(() => { setProject(initialProject); setDirty(false) }, [initialProject])
   useEffect(() => { setTaskCount(totalTasks) }, [totalTasks])
+
+  // Auto-stamp reviewed_at whenever a someday project is opened
+  useEffect(() => {
+    if (open && initialProject?.status === 'someday') {
+      markSomedayReviewed(initialProject.id)
+      setProject(prev => ({ ...prev, reviewed_at: new Date().toISOString() }))
+    }
+  }, [open, initialProject?.id, initialProject?.status])
 
   if (!project) return null
 
@@ -135,11 +144,29 @@ export default function ProjectDetail({ project: initialProject, open, onClose, 
     onClose()
   }
 
+  const handleDefer = async () => {
+    await deferToSomeday(project.id)
+    setProject(prev => ({ ...prev, status: 'someday' }))
+    onRefresh?.()
+    onClose()
+  }
+
   const handleDiscard = async () => {
-    // Hard delete — only from inbox/planning
+    // Hard delete — only from inbox/planning/someday
     const { error } = await supabase.from('projects').delete().eq('id', project.id)
     if (!error) { onRefresh?.(); onClose() }
   }
+
+  // How long since this someday project was last reviewed
+  const somedayAge = (() => {
+    if (project.status !== 'someday') return null
+    const ref = project.reviewed_at || project.created_at
+    if (!ref) return null
+    const days = Math.floor((Date.now() - new Date(ref).getTime()) / 86_400_000)
+    if (days === 0) return 'Reviewed today'
+    if (days === 1) return 'Reviewed yesterday'
+    return `Last reviewed ${days} days ago`
+  })()
 
   return (
     <>
@@ -214,6 +241,19 @@ export default function ProjectDetail({ project: initialProject, open, onClose, 
             <p className="font-medium">⚠ Project is stalled</p>
             <p className="text-xs mt-1" style={{ color: 'var(--state-purple-dim)' }}>
               Move a task to Next Actions to un-stall this project.
+            </p>
+          </div>
+        )}
+
+        {/* ── Someday/Maybe banner ── */}
+        {project.status === 'someday' && (
+          <div
+            className="rounded-lg px-4 py-3 mb-4 border text-sm"
+            style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+          >
+            <p className="font-medium" style={{ color: 'var(--text-primary)' }}>🔮 Someday/Maybe</p>
+            <p className="text-xs mt-1">
+              {somedayAge} — fill in area, dates &amp; description when you're ready to plan it.
             </p>
           </div>
         )}
@@ -331,6 +371,22 @@ export default function ProjectDetail({ project: initialProject, open, onClose, 
             {project.status === 'inbox' && (
               <>
                 <Button variant="primary"   size="sm" onClick={handleStartPlanning} disabled={!clarified}>
+                  {PROJECT_ACTIONS.start_planning}
+                </Button>
+                <Button variant="secondary" size="sm" onClick={handleDefer}>
+                  {PROJECT_ACTIONS.someday}
+                </Button>
+                <Button variant="ghost"     size="sm" onClick={() => setShowDiscard(true)}>
+                  {PROJECT_ACTIONS.discard}
+                </Button>
+              </>
+            )}
+
+            {/* SOMEDAY/MAYBE */}
+            {project.status === 'someday' && (
+              <>
+                <Button variant="primary"   size="sm" onClick={handleStartPlanning} disabled={!clarified}
+                  title={!clarified ? `Fill in: ${missing.join(', ')}` : undefined}>
                   {PROJECT_ACTIONS.start_planning}
                 </Button>
                 <Button variant="ghost"     size="sm" onClick={() => setShowDiscard(true)}>

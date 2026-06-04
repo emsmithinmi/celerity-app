@@ -4,6 +4,15 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-03 (Session 10)
+
+### Added
+- **Someday/Maybe for projects** — new status and tab on the Projects page (excluded from "All Active" so it doesn't inflate your workload view). Send any inbox project to Someday/Maybe with one click — no area, dates, or description required. From Someday/Maybe you can clarify in place and promote to Planning, or delete it.
+- **Review staleness tracking** — `reviewed_at` timestamp stamped automatically each time you open a Someday/Maybe project. The row shows how many days since last review, highlighted amber at 30+ days.
+- **AI daily review alerts** — the daily review AI now flags Someday/Maybe items not reviewed in 30+ days and nudges you to act or delete. Someday/Maybe is not a storage bin.
+
+---
+
 ## 2026-06-03 (Session 9)
 
 ### Changed

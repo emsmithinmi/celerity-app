@@ -44,12 +44,12 @@ async function buildContext(reviewContent = {}) {
   const lastCompleted = (recentChallengeRes.data ?? [])
     .find(n => n.code_challenge?.completed === true)
 
-  const [projectsRes, activeTasksRes, inboxRes, notesRes, todayNoteRes] = await Promise.all([
+  const [projectsRes, activeTasksRes, inboxRes, notesRes, todayNoteRes, somedayRes] = await Promise.all([
     supabase
       .from('projects')
       .select('id, title, status, area, priority, start_date, end_date, description')
       .is('archived_at', null)
-      .not('status', 'eq', 'completed')
+      .not('status', 'in', '("completed","someday")')
       .order('updated_at', { ascending: false }),
 
     supabase
@@ -75,6 +75,12 @@ async function buildContext(reviewContent = {}) {
       .limit(30),
 
     supabase.from('daily_notes').select('*').eq('date', today).maybeSingle(),
+
+    supabase
+      .from('projects')
+      .select('id, title, reviewed_at, created_at')
+      .eq('status', 'someday')
+      .is('archived_at', null),
   ])
 
   const projects    = projectsRes.data    ?? []
@@ -82,6 +88,15 @@ async function buildContext(reviewContent = {}) {
   const inboxTasks  = inboxRes.data       ?? []
   const recentNotes = notesRes.data       ?? []
   const todayNote   = todayNoteRes.data
+
+  const now = Date.now()
+  const staleSomeday = (somedayRes.data ?? [])
+    .map(p => ({
+      ...p,
+      daysSinceReview: Math.floor((now - new Date(p.reviewed_at || p.created_at).getTime()) / 86_400_000),
+    }))
+    .filter(p => p.daysSinceReview >= 30)
+    .sort((a, b) => b.daysSinceReview - a.daysSinceReview)
 
   const activeProjectIds = new Set(activeTasks.filter(t => t.project_id).map(t => t.project_id))
   const stalledRisk = projects
@@ -108,7 +123,7 @@ async function buildContext(reviewContent = {}) {
   const recentQuoteTexts = (notesRes.data ?? []).map(n => n.quote).filter(Boolean)
   const quoteCandidates = selectCandidates(recentQuoteTexts, 30)
 
-  return { today, tomorrowStr, projects, activeTasks, inboxTasks, inboxCount: inboxTasks.length, recentNotes, stalledRisk, habits, reviewContent, lastCompletedChallenge: lastCompleted ?? null, calendarEvents, quoteCandidates }
+  return { today, tomorrowStr, projects, activeTasks, inboxTasks, inboxCount: inboxTasks.length, recentNotes, stalledRisk, habits, reviewContent, lastCompletedChallenge: lastCompleted ?? null, calendarEvents, quoteCandidates, staleSomeday }
 }
 
 // ─── System Prompt ────────────────────────────────────────────────────────────
@@ -124,7 +139,7 @@ Respond with valid JSON only — no markdown, no preamble, no explanation outsid
 // ─── User Prompt Builder ──────────────────────────────────────────────────────
 
 function buildPrompt(ctx) {
-  const { today, tomorrowStr, projects, activeTasks, inboxCount, inboxTasks, recentNotes, stalledRisk, habits, reviewContent, lastCompletedChallenge, calendarEvents, quoteCandidates } = ctx
+  const { today, tomorrowStr, projects, activeTasks, inboxCount, inboxTasks, recentNotes, stalledRisk, habits, reviewContent, lastCompletedChallenge, calendarEvents, quoteCandidates, staleSomeday } = ctx
   const lines = []
 
   lines.push(`TODAY: ${today}  |  PLANNING FOR: ${tomorrowStr}`)
@@ -178,6 +193,12 @@ function buildPrompt(ctx) {
   if (stalledRisk.length > 0) {
     lines.push('⚠ PROJECTS WITH NO ACTIVE TASKS (stalled risk):')
     stalledRisk.forEach(t => lines.push(`- ${t}`))
+    lines.push('')
+  }
+
+  if (staleSomeday.length > 0) {
+    lines.push('🔮 SOMEDAY/MAYBE ITEMS NOT REVIEWED IN 30+ DAYS (nudge user to act or delete):')
+    staleSomeday.forEach(p => lines.push(`- "${p.title}" — ${p.daysSinceReview} days since last review`))
     lines.push('')
   }
 

@@ -85,6 +85,14 @@ export async function startPlanning(id) {
   return updateProject(id, { status: 'planning' })
 }
 
+export async function deferToSomeday(id) {
+  return updateProject(id, { status: 'someday' })
+}
+
+export async function markSomedayReviewed(id) {
+  return updateProject(id, { reviewed_at: new Date().toISOString() })
+}
+
 export async function startProject(id) {
   // Requires: at least 2 tasks assigned — validated in UI
   return updateProject(id, { status: 'in_progress' })

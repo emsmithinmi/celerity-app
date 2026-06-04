@@ -6,16 +6,18 @@ import Button from '../components/ui/Button'
 import { CaptureProjectModal } from '../components/daily/QuickCaptureModals'
 
 const TABS = [
-  { key: 'inbox',       label: 'Inbox'       },
-  { key: 'planning',    label: 'Planning'    },
-  { key: 'in_progress', label: 'In Progress' },
-  { key: 'waiting',     label: 'Waiting'     },
-  { key: 'stalled',     label: 'Stalled'     },
-  { key: 'completed',   label: 'Completed'   },
-  { key: 'archived',    label: 'Archived'    },
-  { key: 'all',         label: 'All Active'  },
+  { key: 'inbox',       label: 'Inbox'          },
+  { key: 'planning',    label: 'Planning'        },
+  { key: 'in_progress', label: 'In Progress'     },
+  { key: 'waiting',     label: 'Waiting'         },
+  { key: 'stalled',     label: 'Stalled'         },
+  { key: 'someday',     label: 'Someday/Maybe'   },
+  { key: 'completed',   label: 'Completed'       },
+  { key: 'archived',    label: 'Archived'        },
+  { key: 'all',         label: 'All Active'      },
 ]
 
+// Someday/Maybe intentionally excluded — it's not "active" work
 const ALL_ACTIVE_STATUSES = ['inbox', 'planning', 'in_progress', 'waiting', 'stalled']
 
 function StatChip({ label, count }) {

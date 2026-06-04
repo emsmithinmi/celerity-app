@@ -1,10 +1,18 @@
 ﻿import { StatusPill, PriorityBadge } from '../ui'
 
+function somedayReviewAge(project) {
+  if (project.status !== 'someday') return null
+  const ref = project.reviewed_at || project.created_at
+  if (!ref) return null
+  return Math.floor((Date.now() - new Date(ref).getTime()) / 86_400_000)
+}
+
 export default function ProjectRow({ project, onClick }) {
   const isArchived  = !!project.archived_at
   const today       = new Date().toLocaleDateString('en-CA')
   const overdue     = project.end_date && project.end_date < today
     && project.status !== 'completed' && !isArchived
+  const reviewDays  = somedayReviewAge(project)
 
   return (
     <div
@@ -42,6 +50,17 @@ export default function ProjectRow({ project, onClick }) {
             style={{ backgroundColor: 'var(--border)', color: 'var(--text-secondary)' }}
           >
             Archived
+          </span>
+        )}
+        {reviewDays !== null && (
+          <span
+            className="text-xs px-2 py-0.5 rounded"
+            style={{
+              backgroundColor: reviewDays >= 30 ? 'var(--state-warning-bg)' : 'var(--border)',
+              color: reviewDays >= 30 ? 'var(--state-warning-text)' : 'var(--text-secondary)',
+            }}
+          >
+            {reviewDays === 0 ? 'Today' : reviewDays === 1 ? '1d ago' : `${reviewDays}d ago`}
           </span>
         )}
         {project.end_date && (

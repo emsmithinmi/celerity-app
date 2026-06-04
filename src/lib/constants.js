@@ -11,12 +11,13 @@ export const TASK_STATUSES = {
 
 // ─── Project Statuses ────────────────────────────────────────────────────────
 export const PROJECT_STATUSES = {
-  inbox:       { label: 'Inbox',       bg: '#FBBC05', text: '#000000', border: '#D4990A' },
-  planning:    { label: 'Planning',    bg: '#ffffff', text: '#000000', border: '#BBBBBB' },
-  in_progress: { label: 'In Progress', bg: '#1967D2', text: '#ffffff', border: '#1256B0' },
-  waiting:     { label: 'Waiting',     bg: '#DB4437', text: '#ffffff', border: '#B03228' },
-  stalled:     { label: 'Stalled',     bg: '#FB9039', text: '#000000', border: '#c97030' },
-  completed:   { label: 'Completed',   bg: '#000000', text: '#ffffff', border: '#333333' },
+  inbox:       { label: 'Inbox',          bg: '#FBBC05', text: '#000000', border: '#D4990A' },
+  planning:    { label: 'Planning',       bg: '#ffffff', text: '#000000', border: '#BBBBBB' },
+  in_progress: { label: 'In Progress',    bg: '#1967D2', text: '#ffffff', border: '#1256B0' },
+  waiting:     { label: 'Waiting',        bg: '#DB4437', text: '#ffffff', border: '#B03228' },
+  stalled:     { label: 'Stalled',        bg: '#FB9039', text: '#000000', border: '#c97030' },
+  someday:     { label: 'Someday/Maybe',  bg: '#ffffff', text: '#000000', border: '#BBBBBB' },
+  completed:   { label: 'Completed',      bg: '#000000', text: '#ffffff', border: '#333333' },
 }
 
 // ─── People Statuses ─────────────────────────────────────────────────────────
@@ -61,6 +62,7 @@ export const PROJECT_ACTIONS = {
   start_planning:    "Start Planning",
   start:             "Let's Get Started",
   complete:          "All Done",
+  someday:           "Someday/Maybe",
   discard:           "Scrap This",
 }
 
