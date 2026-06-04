@@ -1,6 +1,6 @@
 ﻿import { supabase } from '../../supabase'
 import { callAI } from '../client'
-import { ensureNoteForDate, updateTopOfMind, updateAgenda, updateChallenge } from '../../api/daily'
+import { ensureNoteForDate, updateTopOfMind, updateAgenda, updateChallenge, updateQuote } from '../../api/daily'
 import { updateSuggestions } from '../../api/reviews'
 
 // ─── Context Builder ──────────────────────────────────────────────────────────
@@ -206,9 +206,10 @@ export async function writeReflectResults(reviewId, result) {
   const tomorrowNote = await ensureNoteForDate(tomorrowStr)
 
   await Promise.all([
-    result.top_of_mind?.length > 0 && updateTopOfMind(tomorrowNote.id, result.top_of_mind),
-    result.agenda?.length > 0      && updateAgenda(tomorrowNote.id, result.agenda),
-    result.challenge                && updateChallenge(tomorrowNote.id, result.challenge),
+    result.top_of_mind?.length > 0          && updateTopOfMind(tomorrowNote.id, result.top_of_mind),
+    result.agenda?.length > 0               && updateAgenda(tomorrowNote.id, result.agenda),
+    result.challenge                         && updateChallenge(tomorrowNote.id, result.challenge),
+    result.quote?.text                       && updateQuote(tomorrowNote.id, result.quote.text, result.quote.author),
   ].filter(Boolean))
 
   const suggestions = [

@@ -4,6 +4,14 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-04 (Session 11)
+
+### Fixed
+- **Quote mismatch after Reflect review** — the Reflect review now writes the chosen quote directly to tomorrow's daily note (same as the Daily Review skill). Previously the quote only appeared as a suggestion card and never made it to the page.
+- **Future days show empty quote** — browsing forward to a future date no longer shows a fallback quote. Future daily pages leave the quote section blank until the review runs for that day.
+
+---
+
 ## 2026-06-03 (Session 10)
 
 ### Added

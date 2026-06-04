@@ -18,6 +18,9 @@ function getFallbackQuote(dateStr) {
 export default function DailyQuote({ note, dateStr }) {
   const [local, setLocal] = useState(null) // override set by skip
 
+  const today = new Date().toLocaleDateString('en-CA')
+  if (dateStr > today) return null
+
   const dbQuote = note?.quote ? { text: note.quote, author: note.quote_author ?? '' } : null
   const active  = local ?? dbQuote ?? getFallbackQuote(dateStr)
 
