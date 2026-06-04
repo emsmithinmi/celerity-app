@@ -555,7 +555,7 @@ function ClarifyStep({ onNext, onBack }) {
     async function load() {
       try {
         const [tasksRes, projectsRes, peopleRes, activeTasksRes] = await Promise.all([
-          supabase.from('tasks').select('id, title, due_date').eq('status', 'inbox').is('archived_at', null).order('created_at', { ascending: false }),
+          supabase.from('tasks').select('id, title, status, due_date, project_id').eq('status', 'inbox').is('archived_at', null).order('created_at', { ascending: false }),
           supabase.from('projects').select('id, title').eq('status', 'inbox').is('archived_at', null).order('created_at', { ascending: false }),
           supabase.from('people').select('id, first_name, last_name').eq('status', 'inbox').order('last_name', { ascending: true }),
           supabase.from('tasks').select('id, project_id').in('status', ['next_action', 'waiting', 'scheduled', 'queued']).is('archived_at', null),
@@ -571,7 +571,7 @@ function ClarifyStep({ onNext, onBack }) {
 
         const overdueRes = await supabase
           .from('tasks')
-          .select('id, title, due_date')
+          .select('id, title, status, due_date, project_id')
           .in('status', ['next_action', 'waiting', 'scheduled', 'queued'])
           .lt('due_date', today)
           .is('archived_at', null)
