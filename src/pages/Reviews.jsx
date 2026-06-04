@@ -698,6 +698,7 @@ function ClarifyStep({ onNext, onBack }) {
 
 function ReflectStep({ review, onComplete, onBack, onSaveState, targetDate }) {
   const { configured: aiConfigured, loading: aiLoading } = useAIConfig()
+  const navigate = useNavigate()
   const aiConfiguredRef = useRef(false)
   useEffect(() => { aiConfiguredRef.current = aiConfigured }, [aiConfigured])
   const saved = review?.content ?? {}
@@ -850,6 +851,7 @@ function ReflectStep({ review, onComplete, onBack, onSaveState, targetDate }) {
     setCompleted(true)
     setShowSuggestions(true)
     onComplete()
+    setTimeout(() => navigate('/'), 1800)
   }
 
   const handleSuggestionChange = async (updated) => {
