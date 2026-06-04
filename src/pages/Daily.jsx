@@ -161,17 +161,19 @@ export default function Daily() {
   const [showGate,    setShowGate]    = useState(false)
   useEffect(() => {
     const yesterday = shiftDate(todayStr(), -1)
+    const today     = todayStr()
     supabase
       .from('reviews')
       .select('status')
       .eq('type', 'daily')
-      .eq('date', yesterday)
-      .maybeSingle()
+      .in('date', [yesterday, today])
+      .eq('status', 'completed')
+      .limit(1)
       .then(({ data }) => {
-        setShowGate(!data || data.status !== 'completed')
+        setShowGate(!data || data.length === 0)
         setGateChecked(true)
       })
-      .catch(() => setGateChecked(true)) // don't block on error
+      .catch(() => setGateChecked(true))
   }, [])
 
   // Modal state
