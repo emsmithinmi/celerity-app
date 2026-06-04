@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { RefreshCw } from 'lucide-react'
 import { useProjects } from '../../hooks/useProjects'
 import { StatusPill, PriorityBadge } from '../ui'
 
@@ -42,16 +43,21 @@ function ProjectRow({ project }) {
 
 export default function ProjectsSection() {
   const [activeTab, setActiveTab] = useState('inbox')
-  const { projects: allProjects, loading } = useProjects({ statuses: ACTIVE_STATUSES, archived: false })
+  const { projects: allProjects, loading, refresh } = useProjects({ statuses: ACTIVE_STATUSES, archived: false })
+  const [spinning, setSpinning] = useState(false)
+  const handleRefresh = async () => { setSpinning(true); await refresh(); setSpinning(false) }
 
   const projects = useMemo(() => allProjects.filter(p => p.status === activeTab), [allProjects, activeTab])
   const tabCount = (key) => allProjects.filter(p => p.status === key).length
 
   return (
     <div>
-      <h3 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
-        Projects
-      </h3>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Projects</h3>
+        <button onClick={handleRefresh} title="Refresh projects" className="flex items-center justify-center rounded-md transition-colors" style={{ width: 26, height: 26, color: 'var(--text-secondary)', background: 'transparent' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--accent)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}>
+          <RefreshCw size={13} style={{ animation: spinning ? 'spin 0.7s linear infinite' : 'none' }} />
+        </button>
+      </div>
 
       {/* Filter tabs */}
       <div className="flex gap-1 mb-3">

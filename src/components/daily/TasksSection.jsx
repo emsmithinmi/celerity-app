@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { RefreshCw } from 'lucide-react'
 import { useTasks } from '../../hooks/useTasks'
 import { PriorityBadge, EnergyBadge } from '../ui'
 
@@ -59,16 +60,21 @@ function TaskRow({ task }) {
 
 export default function TasksSection({ onRefreshStats }) {
   const [activeTab, setActiveTab] = useState('inbox')
-  const { tasks: allTasks, loading } = useTasks({ statuses: ACTIVE_STATUSES })
+  const { tasks: allTasks, loading, refresh } = useTasks({ statuses: ACTIVE_STATUSES })
+  const [spinning, setSpinning] = useState(false)
+  const handleRefresh = async () => { setSpinning(true); await refresh(); setSpinning(false) }
 
   const tasks    = useMemo(() => allTasks.filter(t => t.status === activeTab), [allTasks, activeTab])
   const tabCount = (key) => allTasks.filter(t => t.status === key).length
 
   return (
     <div>
-      <h3 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
-        Tasks
-      </h3>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Tasks</h3>
+        <button onClick={handleRefresh} title="Refresh tasks" className="flex items-center justify-center rounded-md transition-colors" style={{ width: 26, height: 26, color: 'var(--text-secondary)', background: 'transparent' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--accent)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}>
+          <RefreshCw size={13} style={{ animation: spinning ? 'spin 0.7s linear infinite' : 'none' }} />
+        </button>
+      </div>
 
       {/* Filter tabs */}
       <div className="flex gap-1 mb-3 flex-wrap">
