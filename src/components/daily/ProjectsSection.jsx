@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { RefreshCw } from 'lucide-react'
 import { useProjects } from '../../hooks/useProjects'
@@ -48,6 +48,14 @@ function ProjectRow({ project }) {
 export default function ProjectsSection() {
   const [activeTab, setActiveTab] = useState('inbox')
   const { projects: allProjects, loading, refresh } = useProjects({ statuses: ACTIVE_STATUSES, archived: false })
+
+  // Auto-switch to In Progress if inbox is empty once data loads
+  useEffect(() => {
+    if (loading) return
+    if (allProjects.filter(p => p.status === 'inbox').length === 0) {
+      setActiveTab('in_progress')
+    }
+  }, [loading]) // eslint-disable-line react-hooks/exhaustive-deps
   const [spinning, setSpinning] = useState(false)
   const handleRefresh = async () => { setSpinning(true); await refresh(); setSpinning(false) }
 

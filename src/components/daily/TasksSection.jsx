@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { RefreshCw } from 'lucide-react'
 import { useTasks } from '../../hooks/useTasks'
@@ -64,6 +64,14 @@ function TaskRow({ task }) {
 export default function TasksSection({ onRefreshStats }) {
   const [activeTab, setActiveTab] = useState('inbox')
   const { tasks: allTasks, loading, refresh } = useTasks({ statuses: ACTIVE_STATUSES })
+
+  // Auto-switch to Next Actions if inbox is empty once data loads
+  useEffect(() => {
+    if (loading) return
+    if (allTasks.filter(t => t.status === 'inbox').length === 0) {
+      setActiveTab('next_action')
+    }
+  }, [loading]) // eslint-disable-line react-hooks/exhaustive-deps
   const [spinning, setSpinning] = useState(false)
   const handleRefresh = async () => { setSpinning(true); await refresh(); setSpinning(false) }
 
