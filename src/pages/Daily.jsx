@@ -25,13 +25,16 @@ async function fetchCalendarEventsForDate(dateStr) {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) return []
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+    // Compute local-midnight boundaries so the edge function queries the right UTC range
+    const timeMin = new Date(dateStr + 'T00:00:00').toISOString()
+    const timeMax = new Date(dateStr + 'T23:59:59').toISOString()
     const res = await fetch(`${supabaseUrl}/functions/v1/google-calendar`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify({ date: dateStr }),
+      body: JSON.stringify({ date: dateStr, timeMin, timeMax }),
     })
     if (!res.ok) return []
     const { events } = await res.json()

@@ -29,10 +29,10 @@ async function refreshAccessToken(refreshToken: string): Promise<string | null> 
   return json.access_token ?? null
 }
 
-async function fetchCalendarEvents(accessToken: string, dateStr: string, endDateStr?: string) {
-  // Support single-day or date-range queries
-  const timeMin = `${dateStr}T00:00:00Z`
-  const timeMax = `${endDateStr ?? dateStr}T23:59:59Z`
+async function fetchCalendarEvents(accessToken: string, dateStr: string, endDateStr?: string, timeMinOverride?: string, timeMaxOverride?: string) {
+  // Use caller-supplied UTC boundaries when available (avoids UTC-midnight vs local-midnight mismatch)
+  const timeMin = timeMinOverride ?? `${dateStr}T00:00:00Z`
+  const timeMax = timeMaxOverride ?? `${endDateStr ?? dateStr}T23:59:59Z`
 
   const url = new URL(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(FOCUS_FLOW_CALENDAR_ID)}/events`)
   url.searchParams.set('timeMin', timeMin)
@@ -96,7 +96,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // Get the date range to fetch (defaults to tomorrow only)
-    const { date, endDate } = await req.json().catch(() => ({}))
+    const { date, endDate, timeMin: timeMinOverride, timeMax: timeMaxOverride } = await req.json().catch(() => ({}))
     const targetDate = date ?? (() => {
       const tomorrow = new Date()
       tomorrow.setDate(tomorrow.getDate() + 1)
@@ -127,7 +127,7 @@ Deno.serve(async (req: Request) => {
     // Try fetching — if 401, refresh the token and retry
     let events
     try {
-      events = await fetchCalendarEvents(accessToken, targetDate, endDate)
+      events = await fetchCalendarEvents(accessToken, targetDate, endDate, timeMinOverride, timeMaxOverride)
     } catch (err) {
       if (String(err).includes('401') && integration.refresh_token) {
         const newToken = await refreshAccessToken(integration.refresh_token)
@@ -140,7 +140,7 @@ Deno.serve(async (req: Request) => {
           .eq('user_id', user.id)
           .eq('provider', 'google')
 
-        events = await fetchCalendarEvents(newToken, targetDate, endDate)
+        events = await fetchCalendarEvents(newToken, targetDate, endDate, timeMinOverride, timeMaxOverride)
       } else {
         throw err
       }
