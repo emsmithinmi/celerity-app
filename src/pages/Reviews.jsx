@@ -1030,9 +1030,16 @@ export default function Reviews() {
       supabase.from('daily_notes').select('id').eq('date', today).maybeSingle(),
     ]).then(([r, noteRes]) => {
       reviewRef.current = r
-      contentRef.current = r.content ?? {}
-      setReview(r)
-      setStep(r.status === 'completed' ? 0 : (r.content?.step ?? 0))
+      if (r.status === 'completed') {
+        // Start fresh — wipe in-memory content so ReflectStep doesn't rehydrate the old conversation
+        contentRef.current = {}
+        setReview({ ...r, content: {} })
+        setStep(0)
+      } else {
+        contentRef.current = r.content ?? {}
+        setReview(r)
+        setStep(r.content?.step ?? 0)
+      }
       setTodayNoteId(noteRes.data?.id ?? null)
     }).catch(err => {
       console.error('Reviews load error:', err)
