@@ -1158,6 +1158,7 @@ export default function Reviews() {
 
             <SectionWrapper locked={!captureComplete} lockLabel="Complete Capture first">
               <ClarifySection
+                key={String(captureComplete)}
                 done={clarifyComplete}
                 onDone={markClarifyDone}
               />
