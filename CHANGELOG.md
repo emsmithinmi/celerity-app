@@ -4,6 +4,20 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-04 (Session 12 — bug fixes, UX polish, birthday awareness)
+
+### Fixed
+- **Daily Review resuming completed session** — clicking Daily Review after already completing it now resets to Step 1 (Capture) instead of dropping back into the finished Reflect conversation.
+
+### Changed
+- **Tasks and Projects pages default to smart tab** — both pages open on Inbox; if Inbox is empty, they auto-switch to Next Actions (Tasks) or In Progress (Projects) so you land on something useful.
+- **All task and project titles are now clickable** — unified navigation across Daily page task/project lists, Agenda all-day items, and the Project detail task list. Everything goes to the detail page on click. Removed the inline task modal from the Project page task list in favor of full-page navigation.
+
+### Added
+- **Birthday awareness in AI review** — the reflect skill now queries your People for upcoming birthdays (7-day window). Birthdays within 2 days surface in top-of-mind; within 3 days get a reminder suggestion card. The interview questions can also reference them by name.
+
+---
+
 ## 2026-06-04 (Session 11 continued — AI layer + agenda refresh)
 
 ### Added

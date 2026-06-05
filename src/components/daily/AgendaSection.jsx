@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { RefreshCw } from 'lucide-react'
 
 function fmt(date) {
@@ -10,6 +11,7 @@ function fmtHour(date) {
 }
 
 export default function AgendaSection({ calendarEvents = [], dueTasks = [], endingProjects = [], onRefresh }) {
+  const navigate = useNavigate()
   const [now, setNow] = useState(new Date())
   const [spinning, setSpinning] = useState(false)
 
@@ -48,8 +50,8 @@ export default function AgendaSection({ calendarEvents = [], dueTasks = [], endi
 
   const allDayItems = [
     ...calendarEvents.filter(e => e.all_day),
-    ...dueTasks.map(t => ({ summary: t.title, _subtitle: t.projects?.title ?? 'Task due today', _dim: true })),
-    ...endingProjects.map(p => ({ summary: p.title, _subtitle: 'Project deadline', _dim: true })),
+    ...dueTasks.map(t => ({ summary: t.title, _subtitle: t.projects?.title ?? 'Task due today', _dim: true, _href: `/tasks/${t.id}` })),
+    ...endingProjects.map(p => ({ summary: p.title, _subtitle: 'Project deadline', _dim: true, _href: `/projects/${p.id}` })),
   ]
 
   // % position within the 4-hour window
@@ -87,7 +89,8 @@ export default function AgendaSection({ calendarEvents = [], dueTasks = [], endi
           {allDayItems.map((e, i) => (
             <div
               key={i}
-              className="flex items-center gap-3 px-4 py-2 border-b last:border-b-0"
+              onClick={e._href ? () => navigate(e._href) : undefined}
+              className={`flex items-center gap-3 px-4 py-2 border-b last:border-b-0${e._href ? ' cursor-pointer hover:opacity-90 transition-opacity' : ''}`}
               style={{ borderColor: 'var(--border)' }}
             >
               <span className="text-xs font-mono shrink-0 w-16" style={{ color: 'var(--text-dim)' }}>all day</span>

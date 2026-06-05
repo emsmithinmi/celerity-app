@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { RefreshCw } from 'lucide-react'
 import { useTasks } from '../../hooks/useTasks'
 import { PriorityBadge, EnergyBadge } from '../ui'
@@ -14,11 +15,13 @@ const TABS = [
 ]
 
 function TaskRow({ task }) {
+  const navigate   = useNavigate()
   const isWaiting  = task.status === 'waiting'
   const isInbox    = task.status === 'inbox'
 
   return (
     <div
+      onClick={() => navigate(`/tasks/${task.id}`)}
       className="flex items-center gap-3 px-4 py-3 border-b last:border-b-0 hover:opacity-90 transition-opacity cursor-pointer"
       style={{ borderColor: 'var(--border)' }}
     >

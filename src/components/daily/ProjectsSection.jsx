@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { RefreshCw } from 'lucide-react'
 import { useProjects } from '../../hooks/useProjects'
 import { StatusPill, PriorityBadge } from '../ui'
@@ -14,8 +15,11 @@ const TABS = [
 ]
 
 function ProjectRow({ project }) {
+  const navigate = useNavigate()
+
   return (
     <div
+      onClick={() => navigate(`/projects/${project.id}`)}
       className="flex items-center gap-3 px-4 py-3 border-b last:border-b-0 hover:opacity-90 transition-opacity cursor-pointer"
       style={{ borderColor: 'var(--border)' }}
     >

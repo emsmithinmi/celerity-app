@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTasks } from '../hooks/useTasks'
 import TaskRow from '../components/tasks/TaskRow'
@@ -37,6 +37,12 @@ export default function Tasks() {
   const [search,      setSearch]      = useState('')
 
   const { tasks, loading, refresh, createTask } = useTasks({})
+
+  useEffect(() => {
+    if (!loading && tasks.filter(t => t.status === 'inbox').length === 0) {
+      setActiveTab('next_action')
+    }
+  }, [loading]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const displayed = (() => {
     let base = activeTab === 'all'

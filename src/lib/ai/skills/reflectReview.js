@@ -46,7 +46,20 @@ async function getGmailContext() {
 export async function buildReflectContext() {
   const today = new Date().toLocaleDateString('en-CA')
 
-  const [projectsRes, activeTasksRes, inboxRes, notesRes, todayNoteRes] = await Promise.all([
+  const lookAheadEnd = new Date(today + 'T12:00:00')
+  lookAheadEnd.setDate(lookAheadEnd.getDate() + 7)
+  const lookAheadEndStr = lookAheadEnd.toLocaleDateString('en-CA')
+
+  // Birthday window: any person whose MM-DD falls in today+1 through today+7
+  // We store birthday as YYYY-MM-DD so we extract month/day for comparison
+  const birthdayWindow = []
+  for (let d = 1; d <= 7; d++) {
+    const dt = new Date(today + 'T12:00:00')
+    dt.setDate(dt.getDate() + d)
+    birthdayWindow.push({ monthDay: `${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`, date: dt.toLocaleDateString('en-CA'), daysOut: d })
+  }
+
+  const [projectsRes, activeTasksRes, inboxRes, notesRes, todayNoteRes, peopleRes] = await Promise.all([
     supabase
       .from('projects')
       .select('id, title, status, area, priority, end_date, description')
@@ -75,6 +88,12 @@ export async function buildReflectContext() {
       .limit(30),
 
     supabase.from('daily_notes').select('*').eq('date', today).maybeSingle(),
+
+    supabase
+      .from('people')
+      .select('id, first_name, last_name, preferred_name, birthday')
+      .not('birthday', 'is', null)
+      .eq('status', 'active'),
   ])
 
   const projects    = projectsRes.data    ?? []
@@ -82,6 +101,17 @@ export async function buildReflectContext() {
   const inboxTasks  = inboxRes.data       ?? []
   const recentNotes = notesRes.data       ?? []
   const todayNote   = todayNoteRes.data
+
+  const allPeople = peopleRes.data ?? []
+  const upcomingBirthdays = allPeople
+    .map(p => {
+      const bday = birthdayWindow.find(w => p.birthday?.slice(5) === w.monthDay)
+      if (!bday) return null
+      const name = p.preferred_name || p.first_name || `${p.first_name} ${p.last_name}`
+      return { name, date: bday.date, daysOut: bday.daysOut }
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.daysOut - b.daysOut)
 
   const activeProjectIds = new Set(activeTasks.filter(t => t.project_id).map(t => t.project_id))
   const stalledProjects  = projects.filter(p => p.status === 'in_progress' && !activeProjectIds.has(p.id))
@@ -111,7 +141,7 @@ export async function buildReflectContext() {
     getGmailContext(),
   ])
 
-  return { today, tomorrowStr, weekEndStr, projects, activeTasks, inboxTasks, recentNotes, stalledProjects, overdueTasks, habits, calendarEvents, gmail }
+  return { today, tomorrowStr, weekEndStr, projects, activeTasks, inboxTasks, recentNotes, stalledProjects, overdueTasks, habits, calendarEvents, gmail, upcomingBirthdays }
 }
 
 // ─── Generate Opening Questions ───────────────────────────────────────────────
@@ -127,7 +157,7 @@ Last question always checks in on energy and headspace going into tomorrow. That
 Respond with valid JSON only: { "questions": ["string", ...] }`
 
 export async function generateReflectQuestions(ctx) {
-  const { today, tomorrowStr, weekEndStr, projects, activeTasks, stalledProjects, overdueTasks, habits, recentNotes, calendarEvents = [], gmail = {} } = ctx
+  const { today, tomorrowStr, weekEndStr, projects, activeTasks, stalledProjects, overdueTasks, habits, recentNotes, calendarEvents = [], gmail = {}, upcomingBirthdays = [] } = ctx
   const lines = []
 
   lines.push(`TODAY: ${today}  |  PLANNING FOR: ${tomorrowStr}  |  LOOKAHEAD THROUGH: ${weekEndStr}`)
@@ -165,6 +195,14 @@ export async function generateReflectQuestions(ctx) {
     lines.push('RECENT NOTES (memory):')
     notesWithContent.forEach(n => {
       lines.push(`[${n.date}] ${n.notes.map(e => e.body).join(' | ')}`)
+    })
+  }
+  if (upcomingBirthdays.length > 0) {
+    lines.push('')
+    lines.push('UPCOMING BIRTHDAYS (from People):')
+    upcomingBirthdays.forEach(b => {
+      const label = b.daysOut === 1 ? 'tomorrow' : `in ${b.daysOut} days`
+      lines.push(`- ${b.name} — birthday ${label} (${b.date})`)
     })
   }
   if (calendarEvents.length > 0) {
@@ -210,7 +248,7 @@ Tone: warm, a little wit, zero filler. You stayed up to do your homework — mak
 Respond with valid JSON only — no markdown, no preamble.`
 
 export async function generateReflectPlan(ctx, conversation, scratchpadNote) {
-  const { today, tomorrowStr, weekEndStr, projects, activeTasks, stalledProjects, recentNotes, calendarEvents = [], gmail = {} } = ctx
+  const { today, tomorrowStr, weekEndStr, projects, activeTasks, stalledProjects, recentNotes, calendarEvents = [], gmail = {}, upcomingBirthdays = [] } = ctx
   const lines = []
 
   lines.push(`TODAY: ${today}  |  PLANNING FOR: ${tomorrowStr}  |  LOOKAHEAD THROUGH: ${weekEndStr}`)
@@ -224,6 +262,14 @@ export async function generateReflectPlan(ctx, conversation, scratchpadNote) {
     lines.push('')
     lines.push('STALLED PROJECTS:')
     stalledProjects.forEach(p => lines.push(`- ${p.title}`))
+  }
+  if (upcomingBirthdays.length > 0) {
+    lines.push('')
+    lines.push('UPCOMING BIRTHDAYS (from People):')
+    upcomingBirthdays.forEach(b => {
+      const label = b.daysOut === 1 ? 'tomorrow' : `in ${b.daysOut} days`
+      lines.push(`- ${b.name} — birthday ${label} (${b.date})`)
+    })
   }
   if (calendarEvents.length > 0) {
     lines.push('')
@@ -274,9 +320,9 @@ export async function generateReflectPlan(ctx, conversation, scratchpadNote) {
   "suggestions": [{ "type": "task_update|project_update|new_task|reminder|insight", "content": "string" }]
 }
 Rules:
-- top_of_mind: 3-5 items, use actual names from their data and interview answers
+- top_of_mind: 3-5 items, use actual names from their data and interview answers; if a birthday is tomorrow or the next day, it belongs here
 - agenda: 3-8 time blocks for TOMORROW based on what they said matters
-- suggestions: 2-6 actionable items, prioritise what came up in the interview`)
+- suggestions: 2-6 actionable items, prioritise what came up in the interview; include a reminder suggestion for any upcoming birthday within 3 days`)
 
   const messages = [
     { role: 'system', content: PLAN_SYSTEM },

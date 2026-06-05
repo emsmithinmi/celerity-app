@@ -1,8 +1,8 @@
 ﻿import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTasks } from '../../hooks/useTasks'
 import { createTask } from '../../lib/api/tasks'
 import { StatusPill, PriorityBadge } from '../ui'
-import TaskDetail from '../tasks/TaskDetail'
 
 const STATUS_TABS = [
   { key: 'active',      label: 'Active'       },
@@ -15,10 +15,11 @@ const STATUS_TABS = [
 
 const ACTIVE = ['inbox', 'next_action', 'queued', 'scheduled', 'waiting']
 
-function MiniTaskRow({ task, onClick }) {
+function MiniTaskRow({ task }) {
+  const navigate = useNavigate()
   return (
     <div
-      onClick={onClick}
+      onClick={() => navigate(`/tasks/${task.id}`)}
       className="flex items-center gap-3 px-4 py-2.5 border-b last:border-b-0 cursor-pointer hover:opacity-90 transition-opacity"
       style={{ borderColor: 'var(--border)' }}
     >
@@ -38,10 +39,9 @@ function MiniTaskRow({ task, onClick }) {
 }
 
 export default function ProjectTaskList({ projectId, onTaskCountChange }) {
-  const [tab,          setTab]          = useState('active')
-  const [newTitle,     setNewTitle]     = useState('')
-  const [addingTask,   setAddingTask]   = useState(false)
-  const [selectedTask, setSelectedTask] = useState(null)
+  const [tab,        setTab]        = useState('active')
+  const [newTitle,   setNewTitle]   = useState('')
+  const [addingTask, setAddingTask] = useState(false)
 
   const { tasks, loading, refresh } = useTasks({ project_id: projectId })
 
@@ -107,7 +107,7 @@ export default function ProjectTaskList({ projectId, onTaskCountChange }) {
             <p className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p>
           ) : displayed.length > 0 ? (
             displayed.map(t => (
-              <MiniTaskRow key={t.id} task={t} onClick={() => setSelectedTask(t)} />
+              <MiniTaskRow key={t.id} task={t} />
             ))
           ) : (
             <p className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
@@ -147,15 +147,6 @@ export default function ProjectTaskList({ projectId, onTaskCountChange }) {
         </p>
       </div>
 
-      {/* Task detail modal */}
-      {selectedTask && (
-        <TaskDetail
-          task={selectedTask}
-          open={!!selectedTask}
-          onClose={() => setSelectedTask(null)}
-          onRefresh={() => { refresh(); setSelectedTask(null) }}
-        />
-      )}
     </>
   )
 }

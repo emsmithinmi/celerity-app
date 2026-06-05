@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useProjects } from '../hooks/useProjects'
 import ProjectRow from '../components/projects/ProjectRow'
@@ -39,6 +39,12 @@ export default function Projects() {
   const [search,      setSearch]      = useState('')
 
   const { projects, loading, refresh, createProject } = useProjects({})
+
+  useEffect(() => {
+    if (!loading && projects.filter(p => p.status === 'inbox' && !p.archived_at).length === 0) {
+      setActiveTab('in_progress')
+    }
+  }, [loading]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const displayed = (() => {
     let base

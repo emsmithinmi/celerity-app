@@ -1032,7 +1032,7 @@ export default function Reviews() {
       reviewRef.current = r
       contentRef.current = r.content ?? {}
       setReview(r)
-      setStep(r.content?.step ?? 0)
+      setStep(r.status === 'completed' ? 0 : (r.content?.step ?? 0))
       setTodayNoteId(noteRes.data?.id ?? null)
     }).catch(err => {
       console.error('Reviews load error:', err)
