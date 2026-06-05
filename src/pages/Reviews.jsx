@@ -729,14 +729,10 @@ function ReflectSection({ review, locked, onSaveState, targetDate }) {
   const [typing,          setTyping]          = useState(false)
   const [inputVal,        setInputVal]        = useState('')
   const [inputActive,     setInputActive]     = useState(false)
-  const [scratchpad,      setScratchpad]      = useState(saved.scratchpad ?? '')
-  const [showScratch,     setShowScratch]     = useState(saved.showScratch ?? false)
   const [generating,      setGenerating]      = useState(false)
   const [suggestions,     setSuggestions]     = useState(review?.suggestions ?? [])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [completed,       setCompleted]       = useState(review?.status === 'completed')
-  const [nextActions,     setNextActions]     = useState([])
-  const [inProgress,      setInProgress]      = useState([])
   const chatRef  = useRef(null)
   const inputRef = useRef(null)
   const mountedRef = useRef(true)
@@ -751,14 +747,6 @@ function ReflectSection({ review, locked, onSaveState, targetDate }) {
     if (conversation.length === 0) return
     onSaveState?.({ conversation, qIndex })
   }, [conversation, qIndex]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Persist scratchpad (debounced)
-  useEffect(() => {
-    const t = setTimeout(() => {
-      if (scratchpad || showScratch) onSaveState?.({ scratchpad, showScratch })
-    }, 600)
-    return () => clearTimeout(t)
-  }, [scratchpad, showScratch]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const scrollChat = () => setTimeout(() => chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: 'smooth' }), 50)
 
@@ -804,9 +792,14 @@ function ReflectSection({ review, locked, onSaveState, targetDate }) {
       if (saved.conversation?.length > 0) {
         const qs = saved.questions ?? []
         const qi = saved.qIndex ?? 0
-        if (qi < qs.length) {
+        // Still mid-interview
+        if (qi <= qs.length) {
           setInputActive(true)
           setTimeout(() => inputRef.current?.focus(), 50)
+        }
+        // Past the ready question but plan not yet generated — re-trigger
+        if (qi > qs.length && !review?.suggestions?.length) {
+          triggerGenerate(ctxData, saved.conversation ?? [])
         }
         return
       }
@@ -832,8 +825,7 @@ function ReflectSection({ review, locked, onSaveState, targetDate }) {
           }
         } else {
           setTyping(false)
-          addBubble('ai', "Set up an AI provider in <a href='/settings' style='color:var(--accent);text-decoration:underline;'>Settings</a> to enable the AI interview. You can still generate a plan with the scratchpad below.")
-          setShowScratch(true)
+          addBubble('ai', "Set up an AI provider in <a href='/settings' style='color:var(--accent);text-decoration:underline;'>Settings</a> to enable the AI interview.")
         }
       }, 800)
     }
@@ -841,6 +833,32 @@ function ReflectSection({ review, locked, onSaveState, targetDate }) {
     init()
     return () => { cancelled = true }
   }, [aiLoading, locked]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const triggerGenerate = async (ctxOverride, convOverride) => {
+    const activeCtx  = ctxOverride  ?? ctx
+    const activeConv = convOverride ?? conversation
+    if (!activeCtx)  { addBubble('ai', 'Context not loaded yet — give it a second and try again.'); return }
+    if (!review?.id) { addBubble('ai', 'Review record missing — try refreshing the page.'); return }
+    setGenerating(true)
+    try {
+      const result = await generateReflectPlan(activeCtx, activeConv, '')
+      const { suggestions: newSuggestions } = await writeReflectResults(review.id, result, targetDate)
+      if (!mountedRef.current) return
+      setSuggestions(newSuggestions)
+      setShowSuggestions(true)
+      setTyping(true)
+      setTimeout(() => {
+        if (!mountedRef.current) return
+        setTyping(false)
+        addBubble('ai', "✨ Done. Tomorrow's locked in — top of mind, agenda, quote, and code challenge are sitting on the Daily page. Suggestions below are worth a look. Now close the laptop and go do something fun.")
+      }, 800)
+    } catch (err) {
+      if (!mountedRef.current) return
+      addBubble('ai', `Something went wrong building the plan: ${err.message}`)
+    } finally {
+      if (mountedRef.current) setGenerating(false)
+    }
+  }
 
   const handleSend = () => {
     const val = inputVal.trim()
@@ -853,37 +871,21 @@ function ReflectSection({ review, locked, onSaveState, targetDate }) {
     setQIndex(nextIndex)
 
     if (nextIndex < questions.length) {
+      // More interview questions
       askQuestion(questions[nextIndex])
-    } else {
+    } else if (nextIndex === questions.length) {
+      // Just answered the last question — ask if ready
       setTyping(true)
       setTimeout(() => {
         if (!mountedRef.current) return
         setTyping(false)
-        addBubble('ai', "Got it. Anything else on your mind before I put tomorrow together? Drop it in the notes below, then hit Generate.")
-        setShowScratch(true)
+        addBubble('ai', "That's what I needed. Anything else to add before I lock in tomorrow — drop it here. Or just say go.")
+        setInputActive(true)
+        setTimeout(() => inputRef.current?.focus(), 50)
       }, 1200)
-    }
-  }
-
-  const handleGenerate = async () => {
-    if (!ctx) { addBubble('ai', 'Context not loaded yet — please wait a moment and try again.'); return }
-    if (!review?.id) { addBubble('ai', 'Review record missing — try refreshing the page.'); return }
-    setGenerating(true)
-    try {
-      const result = await generateReflectPlan(ctx, conversation, scratchpad)
-      const { suggestions: newSuggestions } = await writeReflectResults(review.id, result, targetDate)
-      if (!mountedRef.current) return
-      setSuggestions(newSuggestions)
-      setTyping(true)
-      setTimeout(() => {
-        if (!mountedRef.current) return
-        setTyping(false)
-        addBubble('ai', "✨ Done. Tomorrow's locked in — top of mind, agenda, quote, and your code challenge are all sitting on the Daily page. I checked your email queue and the calendar too, so the suggestions below are worth a look. Now close the laptop and go do something fun. You put in the work.")
-      }, 800)
-    } catch (err) {
-      addBubble('ai', `Something went wrong generating the plan: ${err.message}`)
-    } finally {
-      if (mountedRef.current) setGenerating(false)
+    } else {
+      // User replied to the ready question — generate
+      triggerGenerate()
     }
   }
 
@@ -892,7 +894,6 @@ function ReflectSection({ review, locked, onSaveState, targetDate }) {
     await completeReview(review.id)
     if (!mountedRef.current) return
     setCompleted(true)
-    setShowSuggestions(true)
   }
 
   const handleSuggestionChange = async (updated) => {
@@ -973,36 +974,15 @@ function ReflectSection({ review, locked, onSaveState, targetDate }) {
         </div>
       )}
 
-      {/* Scratchpad */}
-      {showScratch && !completed && (
-        <div className="rounded-xl border p-4 mb-3" style={S.card}>
-          <h3 className="text-xs font-semibold uppercase tracking-wide mb-2" style={S.muted}>📝 Notes for Today</h3>
-          <textarea
-            value={scratchpad}
-            onChange={e => setScratchpad(e.target.value)}
-            placeholder="Brain dump anything that came up — it goes into the AI context."
-            rows={3}
-            className="w-full px-3 py-2 rounded-lg border text-sm outline-none resize-none"
-            style={{ ...S.input, transition: 'border-color 0.15s' }}
-            onFocus={e => e.target.style.borderColor = 'var(--accent)'}
-            onBlur={e => e.target.style.borderColor = 'var(--border)'}
-          />
-        </div>
-      )}
-
-      {/* Generate */}
-      {showScratch && !completed && !generating && suggestions.length === 0 && aiConfigured && (
-        <Button variant="action" size="md" onClick={handleGenerate} disabled={generating} className="w-full mb-3">
-          ✨ Generate Tomorrow's Plan
-        </Button>
-      )}
+      {/* Generating indicator */}
       {generating && (
-        <div className="text-center py-3 mb-3">
-          <p className="text-sm" style={S.muted}>Generating your plan…</p>
+        <div className="flex items-center gap-2 text-sm py-2 mb-3" style={S.muted}>
+          <Loader2 size={14} className="animate-spin" />
+          Building your plan…
         </div>
       )}
 
-      {/* Suggestions */}
+      {/* Suggestions — appear as soon as plan is generated */}
       {showSuggestions && suggestions.length > 0 && (
         <div className="mt-2 space-y-3 mb-4">
           <h3 className="text-xs font-semibold uppercase tracking-wide" style={S.blue}>💡 Suggestions</h3>
