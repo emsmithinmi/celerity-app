@@ -56,6 +56,7 @@ async function fetchCalendarEvents(accessToken: string, dateStr: string, endDate
     const end   = item.end   as Record<string, string> | undefined
     const allDay = Boolean(start?.date && !start?.dateTime)
     return {
+      event_id:   item.id as string ?? null,
       summary:    item.summary ?? '(No title)',
       all_day:    allDay,
       start_time: start?.dateTime ?? start?.date ?? null,

@@ -244,6 +244,22 @@ Be specific. Use real names, real project titles, real tasks from the conversati
 
 You also have their email @Action and @Waiting queues and a 7-day calendar view. If something's been sitting in @Action for too long, suggest turning it into a task. If a big event is coming up this week, suggest prep. Be the person who thought of things they hadn't yet.
 
+IMPORTANT — EXECUTABLE ACTIONS:
+Each suggestion can include an optional "action" field with a machine-executable operation. When the user mentioned something specific during the interview (update a task, archive an email, add a calendar event, etc.), attach an action so they can approve it with one click. Only attach an action when you have the required IDs from the context.
+
+Action types and required fields:
+- update_task:           { type, task_id, fields: { status?, due_date?, title?, waiting_for? } }
+- create_task:           { type, fields: { title, status: "inbox"|"next_action", project_id?, due_date? } }
+- update_project:        { type, project_id, fields: { status? } }
+- archive_email:         { type, thread_id }
+- trash_email:           { type, thread_id }
+- create_calendar_event: { type, event: { summary, start (ISO 8601), end (ISO 8601), description?, all_day? } }
+- update_calendar_event: { type, event_id, fields: { summary?, start?, end?, description? } }
+- delete_calendar_event: { type, event_id }
+
+Valid task statuses: inbox, next_action, queued, waiting, scheduled, someday, done
+Valid project statuses: inbox, planning, in_progress, waiting, stalled, completed
+
 Tone: warm, a little wit, zero filler. You stayed up to do your homework — make it count.
 Respond with valid JSON only — no markdown, no preamble.`
 
@@ -253,11 +269,11 @@ export async function generateReflectPlan(ctx, conversation, scratchpadNote) {
 
   lines.push(`TODAY: ${today}  |  PLANNING FOR: ${tomorrowStr}  |  LOOKAHEAD THROUGH: ${weekEndStr}`)
   lines.push('')
-  lines.push('ACTIVE PROJECTS:')
-  projects.slice(0, 8).forEach(p => lines.push(`- [${p.status}] ${p.title}${p.end_date ? ` (due ${p.end_date})` : ''}`))
+  lines.push('ACTIVE PROJECTS (id | status | title):')
+  projects.slice(0, 8).forEach(p => lines.push(`- [id:${p.id}] [${p.status}] ${p.title}${p.end_date ? ` (due ${p.end_date})` : ''}`))
   lines.push('')
-  lines.push('NEXT ACTIONS:')
-  activeTasks.filter(t => t.status === 'next_action').slice(0, 8).forEach(t => lines.push(`- ${t.title}`))
+  lines.push('TASKS (id | status | title):')
+  activeTasks.slice(0, 12).forEach(t => lines.push(`- [id:${t.id}] [${t.status}] ${t.title}${t.due_date ? ` (due ${t.due_date})` : ''}`))
   if (stalledProjects.length) {
     lines.push('')
     lines.push('STALLED PROJECTS:')
@@ -273,27 +289,28 @@ export async function generateReflectPlan(ctx, conversation, scratchpadNote) {
   }
   if (calendarEvents.length > 0) {
     lines.push('')
-    lines.push('UPCOMING CALENDAR:')
+    lines.push('UPCOMING CALENDAR (event_id | date | time | title):')
     calendarEvents.forEach(e => {
       const time = e.all_day ? '[all day]' : (e.start_time ? new Date(e.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' }) : '')
-      lines.push(`- [${e.date ?? ''}] ${time} ${e.summary}`)
+      const idTag = e.event_id ? `[event_id:${e.event_id}]` : ''
+      lines.push(`- ${idTag} [${e.date ?? ''}] ${time} ${e.summary}`)
     })
   }
   const { actionThreads = [], waitingThreads = [], recentUnread = [] } = gmail
   if (actionThreads.length > 0) {
     lines.push('')
-    lines.push('EMAIL @ACTION (items sitting in inbox needing a decision):')
-    actionThreads.forEach(t => lines.push(`- "${t.subject}" from ${t.sender} — ${t.age_days}d in queue. "${t.snippet?.slice(0, 100) ?? ''}"`))
+    lines.push('EMAIL @ACTION (thread_id | subject | sender | age):')
+    actionThreads.forEach(t => lines.push(`- [thread_id:${t.id}] "${t.subject}" from ${t.sender} — ${t.age_days}d in queue. "${t.snippet?.slice(0, 100) ?? ''}"`))
   }
   if (waitingThreads.length > 0) {
     lines.push('')
-    lines.push('EMAIL @WAITING (things waiting on others):')
-    waitingThreads.forEach(t => lines.push(`- "${t.subject}" from ${t.sender} — ${t.age_days}d waiting`))
+    lines.push('EMAIL @WAITING (thread_id | subject | sender | age):')
+    waitingThreads.forEach(t => lines.push(`- [thread_id:${t.id}] "${t.subject}" from ${t.sender} — ${t.age_days}d waiting`))
   }
   if (recentUnread.length > 0) {
     lines.push('')
-    lines.push('RECENT UNREAD EMAIL (last 48h — flag anything worth acting on):')
-    recentUnread.forEach(t => lines.push(`- "${t.subject}" from ${t.sender}: "${t.snippet?.slice(0, 100) ?? ''}"`))
+    lines.push('RECENT UNREAD EMAIL (last 48h):')
+    recentUnread.forEach(t => lines.push(`- [thread_id:${t.id}] "${t.subject}" from ${t.sender}: "${t.snippet?.slice(0, 100) ?? ''}"`))
   }
   lines.push('')
   lines.push('INTERVIEW CONVERSATION:')
@@ -317,12 +334,17 @@ export async function generateReflectPlan(ctx, conversation, scratchpadNote) {
   "agenda": [{ "time": "9:00 AM", "title": "string", "notes": "string or null" }],
   "challenge": { "topic": "python|ai|llm|general", "difficulty": "beginner|intermediate|advanced", "prompt": "string", "hint": "string" },
   "quote": { "text": "string", "author": "string" },
-  "suggestions": [{ "type": "task_update|project_update|new_task|reminder|insight", "content": "string" }]
+  "suggestions": [{
+    "type": "task_update|project_update|new_task|archive_email|calendar_add|calendar_edit|calendar_delete|reminder|insight",
+    "content": "string — human-readable description of what this does, shown to the user before they accept",
+    "action": { ...see action schema in system prompt }
+  }]
 }
 Rules:
 - top_of_mind: 3-5 items, use actual names from their data and interview answers; if a birthday is tomorrow or the next day, it belongs here
 - agenda: 3-8 time blocks for TOMORROW based on what they said matters
-- suggestions: 2-6 actionable items, prioritise what came up in the interview; include a reminder suggestion for any upcoming birthday within 3 days`)
+- suggestions: 2-6 items; for anything the user mentioned changing (a task status, an email to delete, a calendar event to add), include an action object with the relevant IDs from the context above; omit "action" for informational/reminder suggestions
+- include a reminder suggestion for any upcoming birthday within 3 days`)
 
   const messages = [
     { role: 'system', content: PLAN_SYSTEM },

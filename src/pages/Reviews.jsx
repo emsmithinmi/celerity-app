@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
-import { Pencil, RotateCcw } from 'lucide-react'
+import { Pencil, RotateCcw, Loader2 } from 'lucide-react'
 import { ensureReview, updateReviewContent, completeReview, updateSuggestions } from '../lib/api/reviews'
 import { buildReflectContext, generateReflectQuestions, generateReflectPlan, writeReflectResults } from '../lib/ai/skills/reflectReview'
 import { useAIConfig } from '../hooks/useAI'
@@ -15,6 +15,7 @@ import {
   QuickNoteModal,
 } from '../components/daily/QuickCaptureModals'
 import Button from '../components/ui/Button'
+import { executeAction } from '../lib/ai/actions'
 
 // ─── Shared styles ────────────────────────────────────────────────────────────
 
@@ -306,19 +307,54 @@ function ClarifyRow({ item, linkTo, onDone, onScrap, meta }) {
 
 // ─── Suggestion card ──────────────────────────────────────────────────────────
 
+const ACTION_LABELS = {
+  update_task:           '✏️ Update task',
+  create_task:           '✅ Create task',
+  update_project:        '📁 Update project',
+  archive_email:         '📨 Archive email',
+  trash_email:           '🗑 Delete email',
+  create_calendar_event: '📅 Add to calendar',
+  update_calendar_event: '📅 Edit event',
+  delete_calendar_event: '📅 Remove event',
+}
+
 function SuggestionCard({ suggestion, onAccept, onSkip, onEdit }) {
-  const [editing, setEditing] = useState(false)
-  const [edited,  setEdited]  = useState(suggestion.content)
+  const [editing,  setEditing]  = useState(false)
+  const [edited,   setEdited]   = useState(suggestion.content)
+  const [running,  setRunning]  = useState(false)
+  const [runError, setRunError] = useState(null)
 
   const TYPE_COLORS = {
-    task_update:    { bg: 'var(--card-task-bg)', border: 'var(--accent)', text: 'var(--accent)' },
-    project_update: { bg: 'var(--card-project-bg)', border: 'var(--accent-purple)', text: 'var(--accent-purple)' },
-    new_task:       { bg: 'var(--state-success-bg)', border: 'var(--accent-green)', text: 'var(--accent-green)' },
+    task_update:    { bg: 'var(--card-task-bg)',     border: 'var(--accent)',        text: 'var(--accent)'        },
+    project_update: { bg: 'var(--card-project-bg)',  border: 'var(--accent-purple)', text: 'var(--accent-purple)' },
+    new_task:       { bg: 'var(--state-success-bg)', border: 'var(--accent-green)',  text: 'var(--accent-green)'  },
+    archive_email:  { bg: 'var(--card-reminder-bg)', border: 'var(--accent-yellow)', text: 'var(--accent-yellow)' },
+    calendar_add:   { bg: 'var(--card-insight-bg)',  border: 'var(--accent-pink)',   text: 'var(--accent-pink)'   },
+    calendar_edit:  { bg: 'var(--card-insight-bg)',  border: 'var(--accent-pink)',   text: 'var(--accent-pink)'   },
+    calendar_delete:{ bg: 'var(--state-error-bg)',   border: 'var(--accent-red)',    text: 'var(--accent-red)'    },
     reminder:       { bg: 'var(--card-reminder-bg)', border: 'var(--accent-orange)', text: 'var(--accent-orange)' },
-    insight:        { bg: 'var(--card-insight-bg)', border: 'var(--accent-pink)', text: 'var(--accent-pink)' },
+    insight:        { bg: 'var(--card-insight-bg)',  border: 'var(--accent-pink)',   text: 'var(--accent-pink)'   },
   }
   const colors = TYPE_COLORS[suggestion.type] ?? TYPE_COLORS.insight
   if (suggestion.status === 'skipped') return null
+
+  const hasAction = !!suggestion.action
+
+  const handleAccept = async () => {
+    if (hasAction) {
+      setRunning(true)
+      setRunError(null)
+      try {
+        await executeAction(suggestion.action)
+      } catch (err) {
+        setRunError(err.message ?? 'Action failed')
+        setRunning(false)
+        return
+      }
+      setRunning(false)
+    }
+    onAccept()
+  }
 
   return (
     <div className="rounded-lg border p-4 space-y-3" style={{ backgroundColor: colors.bg, borderColor: colors.border }}>
@@ -342,7 +378,23 @@ function SuggestionCard({ suggestion, onAccept, onSkip, onEdit }) {
           <p className="text-sm flex-1" style={S.text}>{suggestion.content}</p>
         )}
       </div>
-      <div className="flex gap-2">
+
+      {/* Action badge — shows what will happen on accept */}
+      {hasAction && suggestion.status !== 'accepted' && (
+        <div
+          className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg"
+          style={{ backgroundColor: colors.border + '22', color: colors.text }}
+        >
+          <span className="font-medium">{ACTION_LABELS[suggestion.action.type] ?? suggestion.action.type}</span>
+          <span style={{ opacity: 0.7 }}>— will execute on accept</span>
+        </div>
+      )}
+
+      {runError && (
+        <p className="text-xs" style={S.red}>⚠ {runError}</p>
+      )}
+
+      <div className="flex gap-2 items-center">
         {editing ? (
           <>
             <Button size="sm" variant="success" onClick={() => { onEdit(edited); setEditing(false) }}>Accept Edit</Button>
@@ -351,9 +403,19 @@ function SuggestionCard({ suggestion, onAccept, onSkip, onEdit }) {
         ) : (
           <>
             {suggestion.status !== 'accepted' && (
-              <Button size="sm" variant="success" onClick={onAccept}>✓ Accept</Button>
+              <button
+                onClick={handleAccept}
+                disabled={running}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                style={{ backgroundColor: 'var(--accent-green)', color: 'var(--app-bg)', opacity: running ? 0.6 : 1 }}
+              >
+                {running
+                  ? <><Loader2 size={12} className="animate-spin" /> Running…</>
+                  : '✓ Accept'
+                }
+              </button>
             )}
-            {suggestion.status !== 'accepted' && (
+            {suggestion.status !== 'accepted' && !running && (
               <button
                 onClick={() => setEditing(true)}
                 title="Edit"
@@ -365,9 +427,9 @@ function SuggestionCard({ suggestion, onAccept, onSkip, onEdit }) {
                 <Pencil size={13} />
               </button>
             )}
-            <Button size="sm" variant="ghost" onClick={onSkip}>✕ Skip</Button>
+            {!running && <Button size="sm" variant="ghost" onClick={onSkip}>✕ Skip</Button>}
             {suggestion.status === 'accepted' && (
-              <span className="text-xs self-center" style={S.green}>✓ Accepted</span>
+              <span className="text-xs self-center" style={S.green}>✓ Done</span>
             )}
           </>
         )}
