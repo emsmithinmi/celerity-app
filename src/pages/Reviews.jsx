@@ -1033,7 +1033,7 @@ export default function Reviews() {
       if (r.status === 'completed') {
         // Start fresh — wipe in-memory content so ReflectStep doesn't rehydrate the old conversation
         contentRef.current = {}
-        setReview({ ...r, content: {} })
+        setReview({ ...r, content: {}, status: 'draft' })
         setStep(0)
       } else {
         contentRef.current = r.content ?? {}
