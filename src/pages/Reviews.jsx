@@ -427,7 +427,7 @@ function SuggestionCard({ suggestion, onAccept, onSkip, onEdit }) {
                 <Pencil size={13} />
               </button>
             )}
-            {!running && <Button size="sm" variant="ghost" onClick={onSkip}>✕ Skip</Button>}
+            {!running && suggestion.status !== 'accepted' && <Button size="sm" variant="ghost" onClick={onSkip}>✕ Skip</Button>}
             {suggestion.status === 'accepted' && (
               <span className="text-xs self-center" style={S.green}>✓ Done</span>
             )}

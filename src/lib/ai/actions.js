@@ -23,6 +23,19 @@ async function callGoogleAction(action) {
 
 // Executes a structured action from a review suggestion card.
 // Task/project writes go directly to Supabase; Google API calls go through the edge function.
+// Inject the browser's local timezone into calendar actions so the edge
+// function can send properly-zoned dateTime objects to Google Calendar.
+function withTimezone(action) {
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+  if (action.type === 'create_calendar_event') {
+    return { ...action, event: { ...action.event, timezone: tz } }
+  }
+  if (action.type === 'update_calendar_event') {
+    return { ...action, fields: { ...action.fields, timezone: tz } }
+  }
+  return action
+}
+
 export async function executeAction(action) {
   if (!action?.type) return
 
@@ -41,7 +54,7 @@ export async function executeAction(action) {
     case 'create_calendar_event':
     case 'update_calendar_event':
     case 'delete_calendar_event':
-      await callGoogleAction(action)
+      await callGoogleAction(withTimezone(action))
       break
     default:
       console.warn('Unknown action type:', action.type)

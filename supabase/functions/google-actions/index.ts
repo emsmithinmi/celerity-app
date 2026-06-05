@@ -34,6 +34,7 @@ type CalendarEventInput = {
   end?: string
   description?: string
   all_day?: boolean
+  timezone?: string   // IANA timezone name, e.g. "America/Detroit"
 }
 
 type Action =
@@ -43,12 +44,11 @@ type Action =
   | { type: 'update_calendar_event';   event_id: string; fields: Partial<CalendarEventInput> }
   | { type: 'delete_calendar_event';   event_id: string }
 
-function toCalendarDateTime(iso: string, allDay: boolean) {
+function toCalendarDateTime(iso: string, allDay: boolean, tz?: string) {
   if (allDay) {
     return { date: iso.split('T')[0] }
   }
-  // If the string already has an offset (e.g. -04:00) use as-is; otherwise treat as UTC
-  return { dateTime: iso }
+  return { dateTime: iso, timeZone: tz ?? 'UTC' }
 }
 
 async function run(accessToken: string, action: Action): Promise<void> {
@@ -79,10 +79,11 @@ async function run(accessToken: string, action: Action): Promise<void> {
     case 'create_calendar_event': {
       const { event } = action
       const allDay = event.all_day ?? !event.start.includes('T')
+      const tz = event.timezone
       const body: Record<string, unknown> = {
         summary: event.summary,
-        start:   toCalendarDateTime(event.start, allDay),
-        end:     toCalendarDateTime(event.end ?? event.start, allDay),
+        start:   toCalendarDateTime(event.start, allDay, tz),
+        end:     toCalendarDateTime(event.end ?? event.start, allDay, tz),
       }
       if (event.description) body.description = event.description
 
@@ -101,11 +102,12 @@ async function run(accessToken: string, action: Action): Promise<void> {
     case 'update_calendar_event': {
       const { event_id, fields } = action
       const allDay = fields.all_day ?? (fields.start ? !fields.start.includes('T') : false)
+      const tz = fields.timezone
       const body: Record<string, unknown> = {}
       if (fields.summary)     body.summary     = fields.summary
       if (fields.description !== undefined) body.description = fields.description
-      if (fields.start)       body.start       = toCalendarDateTime(fields.start, allDay)
-      if (fields.end)         body.end         = toCalendarDateTime(fields.end,   allDay)
+      if (fields.start)       body.start       = toCalendarDateTime(fields.start, allDay, tz)
+      if (fields.end)         body.end         = toCalendarDateTime(fields.end,   allDay, tz)
 
       const res = await fetch(
         `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(FOCUS_FLOW_CALENDAR_ID)}/events/${event_id}`,
