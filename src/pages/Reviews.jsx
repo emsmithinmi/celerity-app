@@ -1,6 +1,6 @@
-﻿import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
-import { Pencil } from 'lucide-react'
+import { Pencil, RotateCcw } from 'lucide-react'
 import { ensureReview, updateReviewContent, completeReview, updateSuggestions } from '../lib/api/reviews'
 import { buildReflectContext, generateReflectQuestions, generateReflectPlan, writeReflectResults } from '../lib/ai/skills/reflectReview'
 import { useAIConfig } from '../hooks/useAI'
@@ -30,40 +30,59 @@ const S = {
   purple:   { color: 'var(--accent-purple)' },
 }
 
-// ─── Step progress bar ────────────────────────────────────────────────────────
+// ─── Section wrapper — locks downstream sections ──────────────────────────────
 
-const STEPS = ['Capture', 'Clarify', 'Reflect']
-
-function StepBar({ current, onNavigate }) {
+function SectionWrapper({ locked, lockLabel, children }) {
   return (
-    <div className="flex items-center px-6 border-b shrink-0" style={{ borderColor: 'var(--border)' }}>
-      {STEPS.map((label, i) => {
-        const done   = i < current
-        const active = i === current
-        return (
-          <button
-            key={label}
-            onClick={() => onNavigate(i)}
-            className="flex items-center gap-2 px-4 py-3 text-xs font-medium border-b-2 transition-colors whitespace-nowrap"
-            style={{
-              borderColor: active ? 'var(--accent)' : done ? 'var(--accent-green)' : 'transparent',
-              color: active ? 'var(--accent)' : done ? 'var(--accent-green)' : 'var(--text-secondary)',
-              background: 'transparent',
-            }}
+    <div
+      style={{
+        opacity: locked ? 0.38 : 1,
+        pointerEvents: locked ? 'none' : 'auto',
+        transition: 'opacity 0.35s ease',
+        position: 'relative',
+      }}
+    >
+      {locked && (
+        <div
+          className="absolute inset-0 flex items-start justify-center pt-10 z-10 rounded-2xl"
+          style={{ pointerEvents: 'none' }}
+        >
+          <span
+            className="text-xs font-medium px-3 py-1.5 rounded-full border"
+            style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
           >
-            <span
-              className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
-              style={{
-                backgroundColor: active ? 'var(--accent)' : done ? 'var(--accent-green)' : 'var(--border)',
-                color: active || done ? 'var(--app-bg)' : 'var(--text-secondary)',
-              }}
-            >
-              {done ? '✓' : i + 1}
-            </span>
-            {label}
-          </button>
-        )
-      })}
+            🔒 {lockLabel}
+          </span>
+        </div>
+      )}
+      {children}
+    </div>
+  )
+}
+
+// ─── Section header ───────────────────────────────────────────────────────────
+
+function SectionHeader({ step, title, subtitle, done }) {
+  return (
+    <div className="mb-5">
+      <div className="flex items-center gap-2 mb-1">
+        <span
+          className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+          style={{
+            backgroundColor: done ? 'var(--accent-green)' : 'var(--accent)',
+            color: 'var(--app-bg)',
+          }}
+        >
+          {done ? '✓' : step}
+        </span>
+        <h2 className="text-xl font-semibold" style={S.text}>{title}</h2>
+        {done && (
+          <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--state-success-bg)', color: 'var(--accent-green)', border: '1px solid var(--accent-green)33' }}>
+            Done
+          </span>
+        )}
+      </div>
+      <p className="text-sm ml-7" style={S.muted}>{subtitle}</p>
     </div>
   )
 }
@@ -95,12 +114,12 @@ function ActionBtn({ variant = 'ghost', onClick, disabled, children }) {
   )
 }
 
-// ─── Clarify task row (full What's Next actions inline) ───────────────────────
+// ─── Clarify task row ─────────────────────────────────────────────────────────
 
 function ClarifyTaskRow({ task }) {
   const [resolved,        setResolved]        = useState(false)
   const [resolvedLabel,   setResolvedLabel]   = useState('')
-  const [prompt,          setPrompt]          = useState(null) // 'schedule' | 'waiting' | 'route'
+  const [prompt,          setPrompt]          = useState(null)
   const [promptValue,     setPromptValue]     = useState('')
   const [projects,        setProjects]        = useState([])
   const [selectedProject, setSelectedProject] = useState(null)
@@ -136,14 +155,12 @@ function ClarifyTaskRow({ task }) {
 
   return (
     <div className="rounded-lg border mb-1.5 overflow-hidden" style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)' }}>
-      {/* Title row */}
       <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5">
         <span className="flex-1 text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{task.title}</span>
         {task.due_date && <span className="text-xs shrink-0" style={{ color: 'var(--accent-yellow)' }}>{task.due_date}</span>}
         <Link to={`/tasks/${task.id}`} className="text-xs shrink-0 hover:underline" style={{ color: 'var(--text-dim)' }}>open →</Link>
       </div>
 
-      {/* Inline prompts */}
       {prompt === 'schedule' && (
         <div className="px-3 pb-2.5 flex items-center gap-2">
           <input
@@ -188,7 +205,6 @@ function ClarifyTaskRow({ task }) {
         </div>
       )}
 
-      {/* What's Next buttons */}
       {!prompt && (
         <div className="px-3 pb-2.5 flex flex-wrap gap-1.5">
           {status === 'inbox' && !task.project_id && (
@@ -242,19 +258,10 @@ function ClarifyTaskRow({ task }) {
   )
 }
 
-// ─── Clarify row (projects / people — simpler) ────────────────────────────────
+// ─── Clarify row (projects / people) ─────────────────────────────────────────
 
 function ClarifyRow({ item, linkTo, onDone, onScrap, meta }) {
   const [state, setState] = useState('pending')
-
-  const handleDone = async () => {
-    setState('done')
-    await onDone(item)
-  }
-  const handleScrap = async () => {
-    setState('scrapped')
-    await onScrap(item)
-  }
 
   return (
     <div
@@ -276,7 +283,7 @@ function ClarifyRow({ item, linkTo, onDone, onScrap, meta }) {
       {state === 'pending' && (
         <div className="flex gap-1.5 shrink-0">
           <button
-            onClick={handleDone}
+            onClick={async () => { setState('done'); await onDone(item) }}
             title="Done"
             className="w-7 h-7 rounded-md flex items-center justify-center text-sm transition-colors"
             style={{ backgroundColor: 'var(--state-success-bg)', color: 'var(--accent-green)' }}
@@ -284,7 +291,7 @@ function ClarifyRow({ item, linkTo, onDone, onScrap, meta }) {
             onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'var(--state-success-bg)'; e.currentTarget.style.color = 'var(--accent-green)' }}
           >✓</button>
           <button
-            onClick={handleScrap}
+            onClick={async () => { setState('scrapped'); await onScrap(item) }}
             title="Scrap"
             className="w-7 h-7 rounded-md flex items-center justify-center text-sm transition-colors"
             style={{ backgroundColor: 'var(--state-error-bg)', color: 'var(--accent-red)' }}
@@ -293,19 +300,6 @@ function ClarifyRow({ item, linkTo, onDone, onScrap, meta }) {
           >🗑</button>
         </div>
       )}
-    </div>
-  )
-}
-
-function ClarifySection({ title, titleColor = 'var(--accent)', items, renderRow, emptyText }) {
-  if (!items.length) return null
-  return (
-    <div className="rounded-xl border p-4 mb-3" style={S.card}>
-      <h3 className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: titleColor }}>{title}</h3>
-      {items.length === 0
-        ? <p className="text-sm" style={S.muted}>{emptyText}</p>
-        : items.map(renderRow)
-      }
     </div>
   )
 }
@@ -448,27 +442,18 @@ function RefCard({ title, count, children }) {
   )
 }
 
-// ─── STEP 1: CAPTURE ──────────────────────────────────────────────────────────
+// ─── SECTION 1: CAPTURE ───────────────────────────────────────────────────────
 
-function CaptureStep({ onNext, todayNoteId }) {
-  const [modal,     setModal]     = useState(null)
-  const [captured,  setCaptured]  = useState([])
+function CaptureSection({ onDone, done, todayNoteId }) {
+  const [modal,    setModal]    = useState(null)
+  const [captured, setCaptured] = useState([])
 
   const addCaptured = (type, title) => setCaptured(prev => [...prev, { type, title }])
 
-  const handleCreateTask = async (title) => {
-    await createTask({ title, status: 'inbox' })
-    addCaptured('task', title)
-  }
-  const handleCreateProject = async (title) => {
-    await createProject({ title })
-    addCaptured('project', title)
-  }
-  const handleCreatePerson = async ({ first_name, last_name }) => {
-    await createPerson({ first_name, last_name })
-    addCaptured('person', `${first_name} ${last_name}`)
-  }
-  const handleAddNote = async (body) => {
+  const handleCreateTask    = async (title)                  => { await createTask({ title, status: 'inbox' }); addCaptured('task', title) }
+  const handleCreateProject = async (title)                  => { await createProject({ title }); addCaptured('project', title) }
+  const handleCreatePerson  = async ({ first_name, last_name }) => { await createPerson({ first_name, last_name }); addCaptured('person', `${first_name} ${last_name}`) }
+  const handleAddNote       = async (body)                   => {
     if (todayNoteId) {
       await supabase.rpc('append_daily_note', { note_id: todayNoteId, body }).catch(() => {
         supabase.from('daily_notes').select('notes').eq('id', todayNoteId).single().then(({ data }) => {
@@ -483,15 +468,15 @@ function CaptureStep({ onNext, todayNoteId }) {
   const icons = { task: '✅', project: '📁', note: '📝', person: '👤' }
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-6 space-y-4">
-      <div className="mb-6">
-        <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={S.muted}>Step 1 of 3</p>
-        <h2 className="text-2xl font-semibold mb-2" style={S.text}>What's on your mind?</h2>
-        <p className="text-sm" style={S.muted}>Get everything out of your head. Don't filter, don't organize — just capture.</p>
-      </div>
+    <div className="rounded-2xl border p-6 mb-4" style={S.card}>
+      <SectionHeader
+        step={1}
+        title="What's on your mind?"
+        subtitle="Get everything out of your head. Don't filter, don't organize — just capture."
+        done={done}
+      />
 
-      {/* Capture buttons */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 mb-4">
         {[
           { type: 'task',    icon: '✅', label: 'Task',    sub: 'Something to do'       },
           { type: 'project', icon: '📁', label: 'Project', sub: 'Multi-step outcome'    },
@@ -503,8 +488,8 @@ function CaptureStep({ onNext, todayNoteId }) {
             onClick={() => setModal(type)}
             className="rounded-xl border p-4 text-left transition-all"
             style={{ backgroundColor: 'var(--border)', borderColor: 'var(--text-dim)' }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.backgroundColor = 'var(--border)' }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--text-dim)'; e.currentTarget.style.backgroundColor = 'var(--border)' }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--text-dim)' }}
           >
             <div className="text-xl mb-1">{icon}</div>
             <div className="text-sm font-medium" style={S.text}>{label}</div>
@@ -513,9 +498,8 @@ function CaptureStep({ onNext, todayNoteId }) {
         ))}
       </div>
 
-      {/* Captured this session */}
       {captured.length > 0 && (
-        <div className="space-y-1.5 mt-2">
+        <div className="space-y-1.5 mb-4">
           {captured.map((item, i) => (
             <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg border text-sm" style={{ backgroundColor: 'var(--state-success-bg)', borderColor: 'var(--accent-green)33', color: 'var(--accent-green)' }}>
               <span>{icons[item.type]}</span>
@@ -527,11 +511,15 @@ function CaptureStep({ onNext, todayNoteId }) {
       )}
 
       <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
-        <span className="text-sm" style={S.muted}>{captured.length > 0 ? `${captured.length} item${captured.length !== 1 ? 's' : ''} captured` : 'Capture anything on your mind'}</span>
-        <Button variant="primary" onClick={onNext}>Done Capturing →</Button>
+        <span className="text-sm" style={S.muted}>
+          {captured.length > 0 ? `${captured.length} item${captured.length !== 1 ? 's' : ''} captured this session` : 'Nothing yet — what\'s rattling around up there?'}
+        </span>
+        {done
+          ? <span className="text-sm" style={S.muted}>✓ Capture locked in — keep adding above anytime</span>
+          : <Button variant="primary" onClick={onDone}>Done Capturing →</Button>
+        }
       </div>
 
-      {/* Modals */}
       <CaptureTaskModal    open={modal === 'task'}    onClose={() => setModal(null)} onCreate={handleCreateTask}    />
       <CaptureProjectModal open={modal === 'project'} onClose={() => setModal(null)} onCreate={handleCreateProject} />
       <CapturePersonModal  open={modal === 'person'}  onClose={() => setModal(null)} onCreate={handleCreatePerson}  />
@@ -540,10 +528,10 @@ function CaptureStep({ onNext, todayNoteId }) {
   )
 }
 
-// ─── STEP 2: CLARIFY ──────────────────────────────────────────────────────────
+// ─── SECTION 2: CLARIFY ───────────────────────────────────────────────────────
 
-function ClarifyStep({ onNext, onBack }) {
-  const today = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD in local time
+function ClarifySection({ onDone, done }) {
+  const today = new Date().toLocaleDateString('en-CA')
   const [inboxTasks,    setInboxTasks]    = useState([])
   const [inboxProjects, setInboxProjects] = useState([])
   const [inboxPeople,   setInboxPeople]   = useState([])
@@ -560,30 +548,18 @@ function ClarifyStep({ onNext, onBack }) {
           supabase.from('people').select('id, first_name, last_name').eq('status', 'inbox').order('last_name', { ascending: true }),
           supabase.from('tasks').select('id, project_id').in('status', ['next_action', 'waiting', 'scheduled', 'queued']).is('archived_at', null),
         ])
-
         const activeProjectIds = new Set((activeTasksRes.data ?? []).filter(t => t.project_id).map(t => t.project_id))
-
-        const stalledRes = await supabase
-          .from('projects')
-          .select('id, title')
-          .eq('status', 'in_progress')
-          .is('archived_at', null)
-
-        const overdueRes = await supabase
-          .from('tasks')
-          .select('id, title, status, due_date, project_id')
-          .in('status', ['next_action', 'waiting', 'scheduled', 'queued'])
-          .lt('due_date', today)
-          .is('archived_at', null)
-          .order('due_date', { ascending: true })
-
+        const [stalledRes, overdueRes] = await Promise.all([
+          supabase.from('projects').select('id, title').eq('status', 'in_progress').is('archived_at', null),
+          supabase.from('tasks').select('id, title, status, due_date, project_id').in('status', ['next_action', 'waiting', 'scheduled', 'queued']).lt('due_date', today).is('archived_at', null).order('due_date', { ascending: true }),
+        ])
         setInboxTasks(tasksRes.data ?? [])
         setInboxProjects(projectsRes.data ?? [])
         setInboxPeople(peopleRes.data ?? [])
         setStalled((stalledRes.data ?? []).filter(p => !activeProjectIds.has(p.id)))
         setOverdue(overdueRes.data ?? [])
       } catch (err) {
-        console.error('ClarifyStep load error:', err)
+        console.error('ClarifySection load error:', err)
       } finally {
         setLoading(false)
       }
@@ -596,137 +572,125 @@ function ClarifyStep({ onNext, onBack }) {
     return diff === 1 ? '1d overdue' : `${diff}d overdue`
   }
 
-  if (loading) return (
-    <div className="flex items-center justify-center h-40">
-      <p className="text-sm" style={S.muted}>Loading…</p>
-    </div>
-  )
-
   const allEmpty = !inboxTasks.length && !inboxProjects.length && !inboxPeople.length && !stalled.length && !overdue.length
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-6">
-      <div className="mb-6">
-        <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={S.muted}>Step 2 of 3</p>
-        <h2 className="text-2xl font-semibold mb-2" style={S.text}>What does each item mean?</h2>
-        <p className="text-sm" style={S.muted}>Open each item to clarify it on its detail page. Mark done when sorted, scrap if it's noise.</p>
-      </div>
+    <div className="rounded-2xl border p-6 mb-4" style={S.card}>
+      <SectionHeader
+        step={2}
+        title="What does each item mean?"
+        subtitle="Process what's in your inbox. Mark done when sorted, scrap if it's noise."
+        done={done}
+      />
 
-      {allEmpty ? (
-        <div className="rounded-xl border p-8 text-center" style={S.card}>
+      {loading ? (
+        <p className="text-sm py-4" style={S.muted}>Loading…</p>
+      ) : allEmpty ? (
+        <div className="rounded-xl border p-6 text-center mb-4" style={{ borderColor: 'var(--border)' }}>
           <p className="text-2xl mb-2">🎉</p>
           <p className="text-sm font-medium" style={S.green}>All clear — nothing to clarify.</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3 mb-4">
           {inboxTasks.length > 0 && (
-            <div className="rounded-xl border p-4" style={S.card}>
+            <div className="rounded-xl border p-4" style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)' }}>
               <h3 className="text-xs font-semibold uppercase tracking-wide mb-3" style={S.blue}>📥 Inbox Tasks</h3>
-              {inboxTasks.map(item => (
-                <ClarifyTaskRow key={item.id} task={item} />
-              ))}
+              {inboxTasks.map(item => <ClarifyTaskRow key={item.id} task={item} />)}
             </div>
           )}
-
           {inboxProjects.length > 0 && (
-            <div className="rounded-xl border p-4" style={S.card}>
+            <div className="rounded-xl border p-4" style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)' }}>
               <h3 className="text-xs font-semibold uppercase tracking-wide mb-3" style={S.purple}>📥 Inbox Projects</h3>
               {inboxProjects.map(item => (
-                <ClarifyRow
-                  key={item.id}
-                  item={item}
-                  linkTo={`/projects/${item.id}`}
+                <ClarifyRow key={item.id} item={item} linkTo={`/projects/${item.id}`}
                   onDone={() => updateProject(item.id, { status: 'completed' })}
                   onScrap={() => updateProject(item.id, { archived_at: new Date().toISOString() })}
                 />
               ))}
             </div>
           )}
-
           {inboxPeople.length > 0 && (
-            <div className="rounded-xl border p-4" style={S.card}>
-              <h3 className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: 'var(--accent-green)' }}>👤 Inbox People</h3>
+            <div className="rounded-xl border p-4" style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)' }}>
+              <h3 className="text-xs font-semibold uppercase tracking-wide mb-3" style={S.green}>👤 Inbox People</h3>
               {inboxPeople.map(item => (
-                <ClarifyRow
-                  key={item.id}
-                  item={item}
-                  linkTo={`/people/${item.id}`}
+                <ClarifyRow key={item.id} item={item} linkTo={`/people/${item.id}`}
                   onDone={() => updatePerson(item.id, { status: 'active' })}
                   onScrap={() => updatePerson(item.id, { status: 'stale' })}
                 />
               ))}
             </div>
           )}
-
           {stalled.length > 0 && (
-            <div className="rounded-xl border p-4" style={S.card}>
+            <div className="rounded-xl border p-4" style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)' }}>
               <h3 className="text-xs font-semibold uppercase tracking-wide mb-1" style={S.yellow}>⚠️ Stalled Projects</h3>
               <p className="text-xs mb-3" style={S.muted}>In progress with no active tasks</p>
               {stalled.map(item => (
-                <ClarifyRow
-                  key={item.id}
-                  item={item}
-                  linkTo={`/projects/${item.id}`}
+                <ClarifyRow key={item.id} item={item} linkTo={`/projects/${item.id}`}
                   onDone={() => updateProject(item.id, { status: 'in_progress' })}
                   onScrap={() => updateProject(item.id, { archived_at: new Date().toISOString() })}
                 />
               ))}
             </div>
           )}
-
           {overdue.length > 0 && (
-            <div className="rounded-xl border p-4" style={S.card}>
+            <div className="rounded-xl border p-4" style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)' }}>
               <h3 className="text-xs font-semibold uppercase tracking-wide mb-1" style={S.red}>🔴 Overdue Tasks</h3>
               <p className="text-xs mb-3" style={S.muted}>Past due date, not completed</p>
-              {overdue.map(item => (
-                <ClarifyTaskRow key={item.id} task={item} />
-              ))}
+              {overdue.map(item => <ClarifyTaskRow key={item.id} task={item} />)}
             </div>
           )}
         </div>
       )}
 
-      <div className="flex items-center justify-between pt-6 mt-4 border-t" style={{ borderColor: 'var(--border)' }}>
-        <Button variant="ghost" onClick={onBack}>← Back</Button>
-        <Button variant="primary" onClick={onNext}>Done Clarifying →</Button>
+      <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
+        <span className="text-sm" style={S.muted}>
+          {done ? '✓ Clarify locked in — scroll up to adjust anything' : 'Sort every item above, then move on'}
+        </span>
+        {!done && <Button variant="primary" onClick={onDone}>Done Clarifying →</Button>}
       </div>
     </div>
   )
 }
 
-// ─── STEP 3: REFLECT ─────────────────────────────────────────────────────────
+// ─── SECTION 3: REFLECT ───────────────────────────────────────────────────────
 
-function ReflectStep({ review, onComplete, onBack, onSaveState, targetDate }) {
+function ReflectSection({ review, locked, onSaveState, targetDate }) {
   const { configured: aiConfigured, loading: aiLoading } = useAIConfig()
-  const navigate = useNavigate()
   const aiConfiguredRef = useRef(false)
   useEffect(() => { aiConfiguredRef.current = aiConfigured }, [aiConfigured])
-  const saved = review?.content ?? {}
-  const [ctx,          setCtx]          = useState(null)
-  const [questions,    setQuestions]    = useState(saved.questions ?? [])
-  const [conversation, setConversation] = useState(saved.conversation ?? [])
-  const [qIndex,       setQIndex]       = useState(saved.qIndex ?? 0)
-  const [typing,       setTyping]       = useState(false)
-  const [inputVal,     setInputVal]     = useState('')
-  const [inputActive,  setInputActive]  = useState(false)
-  const [scratchpad,   setScratchpad]   = useState(saved.scratchpad ?? '')
-  const [showScratch,  setShowScratch]  = useState(saved.showScratch ?? false)
-  const [generating,   setGenerating]   = useState(false)
-  const [suggestions,  setSuggestions]  = useState(review?.suggestions ?? [])
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const [completed,    setCompleted]    = useState(review?.status === 'completed')
-  const [nextActions,  setNextActions]  = useState([])
-  const [inProgress,   setInProgress]   = useState([])
-  const chatRef = useRef(null)
-  const inputRef = useRef(null)
 
-  // Persist conversation + question state to DB on change
+  const saved = review?.content ?? {}
+  const [ctx,             setCtx]             = useState(null)
+  const [questions,       setQuestions]       = useState(saved.questions ?? [])
+  const [conversation,    setConversation]    = useState(saved.conversation ?? [])
+  const [qIndex,          setQIndex]          = useState(saved.qIndex ?? 0)
+  const [typing,          setTyping]          = useState(false)
+  const [inputVal,        setInputVal]        = useState('')
+  const [inputActive,     setInputActive]     = useState(false)
+  const [scratchpad,      setScratchpad]      = useState(saved.scratchpad ?? '')
+  const [showScratch,     setShowScratch]     = useState(saved.showScratch ?? false)
+  const [generating,      setGenerating]      = useState(false)
+  const [suggestions,     setSuggestions]     = useState(review?.suggestions ?? [])
+  const [showSuggestions, setShowSuggestions] = useState(false)
+  const [completed,       setCompleted]       = useState(review?.status === 'completed')
+  const [nextActions,     setNextActions]     = useState([])
+  const [inProgress,      setInProgress]      = useState([])
+  const chatRef  = useRef(null)
+  const inputRef = useRef(null)
+  const mountedRef = useRef(true)
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => { mountedRef.current = false }
+  }, [])
+
+  // Persist conversation to DB on change
   useEffect(() => {
     if (conversation.length === 0) return
     onSaveState?.({ conversation, qIndex })
   }, [conversation, qIndex]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Persist scratchpad to DB (debounced)
+  // Persist scratchpad (debounced)
   useEffect(() => {
     const t = setTimeout(() => {
       if (scratchpad || showScratch) onSaveState?.({ scratchpad, showScratch })
@@ -737,14 +701,17 @@ function ReflectStep({ review, onComplete, onBack, onSaveState, targetDate }) {
   const scrollChat = () => setTimeout(() => chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: 'smooth' }), 50)
 
   const addBubble = useCallback((role, content) => {
+    if (!mountedRef.current) return
     setConversation(prev => [...prev, { role, content }])
     scrollChat()
   }, [])
 
   const askQuestion = useCallback((q) => {
+    if (!mountedRef.current) return
     setTyping(true)
     setInputActive(false)
     setTimeout(() => {
+      if (!mountedRef.current) return
       setTyping(false)
       addBubble('ai', q)
       setInputActive(true)
@@ -752,22 +719,26 @@ function ReflectStep({ review, onComplete, onBack, onSaveState, targetDate }) {
     }, 1200)
   }, [addBubble])
 
-  // Load context + reference lists on mount
+  // Start interview when section unlocks and AI config is ready
   useEffect(() => {
-    if (aiLoading) return // wait until AI config is resolved before starting
+    if (aiLoading || locked) return
+
+    let cancelled = false
+
     async function init() {
       const [ctxData, nextRes, projRes] = await Promise.all([
         buildReflectContext(),
         supabase.from('tasks').select('id, title, due_date').eq('status', 'next_action').is('archived_at', null).limit(8),
         supabase.from('projects').select('id, title, status').eq('status', 'in_progress').is('archived_at', null).limit(6),
       ])
+      if (cancelled || !mountedRef.current) return
       setCtx(ctxData)
       setNextActions(nextRes.data ?? [])
       setInProgress(projRes.data ?? [])
 
       if (review?.status === 'completed') return
 
-      // Rehydrate — if we have a saved conversation, restore UI state and skip question generation
+      // Rehydrate saved conversation — skip question generation
       if (saved.conversation?.length > 0) {
         const qs = saved.questions ?? []
         const qi = saved.qIndex ?? 0
@@ -780,9 +751,11 @@ function ReflectStep({ review, onComplete, onBack, onSaveState, targetDate }) {
 
       setTyping(true)
       setTimeout(async () => {
-        if (aiConfigured) {
+        if (cancelled || !mountedRef.current) return
+        if (aiConfiguredRef.current) {
           try {
             const qs = await generateReflectQuestions(ctxData)
+            if (cancelled || !mountedRef.current) return
             setQuestions(qs)
             onSaveState?.({ questions: qs })
             setTyping(false)
@@ -790,18 +763,22 @@ function ReflectStep({ review, onComplete, onBack, onSaveState, targetDate }) {
             setInputActive(true)
             setTimeout(() => inputRef.current?.focus(), 50)
           } catch {
+            if (cancelled || !mountedRef.current) return
             setTyping(false)
             addBubble('ai', "Alright, let's do this. What was the highlight of your day — something that actually went well?")
             setInputActive(true)
           }
         } else {
           setTyping(false)
-          addBubble('ai', "Set up an AI provider in <a href='/settings' style='color:var(--accent);text-decoration:underline;'>Settings</a> to enable the AI interview. You can still complete the review below.")
+          addBubble('ai', "Set up an AI provider in <a href='/settings' style='color:var(--accent);text-decoration:underline;'>Settings</a> to enable the AI interview. You can still generate a plan with the scratchpad below.")
+          setShowScratch(true)
         }
-      }, 1500)
+      }, 800)
     }
+
     init()
-  }, [aiLoading]) // eslint-disable-line react-hooks/exhaustive-deps
+    return () => { cancelled = true }
+  }, [aiLoading, locked]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSend = () => {
     const val = inputVal.trim()
@@ -818,6 +795,7 @@ function ReflectStep({ review, onComplete, onBack, onSaveState, targetDate }) {
     } else {
       setTyping(true)
       setTimeout(() => {
+        if (!mountedRef.current) return
         setTyping(false)
         addBubble('ai', "Got it. Anything else on your mind before I put tomorrow together? Drop it in the notes below, then hit Generate.")
         setShowScratch(true)
@@ -832,26 +810,27 @@ function ReflectStep({ review, onComplete, onBack, onSaveState, targetDate }) {
     try {
       const result = await generateReflectPlan(ctx, conversation, scratchpad)
       const { suggestions: newSuggestions } = await writeReflectResults(review.id, result, targetDate)
+      if (!mountedRef.current) return
       setSuggestions(newSuggestions)
       setTyping(true)
       setTimeout(() => {
+        if (!mountedRef.current) return
         setTyping(false)
-        addBubble('ai', `✨ Done. Tomorrow's locked in — top of mind, agenda, quote, and your code challenge are all sitting on the Daily page ready for you. I checked your email queue and the calendar too, so the suggestions below are worth a look. Now close the laptop and go do something fun. You put in the work.`)
+        addBubble('ai', "✨ Done. Tomorrow's locked in — top of mind, agenda, quote, and your code challenge are all sitting on the Daily page. I checked your email queue and the calendar too, so the suggestions below are worth a look. Now close the laptop and go do something fun. You put in the work.")
       }, 800)
     } catch (err) {
       addBubble('ai', `Something went wrong generating the plan: ${err.message}`)
     } finally {
-      setGenerating(false)
+      if (mountedRef.current) setGenerating(false)
     }
   }
 
   const handleComplete = async () => {
     if (!review?.id) return
     await completeReview(review.id)
+    if (!mountedRef.current) return
     setCompleted(true)
     setShowSuggestions(true)
-    onComplete()
-    setTimeout(() => navigate('/'), 1800)
   }
 
   const handleSuggestionChange = async (updated) => {
@@ -860,16 +839,17 @@ function ReflectStep({ review, onComplete, onBack, onSaveState, targetDate }) {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-6">
-      <div className="mb-4">
-        <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={S.muted}>Step 3 of 3</p>
-        <h2 className="text-2xl font-semibold mb-2" style={S.text}>How'd it go today?</h2>
-        <p className="text-sm" style={S.muted}>
-          {aiConfigured
-            ? "Your AI sidekick has been snooping through your tasks, projects, and last 30 days of notes. Answer however feels right — no wrong answers here."
-            : "Take a few minutes to reflect on your day and wrap it up."}
-        </p>
-      </div>
+    <div className="rounded-2xl border p-6 mb-4" style={S.card}>
+      <SectionHeader
+        step={3}
+        title="How'd it go today?"
+        subtitle={
+          aiConfigured
+            ? "Your AI sidekick has been snooping through your tasks, projects, and last 30 days of notes. Answer however feels right."
+            : "Take a few minutes to reflect on your day and wrap it up."
+        }
+        done={completed}
+      />
 
       {/* Reference cards */}
       {nextActions.length > 0 && (
@@ -884,7 +864,6 @@ function ReflectStep({ review, onComplete, onBack, onSaveState, targetDate }) {
           </div>
         </RefCard>
       )}
-
       {inProgress.length > 0 && (
         <RefCard title="📁 Projects In Progress" count={inProgress.length}>
           <div className="space-y-1">
@@ -897,22 +876,25 @@ function ReflectStep({ review, onComplete, onBack, onSaveState, targetDate }) {
         </RefCard>
       )}
 
-      {/* Chat window */}
+      {/* Chat */}
       <div
         ref={chatRef}
-        className="rounded-xl border p-4 space-y-3 overflow-y-auto"
-        style={{ ...S.card, minHeight: 120, maxHeight: 420 }}
+        className="rounded-xl border p-4 space-y-3 overflow-y-auto mb-3"
+        style={{ ...S.card, minHeight: 100, maxHeight: 400 }}
       >
         <style>{`@keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-5px)} }`}</style>
+        {conversation.length === 0 && !typing && (
+          <p className="text-sm text-center py-4" style={S.muted}>Complete Clarify above to start the AI interview…</p>
+        )}
         {conversation.map((msg, i) => (
           <Bubble key={i} role={msg.role}>{msg.content}</Bubble>
         ))}
         {typing && <TypingIndicator />}
       </div>
 
-      {/* Chat input */}
+      {/* Input */}
       {inputActive && !completed && (
-        <div className="flex gap-2 mt-3">
+        <div className="flex gap-2 mb-3">
           <textarea
             ref={inputRef}
             value={inputVal}
@@ -931,7 +913,7 @@ function ReflectStep({ review, onComplete, onBack, onSaveState, targetDate }) {
 
       {/* Scratchpad */}
       {showScratch && !completed && (
-        <div className="rounded-xl border p-4 mt-3" style={S.card}>
+        <div className="rounded-xl border p-4 mb-3" style={S.card}>
           <h3 className="text-xs font-semibold uppercase tracking-wide mb-2" style={S.muted}>📝 Notes for Today</h3>
           <textarea
             value={scratchpad}
@@ -948,19 +930,19 @@ function ReflectStep({ review, onComplete, onBack, onSaveState, targetDate }) {
 
       {/* Generate */}
       {showScratch && !completed && !generating && suggestions.length === 0 && aiConfigured && (
-        <Button variant="action" size="md" onClick={handleGenerate} disabled={generating} className="w-full mt-3">
+        <Button variant="action" size="md" onClick={handleGenerate} disabled={generating} className="w-full mb-3">
           ✨ Generate Tomorrow's Plan
         </Button>
       )}
       {generating && (
-        <div className="text-center py-3">
+        <div className="text-center py-3 mb-3">
           <p className="text-sm" style={S.muted}>Generating your plan…</p>
         </div>
       )}
 
-      {/* Suggestions — shown after complete */}
+      {/* Suggestions */}
       {showSuggestions && suggestions.length > 0 && (
-        <div className="mt-4 space-y-3">
+        <div className="mt-2 space-y-3 mb-4">
           <h3 className="text-xs font-semibold uppercase tracking-wide" style={S.blue}>💡 Suggestions</h3>
           {suggestions.map((s, i) => (
             <SuggestionCard
@@ -975,8 +957,10 @@ function ReflectStep({ review, onComplete, onBack, onSaveState, targetDate }) {
       )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between pt-6 mt-4 border-t" style={{ borderColor: 'var(--border)' }}>
-        <Button variant="ghost" onClick={onBack}>← Back</Button>
+      <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
+        <span className="text-sm" style={S.muted}>
+          {completed ? '✓ Review complete — see you tomorrow' : 'Wrap it up when you\'re ready'}
+        </span>
         {completed ? (
           <span className="text-sm px-3 py-1 rounded-lg border" style={{ backgroundColor: 'var(--state-success-bg)', borderColor: 'var(--accent-green)', color: 'var(--accent-green)' }}>
             ✓ Review Complete
@@ -995,34 +979,51 @@ export default function Reviews() {
   const { type: urlType } = useParams()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const today = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD in local time
-  // gate=today means this review was triggered by the morning gate — write to today, not tomorrow
+  const today = new Date().toLocaleDateString('en-CA')
   const targetDate = searchParams.get('gate') === 'today' ? today : null
 
   const activeType = ['daily', 'weekly', 'monthly'].includes(urlType) ? urlType : 'daily'
 
-  const [step,        setStep]        = useState(0)
-  const [review,      setReview]      = useState(null)
-  const [loading,     setLoading]     = useState(true)
-  const [loadError,   setLoadError]   = useState(null)
-  const [retryCount,  setRetryCount]  = useState(0)
-  const [todayNoteId, setTodayNoteId] = useState(null)
+  const [review,           setReview]           = useState(null)
+  const [loading,          setLoading]          = useState(true)
+  const [loadError,        setLoadError]        = useState(null)
+  const [retryCount,       setRetryCount]       = useState(0)
+  const [todayNoteId,      setTodayNoteId]      = useState(null)
+  const [captureComplete,  setCaptureComplete]  = useState(false)
+  const [clarifyComplete,  setClarifyComplete]  = useState(false)
+  const [resetting,        setResetting]        = useState(false)
 
-  const contentRef = useRef({})
   const reviewRef  = useRef(null)
+  const contentRef = useRef({})
+
   const saveContent = useCallback(async (patch) => {
     if (!reviewRef.current?.id) return
     contentRef.current = { ...contentRef.current, ...patch }
     await updateReviewContent(reviewRef.current.id, contentRef.current).catch(() => {})
   }, [])
 
-  const goToStep = useCallback((n) => {
-    setStep(n)
-    saveContent({ step: n })
+  const markCaptureDone = useCallback(async () => {
+    setCaptureComplete(true)
+    await saveContent({ captureComplete: true })
   }, [saveContent])
 
+  const markClarifyDone = useCallback(async () => {
+    setClarifyComplete(true)
+    await saveContent({ clarifyComplete: true })
+  }, [saveContent])
+
+  const resetReview = useCallback(async () => {
+    if (!reviewRef.current?.id || resetting) return
+    setResetting(true)
+    await supabase
+      .from('reviews')
+      .update({ content: {}, status: 'draft', suggestions: [] })
+      .eq('id', reviewRef.current.id)
+    setRetryCount(c => c + 1)
+    setResetting(false)
+  }, [resetting])
+
   useEffect(() => {
-    setStep(0)
     setLoading(true)
     setLoadError(null)
     Promise.all([
@@ -1030,16 +1031,11 @@ export default function Reviews() {
       supabase.from('daily_notes').select('id').eq('date', today).maybeSingle(),
     ]).then(([r, noteRes]) => {
       reviewRef.current = r
-      if (r.status === 'completed') {
-        // Start fresh — wipe in-memory content so ReflectStep doesn't rehydrate the old conversation
-        contentRef.current = {}
-        setReview({ ...r, content: {}, status: 'draft' })
-        setStep(0)
-      } else {
-        contentRef.current = r.content ?? {}
-        setReview(r)
-        setStep(r.content?.step ?? 0)
-      }
+      const content = r.content ?? {}
+      contentRef.current = content
+      setReview(r)
+      setCaptureComplete(!!content.captureComplete)
+      setClarifyComplete(!!content.clarifyComplete)
       setTodayNoteId(noteRes.data?.id ?? null)
     }).catch(err => {
       console.error('Reviews load error:', err)
@@ -1060,9 +1056,23 @@ export default function Reviews() {
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b shrink-0" style={{ borderColor: 'var(--border)' }}>
         <h1 className="text-xl font-semibold" style={S.text}>Reviews</h1>
-        <p className="text-sm" style={S.muted}>
-          {new Date(today + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-        </p>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={resetReview}
+            disabled={resetting || loading}
+            title="Reset review for testing"
+            className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-colors"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', backgroundColor: 'transparent', opacity: resetting ? 0.5 : 1 }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent-red)'; e.currentTarget.style.color = 'var(--accent-red)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
+          >
+            <RotateCcw size={12} />
+            {resetting ? 'Resetting…' : 'Reset'}
+          </button>
+          <p className="text-sm" style={S.muted}>
+            {new Date(today + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+          </p>
+        </div>
       </div>
 
       {/* Type tabs */}
@@ -1082,11 +1092,6 @@ export default function Reviews() {
         ))}
       </div>
 
-      {/* Step bar — daily only */}
-      {activeType === 'daily' && (
-        <StepBar current={step} onNavigate={i => i < step && goToStep(i)} />
-      )}
-
       {/* Body */}
       <div className="flex-1 overflow-y-auto">
         {loading ? (
@@ -1100,11 +1105,29 @@ export default function Reviews() {
             <button className="text-xs mt-2 underline" style={S.blue} onClick={() => setRetryCount(c => c + 1)}>Retry</button>
           </div>
         ) : activeType === 'daily' ? (
-          <>
-            {step === 0 && <CaptureStep onNext={() => goToStep(1)} todayNoteId={todayNoteId} />}
-            {step === 1 && <ClarifyStep onNext={() => goToStep(2)} onBack={() => goToStep(0)} />}
-            {step === 2 && <ReflectStep review={review} onComplete={() => {}} onBack={() => goToStep(1)} onSaveState={saveContent} targetDate={targetDate} />}
-          </>
+          <div className="max-w-2xl mx-auto px-6 py-6">
+            <CaptureSection
+              done={captureComplete}
+              onDone={markCaptureDone}
+              todayNoteId={todayNoteId}
+            />
+
+            <SectionWrapper locked={!captureComplete} lockLabel="Complete Capture first">
+              <ClarifySection
+                done={clarifyComplete}
+                onDone={markClarifyDone}
+              />
+            </SectionWrapper>
+
+            <SectionWrapper locked={!clarifyComplete} lockLabel="Complete Clarify first">
+              <ReflectSection
+                review={review}
+                locked={!clarifyComplete}
+                onSaveState={saveContent}
+                targetDate={targetDate}
+              />
+            </SectionWrapper>
+          </div>
         ) : (
           <div className="max-w-2xl mx-auto px-6 py-12 text-center">
             <p className="text-4xl mb-4">🚧</p>

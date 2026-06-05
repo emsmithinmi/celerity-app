@@ -4,6 +4,16 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-05 (Session 13 — Reviews page redesign)
+
+### Changed
+- **Reviews page is now a single scrollable page** — replaced the 3-step wizard with stacked sections (Capture → Clarify → Reflect) all visible at once. No more "kicked back to the start" from step navigation. Completed items stay visible; you can scroll back up and add a capture mid-clarify without losing progress.
+- **Sections are dependency-gated** — Clarify is locked (subdued, non-interactive) until Capture is marked done; Reflect locks until Clarify is done. Completion state persists to the DB so returning to the page restores where you left off.
+- **AI interview starts automatically** when the Reflect section unlocks, no extra navigation needed. Fixed the stale-closure race condition from the old `setTimeout` + `aiConfigured` pattern; replaced with a `cancelled` flag and `aiConfiguredRef.current`.
+- **Reset button in header** — one click wipes today's review content and restarts from scratch. Useful for testing without waiting until end of day.
+
+---
+
 ## 2026-06-04 (Session 12 — bug fixes, UX polish, birthday awareness)
 
 ### Fixed
