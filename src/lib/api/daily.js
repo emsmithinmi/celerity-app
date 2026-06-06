@@ -193,40 +193,51 @@ export async function getCalendarEvents(date) {
 export async function getDailyStats(date) {
   const d = date ?? new Date().toLocaleDateString('en-CA')
 
-  const [inProgress, nextActions, waiting, stalled, dueTodayTasks, dueTodayProjects] = await Promise.all([
-    // Projects in progress
+  const [
+    activeProjects, activeTasks,
+    inProgress, nextActions, waiting, stalled,
+    dueTodayTasks,
+  ] = await Promise.all([
+    // All projects with active intent (planning, in_progress, waiting, stalled)
     supabase.from('projects').select('id', { count: 'exact', head: true })
-      .eq('status', 'in_progress'),
+      .in('status', ['planning', 'in_progress', 'waiting', 'stalled'])
+      .is('archived_at', null),
 
-    // Next action tasks
+    // All active tasks (next_action, queued, waiting, scheduled)
     supabase.from('tasks').select('id', { count: 'exact', head: true })
-      .eq('status', 'next_action'),
+      .in('status', ['next_action', 'queued', 'waiting', 'scheduled'])
+      .is('archived_at', null),
+
+    // Projects in progress only
+    supabase.from('projects').select('id', { count: 'exact', head: true })
+      .eq('status', 'in_progress').is('archived_at', null),
+
+    // Next action tasks only
+    supabase.from('tasks').select('id', { count: 'exact', head: true })
+      .eq('status', 'next_action').is('archived_at', null),
 
     // Waiting tasks
     supabase.from('tasks').select('id', { count: 'exact', head: true })
-      .eq('status', 'waiting'),
+      .eq('status', 'waiting').is('archived_at', null),
 
     // Stalled projects
     supabase.from('projects').select('id', { count: 'exact', head: true })
-      .eq('status', 'stalled'),
+      .eq('status', 'stalled').is('archived_at', null),
 
-    // Due today tasks: due on this date OR scheduled OR urgent/stat priority
-    // (excludes done tasks)
+    // Due today: due_date = today OR status = scheduled
     supabase.from('tasks').select('id', { count: 'exact', head: true })
-      .or(`due_date.eq.${d},status.eq.scheduled,priority.in.(urgent,stat)`)
-      .neq('status', 'done'),
-
-    // Projects ending today (not completed)
-    supabase.from('projects').select('id', { count: 'exact', head: true })
-      .eq('end_date', d)
-      .neq('status', 'completed'),
+      .or(`due_date.eq.${d},status.eq.scheduled`)
+      .not('status', 'in', '("done","archived")')
+      .is('archived_at', null),
   ])
 
   return {
-    inProgress:  inProgress.count  ?? 0,
-    nextActions: nextActions.count ?? 0,
-    waiting:     waiting.count     ?? 0,
-    stalled:     stalled.count     ?? 0,
-    dueToday:    (dueTodayTasks.count ?? 0) + (dueTodayProjects.count ?? 0),
+    activeProjects: activeProjects.count ?? 0,
+    activeTasks:    activeTasks.count    ?? 0,
+    inProgress:     inProgress.count     ?? 0,
+    nextActions:    nextActions.count    ?? 0,
+    waiting:        waiting.count        ?? 0,
+    stalled:        stalled.count        ?? 0,
+    dueToday:       dueTodayTasks.count  ?? 0,
   }
 }

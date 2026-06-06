@@ -130,7 +130,8 @@ export default function TaskPage() {
         duration:     draft.duration,
         energy_level: draft.energy_level,
         area:         draft.area,
-        due_date:     draft.due_date || null,
+        due_date:     draft.due_date  || null,
+        deadline:     draft.deadline  || null,
         notes:        draft.notes,
       })
       setTask(prev => ({ ...prev, ...updated }))
@@ -361,7 +362,10 @@ export default function TaskPage() {
                 {/* Due date */}
                 {editing ? (
                   <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Due Date</label>
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
+                      Due Date
+                      <span className="ml-1 font-normal" style={{ color: 'var(--text-dim)' }}>— specific day to do it</span>
+                    </label>
                     <input
                       type="date"
                       value={d.due_date ?? ''}
@@ -379,6 +383,36 @@ export default function TaskPage() {
                   />
                 )}
 
+                {/* Deadline */}
+                {editing ? (
+                  <div>
+                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
+                      Deadline
+                      <span className="ml-1 font-normal" style={{ color: 'var(--text-dim)' }}>— last possible day</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={d.deadline ?? ''}
+                      onChange={e => change('deadline', e.target.value)}
+                      className={inputCls}
+                      style={{ ...inputStyle, borderColor: d.deadline ? 'var(--accent-red)' : inputStyle.borderColor }}
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-xs font-medium mb-0.5" style={{ color: 'var(--text-secondary)' }}>Deadline</p>
+                    {task.deadline ? (
+                      <p className="text-sm font-medium" style={{ color: 'var(--accent-red)' }}>
+                        🔴 {new Date(task.deadline + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                      </p>
+                    ) : (
+                      <p className="text-sm" style={{ color: 'var(--text-dim)' }}>—</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <ReadField label="Project" value={task.projects?.title} />
               </div>
 

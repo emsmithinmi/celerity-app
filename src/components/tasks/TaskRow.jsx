@@ -1,10 +1,11 @@
 ﻿import { StatusPill, PriorityBadge, EnergyBadge, DurationDisplay, ContextTag } from '../ui'
 
 export default function TaskRow({ task, onClick }) {
-  const isDone    = task.status === 'done'
-  const isWaiting = task.status === 'waiting'
-  const today     = new Date().toLocaleDateString('en-CA')
-  const overdue   = task.due_date && task.due_date < today && !isDone
+  const isDone          = task.status === 'done'
+  const isWaiting       = task.status === 'waiting'
+  const today           = new Date().toLocaleDateString('en-CA')
+  const overdue         = task.due_date && task.due_date < today && !isDone
+  const deadlineUrgent  = task.deadline && task.deadline <= today && !isDone
 
   return (
     <div
@@ -43,6 +44,20 @@ export default function TaskRow({ task, onClick }) {
 
       {/* Meta */}
       <div className="flex items-center gap-2 shrink-0">
+        {task.deadline && !isDone && (
+          <span
+            className="text-xs font-medium px-1.5 py-0.5 rounded"
+            style={{
+              backgroundColor: deadlineUrgent ? 'var(--state-error-bg)' : 'transparent',
+              color: deadlineUrgent ? 'var(--accent-red)' : 'var(--accent-red)',
+              border: `1px solid var(--accent-red)`,
+              opacity: deadlineUrgent ? 1 : 0.7,
+            }}
+            title="Deadline"
+          >
+            🔴 {new Date(task.deadline + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+          </span>
+        )}
         {task.due_date && (
           <span className="text-xs" style={{ color: overdue ? 'var(--danger)' : 'var(--text-secondary)' }}>
             {overdue ? '⚠ ' : ''}

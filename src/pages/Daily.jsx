@@ -6,6 +6,8 @@ import { useTasks } from '../hooks/useTasks'
 import { useProjects } from '../hooks/useProjects'
 import { createPerson } from '../lib/api/people'
 import { updateChallenge } from '../lib/api/daily'
+import { getStuckSuggestions } from '../lib/ai/skills/stuckHelper'
+import { useAIConfig } from '../hooks/useAI'
 
 import DailyQuote     from '../components/daily/DailyQuote'
 import StatCards      from '../components/daily/StatCards'
@@ -182,6 +184,26 @@ export default function Daily() {
   // Modal state
   const [modal, setModal] = useState(null)
 
+  // "I'm Stuck" panel
+  const { configured: aiConfigured } = useAIConfig()
+  const [stuckOpen,       setStuckOpen]       = useState(false)
+  const [stuckLoading,    setStuckLoading]    = useState(false)
+  const [stuckResult,     setStuckResult]     = useState(null)
+
+  const handleStuck = async () => {
+    setStuckOpen(true)
+    if (stuckResult) return   // already loaded this session
+    setStuckLoading(true)
+    try {
+      const result = await getStuckSuggestions(aiConfigured)
+      setStuckResult(result)
+    } catch {
+      setStuckResult({ opening: "Couldn't load suggestions — try again in a moment.", suggestions: [] })
+    } finally {
+      setStuckLoading(false)
+    }
+  }
+
   const handleChallengeUpdate = async (updated) => {
     if (!note) return
     await updateChallenge(note.id, updated)
@@ -260,7 +282,72 @@ export default function Daily() {
               {label}
             </Button>
           ))}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleStuck}
+          >
+            🤷 I'm Stuck
+          </Button>
         </div>
+
+        {/* "I'm Stuck" panel */}
+        {stuckOpen && (
+          <div
+            className="rounded-2xl border p-5 space-y-4"
+            style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--accent)' }}
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold" style={{ color: 'var(--accent)' }}>
+                🤷 Easy wins to get you moving
+              </h3>
+              <button
+                onClick={() => setStuckOpen(false)}
+                className="text-xs px-2 py-0.5 rounded hover:opacity-70 transition-opacity"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                ✕ dismiss
+              </button>
+            </div>
+
+            {stuckLoading ? (
+              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Finding your easiest wins…</p>
+            ) : stuckResult ? (
+              <>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{stuckResult.opening}</p>
+                {stuckResult.suggestions.length > 0 ? (
+                  <div className="space-y-2">
+                    {stuckResult.suggestions.map(s => (
+                      <a
+                        key={s.task_id}
+                        href={`/tasks/${s.task_id}`}
+                        className="flex items-start gap-3 px-3 py-2.5 rounded-xl border transition-opacity hover:opacity-80"
+                        style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)', textDecoration: 'none' }}
+                      >
+                        <span className="text-base mt-0.5">⚡</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{s.title}</p>
+                          {s.reason && (
+                            <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{s.reason}</p>
+                          )}
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm" style={{ color: 'var(--text-dim)' }}>No next actions found — add some tasks first.</p>
+                )}
+                <button
+                  onClick={() => { setStuckResult(null); handleStuck() }}
+                  className="text-xs underline"
+                  style={{ color: 'var(--text-dim)' }}
+                >
+                  Refresh suggestions
+                </button>
+              </>
+            ) : null}
+          </div>
+        )}
 
         {/* Top of Mind */}
         <TopOfMind

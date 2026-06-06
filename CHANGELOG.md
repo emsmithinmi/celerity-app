@@ -4,6 +4,22 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-06 (Session 14 cont. 6)
+
+### Added
+- **"I'm Stuck" button** on the Daily page — click to get 3-5 easy wins from your next actions. If AI is configured, it picks the best starters based on context; otherwise falls back to sorting by duration and energy level. Panel is dismissible and has a "Refresh suggestions" link.
+- **Deadline field on tasks** — separate from Due Date. Deadline = absolute last day, user should be actively working toward it. Due Date = specific day the task happens, no movement expected before it. Both fields are editable on TaskPage. Deadline renders in red (🔴) on task rows and detail view.
+- **Deadline shown in AI interview context** — reflectReview now includes `DEADLINE` tags on tasks and a semantic explanation so the AI asks the right kind of questions ("how's progress?" for deadlines vs "are you prepared?" for due dates).
+
+### Changed
+- **Stat cards expanded to 7, in 2 rows** (was 5 in 1 row):
+  - Row 1: Projects (all active), Tasks (all active), In Progress, Next Actions
+  - Row 2: Tasks Waiting, Stalled Projects, Due Today
+- **"Due Today" now counts only `due_date = today` or `status = scheduled`** — removed the priority-based override (urgent/stat tasks were being counted even when not due today).
+- **DB migration** — added `deadline date` column to tasks.
+
+---
+
 ## 2026-06-06 (Session 14 cont. 5)
 
 ### Added

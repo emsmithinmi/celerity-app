@@ -1,9 +1,14 @@
-﻿const CARDS = [
-  { key: 'inProgress',  label: 'Projects in Progress' },
-  { key: 'nextActions', label: 'Next Actions'          },
-  { key: 'dueToday',    label: 'Due Today'             },
-  { key: 'waiting',     label: 'Tasks Waiting'         },
-  { key: 'stalled',     label: 'Stalled Projects'      },
+const ROW1 = [
+  { key: 'activeProjects', label: 'Projects'             },
+  { key: 'activeTasks',    label: 'Tasks'                },
+  { key: 'inProgress',     label: 'In Progress'          },
+  { key: 'nextActions',    label: 'Next Actions'         },
+]
+
+const ROW2 = [
+  { key: 'waiting',        label: 'Tasks Waiting'        },
+  { key: 'stalled',        label: 'Stalled Projects'     },
+  { key: 'dueToday',       label: 'Due Today'            },
 ]
 
 function StatCard({ label, value }) {
@@ -20,10 +25,17 @@ function StatCard({ label, value }) {
 
 export default function StatCards({ stats }) {
   return (
-    <div className="flex gap-3">
-      {CARDS.map(({ key, label }) => (
-        <StatCard key={key} label={label} value={stats[key] ?? 0} />
-      ))}
+    <div className="space-y-3">
+      <div className="flex gap-3">
+        {ROW1.map(({ key, label }) => (
+          <StatCard key={key} label={label} value={stats[key] ?? 0} />
+        ))}
+      </div>
+      <div className="flex gap-3">
+        {ROW2.map(({ key, label }) => (
+          <StatCard key={key} label={label} value={stats[key] ?? 0} />
+        ))}
+      </div>
     </div>
   )
 }

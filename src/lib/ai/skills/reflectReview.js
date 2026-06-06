@@ -98,7 +98,7 @@ export async function buildReflectContext({ gapStart, gapEnd } = {}) {
 
   const [projectsRes, activeTasksRes, inboxRes, notesRes, gapEndNoteRes, peopleRes, gapNotesRes, memoriesRes] = await Promise.all([
     supabase.from('projects').select('id, title, status, area, priority, end_date, description').is('archived_at', null).not('status', 'eq', 'completed').order('updated_at', { ascending: false }),
-    supabase.from('tasks').select('id, title, status, priority, due_date, project_id, projects(title)').in('status', ['next_action', 'waiting', 'scheduled', 'queued']).is('archived_at', null).order('updated_at', { ascending: false }),
+    supabase.from('tasks').select('id, title, status, priority, due_date, deadline, project_id, projects(title)').in('status', ['next_action', 'waiting', 'scheduled', 'queued']).is('archived_at', null).order('updated_at', { ascending: false }),
     supabase.from('tasks').select('id, title').eq('status', 'inbox').is('archived_at', null).limit(20),
     supabase.from('daily_notes').select('date, notes, top_of_mind').order('date', { ascending: false }).limit(30),
     supabase.from('daily_notes').select('*').eq('date', resolvedGapEnd).maybeSingle(),
@@ -261,9 +261,18 @@ export async function generateReflectQuestions(ctx) {
     lines.push(`- [${p.status}] ${p.title}${p.end_date ? ` (due ${p.end_date})` : ''}`)
   })
   lines.push('')
+  lines.push('DATE FIELD SEMANTICS (critical — use correctly when asking about tasks):')
+  lines.push('- due_date: the specific date the task is expected to happen / be handed in. User is not expected to work on it before that day. Ask "are you prepared?" as it approaches.')
+  lines.push('- deadline: the absolute last day. User SHOULD be making progress toward it. Ask "how is it going / what is blocking you?" as it approaches.')
+  lines.push('- scheduled (status): task is time-blocked for a specific day — treated like a due date.')
+  lines.push('- project start_date/end_date: scope markers, NOT task due dates. Tasks inside the project are not expected to be done by the project end date.')
+  lines.push('')
   lines.push('NEXT ACTIONS:')
   activeTasks.filter(t => t.status === 'next_action').slice(0, 6).forEach(t => {
-    lines.push(`- ${t.title}${t.due_date ? ` [due ${t.due_date}]` : ''}`)
+    const dateParts = []
+    if (t.due_date) dateParts.push(`due ${t.due_date}`)
+    if (t.deadline) dateParts.push(`DEADLINE ${t.deadline}`)
+    lines.push(`- ${t.title}${dateParts.length ? ` [${dateParts.join(', ')}]` : ''}`)
   })
   if (stalledProjects.length) {
     lines.push('')
