@@ -722,7 +722,7 @@ function ClarifySection({ onDone, done, captureVersion }) {
 
 // ─── SECTION 3: REFLECT ───────────────────────────────────────────────────────
 
-function ReflectSection({ review, locked, onSaveState, targetDate, reviewDate }) {
+function ReflectSection({ review, locked, onSaveState, targetDate, gapStart, gapEnd }) {
   const { configured: aiConfigured, loading: aiLoading } = useAIConfig()
   const aiConfiguredRef = useRef(false)
   useEffect(() => { aiConfiguredRef.current = aiConfigured }, [aiConfigured])
@@ -786,7 +786,7 @@ function ReflectSection({ review, locked, onSaveState, targetDate, reviewDate })
 
     async function init() {
       const [ctxData, nextRes, projRes] = await Promise.all([
-        buildReflectContext({ reviewDate }),
+        buildReflectContext({ gapStart, gapEnd }),
         supabase.from('tasks').select('id, title, due_date').eq('status', 'next_action').is('archived_at', null).limit(8),
         supabase.from('projects').select('id, title, status').eq('status', 'in_progress').is('archived_at', null).limit(6),
       ])
@@ -819,9 +819,12 @@ function ReflectSection({ review, locked, onSaveState, targetDate, reviewDate })
             setQuestions(qs)
             onSaveState?.({ questions: qs })
             setTyping(false)
-            const reviewLabel = new Date(ctxData.today + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
-            const planLabel   = new Date(ctxData.tomorrowStr + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
-            addBubble('ai', `Welcome to your review for <strong>${reviewLabel}</strong>. I've been through your tasks, projects, and the last month of notes — planning ahead to ${planLabel}. Let's get into it.`)
+            const fmtDate = (d) => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+            const gapLabel = ctxData.gapDays > 1
+              ? `<strong>${fmtDate(ctxData.gapStart)} through ${fmtDate(ctxData.today)}</strong>`
+              : `<strong>${fmtDate(ctxData.today)}</strong>`
+            const gapNote = ctxData.gapDays > 1 ? ` That's ${ctxData.gapDays} days to cover.` : ''
+            addBubble('ai', `Welcome back. Reviewing ${gapLabel}.${gapNote} I've been through your tasks, projects, and the last month of notes — planning ahead to ${fmtDate(ctxData.tomorrowStr)}. Let's get into it.`)
             setTimeout(() => { if (mountedRef.current) addBubble('ai', qs[0]) }, 900)
             setInputActive(true)
             setTimeout(() => inputRef.current?.focus(), 50)
@@ -840,7 +843,7 @@ function ReflectSection({ review, locked, onSaveState, targetDate, reviewDate })
 
     init()
     return () => { cancelled = true }
-  }, [aiLoading, locked, reviewDate]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [aiLoading, locked, gapStart, gapEnd]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const triggerGenerate = async (ctxOverride, convOverride) => {
     const activeCtx  = ctxOverride  ?? ctx
@@ -889,7 +892,7 @@ function ReflectSection({ review, locked, onSaveState, targetDate, reviewDate })
     const remainingTopics = questions.slice(nextIndex)
 
     setTyping(true)
-    const dateContext = ctx ? { reviewDate: ctx.today, planDate: ctx.tomorrowStr } : {}
+    const dateContext = ctx ? { reviewDate: ctx.today, planDate: ctx.tomorrowStr, gapStart: ctx.gapStart, gapDays: ctx.gapDays, weekendDays: ctx.weekendDays, holidayDays: ctx.holidayDays } : {}
     try {
       const { message, ready } = await generateConversationalResponse(newConversation, remainingTopics, dateContext)
       if (!mountedRef.current) return
@@ -938,7 +941,10 @@ function ReflectSection({ review, locked, onSaveState, targetDate, reviewDate })
           <>
             {ctx && (
               <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium mr-2" style={{ backgroundColor: 'var(--border)', color: 'var(--accent)' }}>
-                📅 Reviewing {new Date(ctx.today + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                📅 {ctx.gapDays > 1
+                  ? `Reviewing ${new Date(ctx.gapStart + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} – ${new Date(ctx.today + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`
+                  : `Reviewing ${new Date(ctx.today + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`
+                }
                 {' → '}Planning {new Date(ctx.tomorrowStr + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
               </span>
             )}
@@ -1061,14 +1067,15 @@ export default function Reviews() {
 
   const activeType = ['daily', 'weekly', 'monthly'].includes(urlType) ? urlType : 'daily'
 
-  // Always review the most recent completed day — yesterday's habits/data, plan for today
   const yesterday = (() => {
     const d = new Date(today + 'T12:00:00')
     d.setDate(d.getDate() - 1)
     return d.toLocaleDateString('en-CA')
   })()
-  const reviewDate = yesterday   // always review yesterday's actual data
-  const targetDate = today       // always write the plan to today
+  const targetDate = today  // always write plan to today's daily note
+
+  const [gapStart, setGapStart] = useState(null)   // day after last completed review
+  const gapEnd = yesterday                          // most recent day to cover
 
   const [review,           setReview]           = useState(null)
   const [loading,          setLoading]          = useState(true)
@@ -1116,7 +1123,11 @@ export default function Reviews() {
     Promise.all([
       ensureReview(activeType, today),
       supabase.from('daily_notes').select('id').eq('date', today).maybeSingle(),
-    ]).then(([r, noteRes]) => {
+      // Find last completed review to determine the gap start
+      activeType === 'daily'
+        ? supabase.from('reviews').select('date').eq('type', 'daily').eq('status', 'completed').lt('date', today).order('date', { ascending: false }).limit(1).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]).then(([r, noteRes, lastReviewRes]) => {
       reviewRef.current = r
       const content = r.content ?? {}
       contentRef.current = content
@@ -1124,6 +1135,21 @@ export default function Reviews() {
       setCaptureComplete(!!content.captureComplete)
       setClarifyComplete(!!content.clarifyComplete)
       setTodayNoteId(noteRes.data?.id ?? null)
+
+      // Compute gapStart: day after last completed review, capped at 14 days back
+      const lastReviewDate = lastReviewRes?.data?.date ?? null
+      if (lastReviewDate) {
+        const d = new Date(lastReviewDate + 'T12:00:00')
+        d.setDate(d.getDate() + 1)
+        const computed = d.toLocaleDateString('en-CA')
+        // Don't go back more than 14 days
+        const cap = new Date(today + 'T12:00:00')
+        cap.setDate(cap.getDate() - 14)
+        const capStr = cap.toLocaleDateString('en-CA')
+        setGapStart(computed < capStr ? capStr : computed)
+      } else {
+        setGapStart(yesterday)  // no prior reviews — just use yesterday
+      }
     }).catch(err => {
       console.error('Reviews load error:', err)
       setLoadError(err.message ?? 'Failed to load review session.')
@@ -1215,7 +1241,8 @@ export default function Reviews() {
                 locked={!clarifyComplete}
                 onSaveState={saveContent}
                 targetDate={targetDate}
-                reviewDate={reviewDate}
+                gapStart={gapStart}
+                gapEnd={gapEnd}
               />
             </SectionWrapper>
           </div>

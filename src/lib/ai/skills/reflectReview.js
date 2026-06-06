@@ -43,66 +43,75 @@ async function getGmailContext() {
 
 // ─── Context Builder ──────────────────────────────────────────────────────────
 
-export async function buildReflectContext({ reviewDate } = {}) {
+// US federal holidays as MM-DD for quick lookup
+const US_HOLIDAYS = {
+  '01-01': "New Year's Day", '01-15': 'MLK Day', '02-17': "Presidents' Day",
+  '05-26': 'Memorial Day', '06-19': 'Juneteenth', '07-04': 'Independence Day',
+  '09-01': 'Labor Day', '11-11': "Veterans Day", '11-27': 'Thanksgiving',
+  '12-25': 'Christmas',
+}
+
+function analyzGap(gapStart, gapEnd) {
+  const start  = new Date(gapStart + 'T12:00:00')
+  const end    = new Date(gapEnd   + 'T12:00:00')
+  const gapDays = Math.round((end - start) / 86400000) + 1
+  const weekendDays = []
+  const holidayDays = []
+  let d = new Date(start)
+  while (d <= end) {
+    const dow   = d.getDay()
+    const mmdd  = `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    const label = d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
+    if (dow === 0 || dow === 6) weekendDays.push(label)
+    if (US_HOLIDAYS[mmdd]) holidayDays.push(`${label} (${US_HOLIDAYS[mmdd]})`)
+    d.setDate(d.getDate() + 1)
+  }
+  return { gapDays, weekendDays, holidayDays }
+}
+
+export async function buildReflectContext({ gapStart, gapEnd } = {}) {
   const today = new Date().toLocaleDateString('en-CA')
-  // reviewDate: the day being reviewed (yesterday for morning reviews, today for evening)
-  const targetDay = reviewDate ?? today
 
-  const lookAheadEnd = new Date(targetDay + 'T12:00:00')
-  lookAheadEnd.setDate(lookAheadEnd.getDate() + 7)
-  const lookAheadEndStr = lookAheadEnd.toLocaleDateString('en-CA')
+  // gapStart: day after last completed review (or 7 days ago if no history)
+  // gapEnd: yesterday (the most recent day to review habits/data from)
+  const resolvedGapEnd   = gapEnd   ?? (() => { const d = new Date(today + 'T12:00:00'); d.setDate(d.getDate() - 1); return d.toLocaleDateString('en-CA') })()
+  const resolvedGapStart = gapStart ?? resolvedGapEnd  // single-day gap if no history
 
-  // Birthday window: any person whose MM-DD falls in today+1 through today+7
-  // We store birthday as YYYY-MM-DD so we extract month/day for comparison
+  const { gapDays, weekendDays, holidayDays } = analyzGap(resolvedGapStart, resolvedGapEnd)
+
+  // Plan for today (the day after gapEnd)
+  const planDay = new Date(resolvedGapEnd + 'T12:00:00')
+  planDay.setDate(planDay.getDate() + 1)
+  const tomorrowStr = planDay.toLocaleDateString('en-CA')
+  const weekEnd = new Date(tomorrowStr + 'T12:00:00')
+  weekEnd.setDate(weekEnd.getDate() + 6)
+  const weekEndStr = weekEnd.toLocaleDateString('en-CA')
+
+  // Birthday window from today+1 through today+7
   const birthdayWindow = []
-  for (let d = 1; d <= 7; d++) {
+  for (let i = 1; i <= 7; i++) {
     const dt = new Date(today + 'T12:00:00')
-    dt.setDate(dt.getDate() + d)
-    birthdayWindow.push({ monthDay: `${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`, date: dt.toLocaleDateString('en-CA'), daysOut: d })
+    dt.setDate(dt.getDate() + i)
+    birthdayWindow.push({ monthDay: `${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`, date: dt.toLocaleDateString('en-CA'), daysOut: i })
   }
 
-  const [projectsRes, activeTasksRes, inboxRes, notesRes, targetDayNoteRes, peopleRes] = await Promise.all([
-    supabase
-      .from('projects')
-      .select('id, title, status, area, priority, end_date, description')
-      .is('archived_at', null)
-      .not('status', 'eq', 'completed')
-      .order('updated_at', { ascending: false }),
-
-    supabase
-      .from('tasks')
-      .select('id, title, status, priority, due_date, project_id, projects(title)')
-      .in('status', ['next_action', 'waiting', 'scheduled', 'queued'])
-      .is('archived_at', null)
-      .order('updated_at', { ascending: false }),
-
-    supabase
-      .from('tasks')
-      .select('id, title')
-      .eq('status', 'inbox')
-      .is('archived_at', null)
-      .limit(20),
-
-    supabase
-      .from('daily_notes')
-      .select('date, notes, top_of_mind')
-      .order('date', { ascending: false })
-      .limit(30),
-
-    supabase.from('daily_notes').select('*').eq('date', targetDay).maybeSingle(),
-
-    supabase
-      .from('people')
-      .select('id, first_name, last_name, preferred_name, birthday')
-      .not('birthday', 'is', null)
-      .eq('status', 'active'),
+  const [projectsRes, activeTasksRes, inboxRes, notesRes, gapEndNoteRes, peopleRes, gapNotesRes] = await Promise.all([
+    supabase.from('projects').select('id, title, status, area, priority, end_date, description').is('archived_at', null).not('status', 'eq', 'completed').order('updated_at', { ascending: false }),
+    supabase.from('tasks').select('id, title, status, priority, due_date, project_id, projects(title)').in('status', ['next_action', 'waiting', 'scheduled', 'queued']).is('archived_at', null).order('updated_at', { ascending: false }),
+    supabase.from('tasks').select('id, title').eq('status', 'inbox').is('archived_at', null).limit(20),
+    supabase.from('daily_notes').select('date, notes, top_of_mind').order('date', { ascending: false }).limit(30),
+    supabase.from('daily_notes').select('*').eq('date', resolvedGapEnd).maybeSingle(),
+    supabase.from('people').select('id, first_name, last_name, preferred_name, birthday').not('birthday', 'is', null).eq('status', 'active'),
+    // Notes captured during the gap — may contain context about what happened
+    supabase.from('daily_notes').select('date, notes, top_of_mind').gte('date', resolvedGapStart).lte('date', resolvedGapEnd).order('date', { ascending: true }),
   ])
 
   const projects    = projectsRes.data    ?? []
   const activeTasks = activeTasksRes.data ?? []
   const inboxTasks  = inboxRes.data       ?? []
   const recentNotes = notesRes.data       ?? []
-  const todayNote   = targetDayNoteRes.data
+  const gapEndNote  = gapEndNoteRes.data
+  const gapNotes    = gapNotesRes.data    ?? []
 
   const allPeople = peopleRes.data ?? []
   const upcomingBirthdays = allPeople
@@ -117,33 +126,31 @@ export async function buildReflectContext({ reviewDate } = {}) {
 
   const activeProjectIds = new Set(activeTasks.filter(t => t.project_id).map(t => t.project_id))
   const stalledProjects  = projects.filter(p => p.status === 'in_progress' && !activeProjectIds.has(p.id))
+  const overdueTasks     = activeTasks.filter(t => t.due_date && t.due_date < resolvedGapEnd)
 
-  const overdueTasks = activeTasks.filter(t => t.due_date && t.due_date < targetDay)
-
-  const habits = todayNote ? {
-    morning_meds:    todayNote.habit_morning_meds,
-    evening_meds:    todayNote.habit_evening_meds,
-    journal:         todayNote.habit_journal,
-    meditation:      todayNote.habit_meditation,
-    breathwork:      todayNote.habit_breathwork,
-    stretching:      todayNote.habit_stretching,
-    health_tracking: todayNote.habit_health_tracking,
+  const habits = gapEndNote ? {
+    morning_meds:    gapEndNote.habit_morning_meds,
+    evening_meds:    gapEndNote.habit_evening_meds,
+    journal:         gapEndNote.habit_journal,
+    meditation:      gapEndNote.habit_meditation,
+    breathwork:      gapEndNote.habit_breathwork,
+    stretching:      gapEndNote.habit_stretching,
+    health_tracking: gapEndNote.habit_health_tracking,
   } : {}
 
-  // Plan for the next day after the reviewed day
-  const planDay = new Date(targetDay + 'T12:00:00')
-  planDay.setDate(planDay.getDate() + 1)
-  const tomorrowStr = planDay.toLocaleDateString('en-CA')
-  const weekEnd = new Date(tomorrowStr + 'T12:00:00')
-  weekEnd.setDate(weekEnd.getDate() + 6)
-  const weekEndStr = weekEnd.toLocaleDateString('en-CA')
-
-  const [calendarEvents, gmail] = await Promise.all([
+  const [calendarEvents, gapCalendarEvents, gmail] = await Promise.all([
     getCalendarEvents(tomorrowStr, weekEndStr),
+    resolvedGapStart !== resolvedGapEnd ? getCalendarEvents(resolvedGapStart, resolvedGapEnd) : Promise.resolve([]),
     getGmailContext(),
   ])
 
-  return { today: targetDay, tomorrowStr, weekEndStr, projects, activeTasks, inboxTasks, recentNotes, stalledProjects, overdueTasks, habits, calendarEvents, gmail, upcomingBirthdays }
+  return {
+    today: resolvedGapEnd, tomorrowStr, weekEndStr,
+    gapStart: resolvedGapStart, gapEnd: resolvedGapEnd, gapDays, weekendDays, holidayDays,
+    gapNotes, gapCalendarEvents,
+    projects, activeTasks, inboxTasks, recentNotes, stalledProjects, overdueTasks,
+    habits, calendarEvents, gmail, upcomingBirthdays,
+  }
 }
 
 // ─── Conversational Interview Turn ───────────────────────────────────────────
@@ -163,10 +170,21 @@ Rules:
 Respond with JSON only: { "message": "string", "ready": boolean }`
 
 export async function generateConversationalResponse(conversation, remainingTopics, dateContext = {}) {
-  const { reviewDate, planDate } = dateContext
-  const dateBlock = reviewDate
-    ? `DATE CONTEXT:\n- Reviewing day: ${reviewDate} (this is the day whose habits, tasks, and events you're discussing)\n- Planning for: ${planDate ?? 'tomorrow'} (this is the day the plan will be written to)\n- If the user asks what date you're looking at for habits, today's data, or anything date-related — answer using these dates.`
-    : ''
+  const { reviewDate, planDate, gapStart, gapDays, weekendDays = [], holidayDays = [] } = dateContext
+  const dateLines = []
+  if (reviewDate) {
+    dateLines.push(`DATE CONTEXT:`)
+    if (gapDays > 1) {
+      dateLines.push(`- Gap period: ${gapStart} through ${reviewDate} (${gapDays} days since last review)`)
+    } else {
+      dateLines.push(`- Reviewing day: ${reviewDate}`)
+    }
+    dateLines.push(`- Planning for: ${planDate ?? 'tomorrow'}`)
+    if (weekendDays.length > 0) dateLines.push(`- Weekend days in gap: ${weekendDays.join(', ')}`)
+    if (holidayDays.length > 0) dateLines.push(`- Holidays in gap: ${holidayDays.join(', ')}`)
+    dateLines.push(`- If the user asks what date/period you're reviewing, answer using this context.`)
+  }
+  const dateBlock = dateLines.join('\n')
 
   const topicBlock = remainingTopics.length > 0
     ? `REMAINING TOPICS TO COVER (weave in naturally — skip any already addressed):\n${remainingTopics.map((q, i) => `${i + 1}. ${q}`).join('\n')}`
@@ -187,22 +205,40 @@ export async function generateConversationalResponse(conversation, remainingTopi
 
 // ─── Generate Opening Questions ───────────────────────────────────────────────
 
-const QUESTIONS_SYSTEM = `You are the AI sidekick inside Focus Flow — part trusted co-pilot, part that friend who remembers everything and isn't afraid to ask the real question. Your job: run a real end-of-day check-in. Not a form, not a survey — a conversation.
+const QUESTIONS_SYSTEM = `You are the AI sidekick inside Focus Flow — part trusted co-pilot, part that friend who remembers everything and isn't afraid to ask the real question. Your job: run a real check-in covering everything since the last review. Not a form, not a survey — a conversation.
 
-Generate 4-5 interview questions for today's review. You have their projects, tasks, email queue, upcoming calendar, and recent notes — use them. Make it personal. Reference actual names. If something's been sitting in @Action email for a week, ask about it. If a project went quiet, poke at it. If tomorrow looks brutal on the calendar, acknowledge it.
+Generate 4-5 interview questions. You have their projects, tasks, email queue, upcoming calendar, recent notes, and — critically — context about how much time has passed since the last review. Use all of it. Make it personal. Reference actual names.
 
-Mix it up: some practical ("did the thing with X actually happen?"), some reflective, one that catches them off guard in a good way. Keep it human — the kind of question a sharp friend asks, not a manager running a quarterly review.
+If the gap includes a weekend or holiday, acknowledge it naturally — "How was the weekend?", "Did you do anything fun over Christmas?" — before diving into work stuff.
+If the gap is multiple days, ask about the period as a whole, not just the last day.
+If something's been sitting in @Action email for a week, ask about it. If a project went quiet, poke at it. If tomorrow looks packed, acknowledge it.
 
-Last question always checks in on energy and headspace going into tomorrow. That one matters.
+Mix it up: some practical, some reflective, one that catches them off guard in a good way. Keep it human.
+
+Last question always checks in on energy and headspace going into the next day. That one matters.
 
 Respond with valid JSON only: { "questions": ["string", ...] }`
 
 export async function generateReflectQuestions(ctx) {
-  const { today, tomorrowStr, weekEndStr, projects, activeTasks, stalledProjects, overdueTasks, habits, recentNotes, calendarEvents = [], gmail = {}, upcomingBirthdays = [] } = ctx
+  const { today, tomorrowStr, weekEndStr, gapStart, gapEnd, gapDays, weekendDays, holidayDays, gapNotes = [], gapCalendarEvents = [], projects, activeTasks, stalledProjects, overdueTasks, habits, recentNotes, calendarEvents = [], gmail = {}, upcomingBirthdays = [] } = ctx
   const lines = []
 
-  lines.push(`TODAY: ${today}  |  PLANNING FOR: ${tomorrowStr}  |  LOOKAHEAD THROUGH: ${weekEndStr}`)
+  lines.push(`REVIEWING: ${gapStart}${gapStart !== gapEnd ? ` through ${gapEnd}` : ''} (${gapDays} day${gapDays !== 1 ? 's' : ''} since last review)  |  PLANNING FOR: ${tomorrowStr}  |  LOOKAHEAD THROUGH: ${weekEndStr}`)
+  if (weekendDays.length > 0) lines.push(`WEEKEND DAYS IN GAP: ${weekendDays.join(', ')}`)
+  if (holidayDays.length > 0) lines.push(`HOLIDAYS IN GAP: ${holidayDays.join(', ')}`)
   lines.push('')
+  if (gapCalendarEvents.length > 0) {
+    lines.push('EVENTS THAT HAPPENED DURING THE GAP:')
+    gapCalendarEvents.forEach(e => lines.push(`- [${e.date ?? ''}] ${e.summary}`))
+    lines.push('')
+  }
+  if (gapNotes.some(n => n.notes?.length > 0)) {
+    lines.push('NOTES CAPTURED DURING THE GAP:')
+    gapNotes.filter(n => n.notes?.length > 0).forEach(n => {
+      lines.push(`[${n.date}] ${n.notes.map(e => e.body).join(' | ')}`)
+    })
+    lines.push('')
+  }
   lines.push('ACTIVE PROJECTS:')
   projects.slice(0, 8).forEach(p => {
     lines.push(`- [${p.status}] ${p.title}${p.end_date ? ` (due ${p.end_date})` : ''}`)
@@ -226,7 +262,7 @@ export async function generateReflectQuestions(ctx) {
   const missedHabits    = Object.entries(habits).filter(([, v]) => !v).map(([k]) => k.replace(/_/g, ' '))
   if (completedHabits.length || missedHabits.length) {
     lines.push('')
-    lines.push("TODAY'S HABITS:")
+    lines.push(`HABITS ON ${gapEnd}:`)
     if (completedHabits.length) lines.push(`Completed: ${completedHabits.join(', ')}`)
     if (missedHabits.length)    lines.push(`Missed: ${missedHabits.join(', ')}`)
   }
@@ -264,7 +300,7 @@ export async function generateReflectQuestions(ctx) {
   }
 
   lines.push('')
-  lines.push('Generate 4-5 personalized interview questions. Reference actual names, email threads, and calendar events where relevant. Last question is always about energy and headspace going into tomorrow.')
+  lines.push(`Generate 4-5 personalized interview questions covering the ${gapDays}-day gap. If the gap includes weekend/holiday days, start with a warm personal question about that before getting into work. Reference actual names, email threads, and calendar events. Last question is always about energy and headspace.`)
 
   const messages = [
     { role: 'system', content: QUESTIONS_SYSTEM },
