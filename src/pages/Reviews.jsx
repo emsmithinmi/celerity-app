@@ -141,6 +141,13 @@ function ClarifyTaskRow({ task }) {
     area:        task.area        ?? '',
   })
 
+  const rowRef = useRef(null)
+  useEffect(() => {
+    if (prompt === 'clarify') {
+      setTimeout(() => rowRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80)
+    }
+  }, [prompt])
+
   const resolve = async (fn, label) => {
     setSaving(true)
     try { await fn() } finally { setSaving(false) }
@@ -180,7 +187,7 @@ function ClarifyTaskRow({ task }) {
   const status = task.status
 
   return (
-    <div className="rounded-lg border mb-1.5 overflow-hidden" style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)' }}>
+    <div ref={rowRef} className="rounded-lg border mb-1.5 overflow-hidden" style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)' }}>
       <div className="flex items-center gap-2 px-3 pt-2.5 pb-1.5">
         <span className="flex-1 text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{task.title}</span>
         {task.due_date && <span className="text-xs shrink-0" style={{ color: 'var(--accent-yellow)' }}>{task.due_date}</span>}
@@ -215,7 +222,6 @@ function ClarifyTaskRow({ task }) {
         <div
           className="px-3 pb-3 space-y-2 rounded-b-lg"
           style={{ backgroundColor: 'var(--card-task-bg)', borderTop: '1px solid var(--border)' }}
-          ref={el => el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })}
         >
           <p className="text-xs font-semibold pt-2" style={{ color: 'var(--accent)' }}>⚡ Put me in coach — fill in the details</p>
           <textarea
