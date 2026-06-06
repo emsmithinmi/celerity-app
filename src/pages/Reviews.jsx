@@ -173,7 +173,7 @@ function ClarifyTaskRow({ task }) {
     }), 'Next Action')
     setPrompt(null)
   }
-  const clarifyReady = clarifyFields.priority && clarifyFields.energy_level && clarifyFields.duration && clarifyFields.area
+  const clarifyReady = clarifyFields.priority && clarifyFields.energy_level
 
   if (resolved) {
     return (
