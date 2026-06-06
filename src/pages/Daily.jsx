@@ -401,22 +401,15 @@ export default function Daily() {
         />
 
 
-        {/* Review buttons */}
-        <div className="flex gap-3 flex-wrap justify-center pb-4">
-          {[
-            { label: '📋 Daily Review',   to: '/reviews/daily'   },
-            { label: '📅 Weekly Review',  to: '/reviews/weekly'  },
-            { label: '📆 Monthly Review', to: '/reviews/monthly' },
-          ].map(({ label, to }) => (
-            <Button
-              key={to}
-              variant="action"
-              size="sm"
-              onClick={() => navigate(to)}
-            >
-              {label}
-            </Button>
-          ))}
+        {/* Review button */}
+        <div className="flex justify-center pb-4">
+          <Button
+            variant="action"
+            onClick={() => navigate('/reviews/daily')}
+            style={{ padding: '0.625rem 2.5rem', fontSize: '1rem' }}
+          >
+            📋 Daily Review
+          </Button>
         </div>
       </div>
 
