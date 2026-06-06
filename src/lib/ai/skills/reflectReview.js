@@ -1,7 +1,7 @@
 ﻿import { supabase } from '../../supabase'
 import { callAI } from '../client'
 import { ensureNoteForDate, updateTopOfMind, updateAgenda, updateChallenge, updateQuote } from '../../api/daily'
-import { updateSuggestions } from '../../api/reviews'
+import { updateSuggestions, updateReviewSummary } from '../../api/reviews'
 
 async function getSessionToken() {
   const { data: { session } } = await supabase.auth.getSession()
@@ -95,7 +95,7 @@ export async function buildReflectContext({ gapStart, gapEnd } = {}) {
     birthdayWindow.push({ monthDay: `${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`, date: dt.toLocaleDateString('en-CA'), daysOut: i })
   }
 
-  const [projectsRes, activeTasksRes, inboxRes, notesRes, gapEndNoteRes, peopleRes, gapNotesRes] = await Promise.all([
+  const [projectsRes, activeTasksRes, inboxRes, notesRes, gapEndNoteRes, peopleRes, gapNotesRes, memoriesRes] = await Promise.all([
     supabase.from('projects').select('id, title, status, area, priority, end_date, description').is('archived_at', null).not('status', 'eq', 'completed').order('updated_at', { ascending: false }),
     supabase.from('tasks').select('id, title, status, priority, due_date, project_id, projects(title)').in('status', ['next_action', 'waiting', 'scheduled', 'queued']).is('archived_at', null).order('updated_at', { ascending: false }),
     supabase.from('tasks').select('id, title').eq('status', 'inbox').is('archived_at', null).limit(20),
@@ -104,6 +104,8 @@ export async function buildReflectContext({ gapStart, gapEnd } = {}) {
     supabase.from('people').select('id, first_name, last_name, preferred_name, birthday').not('birthday', 'is', null).eq('status', 'active'),
     // Notes captured during the gap — may contain context about what happened
     supabase.from('daily_notes').select('date, notes, top_of_mind').gte('date', resolvedGapStart).lte('date', resolvedGapEnd).order('date', { ascending: true }),
+    // Past review summaries for persistent memory (last 20, excluding today's gap)
+    supabase.from('reviews').select('date, summary').eq('type', 'daily').not('summary', 'is', null).lt('date', resolvedGapStart).order('date', { ascending: false }).limit(20),
   ])
 
   const projects    = projectsRes.data    ?? []
@@ -111,7 +113,8 @@ export async function buildReflectContext({ gapStart, gapEnd } = {}) {
   const inboxTasks  = inboxRes.data       ?? []
   const recentNotes = notesRes.data       ?? []
   const gapEndNote  = gapEndNoteRes.data
-  const gapNotes    = gapNotesRes.data    ?? []
+  const gapNotes      = gapNotesRes.data  ?? []
+  const recentMemories = memoriesRes.data ?? []
 
   const allPeople = peopleRes.data ?? []
   const upcomingBirthdays = allPeople
@@ -147,7 +150,7 @@ export async function buildReflectContext({ gapStart, gapEnd } = {}) {
   return {
     today: resolvedGapEnd, tomorrowStr, weekEndStr,
     gapStart: resolvedGapStart, gapEnd: resolvedGapEnd, gapDays, weekendDays, holidayDays,
-    gapNotes, gapCalendarEvents,
+    gapNotes, gapCalendarEvents, recentMemories,
     projects, activeTasks, inboxTasks, recentNotes, stalledProjects, overdueTasks,
     habits, calendarEvents, gmail, upcomingBirthdays,
   }
@@ -170,7 +173,7 @@ Rules:
 Respond with JSON only: { "message": "string", "ready": boolean }`
 
 export async function generateConversationalResponse(conversation, remainingTopics, dateContext = {}) {
-  const { reviewDate, planDate, gapStart, gapDays, weekendDays = [], holidayDays = [] } = dateContext
+  const { reviewDate, planDate, gapStart, gapDays, weekendDays = [], holidayDays = [], recentMemories = [] } = dateContext
   const dateLines = []
   if (reviewDate) {
     dateLines.push(`DATE CONTEXT:`)
@@ -183,6 +186,19 @@ export async function generateConversationalResponse(conversation, remainingTopi
     if (weekendDays.length > 0) dateLines.push(`- Weekend days in gap: ${weekendDays.join(', ')}`)
     if (holidayDays.length > 0) dateLines.push(`- Holidays in gap: ${holidayDays.join(', ')}`)
     dateLines.push(`- If the user asks what date/period you're reviewing, answer using this context.`)
+  }
+  if (recentMemories.length > 0) {
+    dateLines.push('')
+    dateLines.push('PAST REVIEW MEMORY (use to notice patterns, follow up on things, acknowledge progress — but don\'t lecture):')
+    recentMemories.slice(0, 10).forEach(m => {
+      if (!m.summary) return
+      try {
+        const parsed = JSON.parse(m.summary)
+        dateLines.push(`[${m.date}] ${parsed.summary ?? m.summary}`)
+      } catch {
+        dateLines.push(`[${m.date}] ${m.summary}`)
+      }
+    })
   }
   const dateBlock = dateLines.join('\n')
 
@@ -220,7 +236,7 @@ Last question always checks in on energy and headspace going into the next day. 
 Respond with valid JSON only: { "questions": ["string", ...] }`
 
 export async function generateReflectQuestions(ctx) {
-  const { today, tomorrowStr, weekEndStr, gapStart, gapEnd, gapDays, weekendDays, holidayDays, gapNotes = [], gapCalendarEvents = [], projects, activeTasks, stalledProjects, overdueTasks, habits, recentNotes, calendarEvents = [], gmail = {}, upcomingBirthdays = [] } = ctx
+  const { today, tomorrowStr, weekEndStr, gapStart, gapEnd, gapDays, weekendDays, holidayDays, gapNotes = [], gapCalendarEvents = [], recentMemories = [], projects, activeTasks, stalledProjects, overdueTasks, habits, recentNotes, calendarEvents = [], gmail = {}, upcomingBirthdays = [] } = ctx
   const lines = []
 
   lines.push(`REVIEWING: ${gapStart}${gapStart !== gapEnd ? ` through ${gapEnd}` : ''} (${gapDays} day${gapDays !== 1 ? 's' : ''} since last review)  |  PLANNING FOR: ${tomorrowStr}  |  LOOKAHEAD THROUGH: ${weekEndStr}`)
@@ -299,8 +315,15 @@ export async function generateReflectQuestions(ctx) {
     waitingThreads.forEach(t => lines.push(`- "${t.subject}" (${t.age_days}d waiting)`))
   }
 
+  if (recentMemories.length > 0) {
+    lines.push('')
+    lines.push('PAST REVIEW MEMORY (use this to notice patterns, follow up on unresolved things, or acknowledge progress):')
+    recentMemories.forEach(m => {
+      if (m.summary) lines.push(`[${m.date}] ${m.summary}`)
+    })
+  }
   lines.push('')
-  lines.push(`Generate 4-5 personalized interview questions covering the ${gapDays}-day gap. If the gap includes weekend/holiday days, start with a warm personal question about that before getting into work. Reference actual names, email threads, and calendar events. Last question is always about energy and headspace.`)
+  lines.push(`Generate 4-5 personalized interview questions covering the ${gapDays}-day gap. If the gap includes weekend/holiday days, start with a warm personal question about that before getting into work. Reference actual names, email threads, calendar events, and past review memory where relevant. Last question is always about energy and headspace.`)
 
   const messages = [
     { role: 'system', content: QUESTIONS_SYSTEM },
@@ -341,7 +364,7 @@ Tone: warm, a little wit, zero filler. You stayed up to do your homework — mak
 Respond with valid JSON only — no markdown, no preamble.`
 
 export async function generateReflectPlan(ctx, conversation, scratchpadNote) {
-  const { today, tomorrowStr, weekEndStr, projects, activeTasks, stalledProjects, recentNotes, calendarEvents = [], gmail = {}, upcomingBirthdays = [] } = ctx
+  const { today, tomorrowStr, weekEndStr, projects, activeTasks, stalledProjects, recentNotes, recentMemories = [], calendarEvents = [], gmail = {}, upcomingBirthdays = [] } = ctx
   const lines = []
 
   lines.push(`TODAY: ${today}  |  PLANNING FOR: ${tomorrowStr}  |  LOOKAHEAD THROUGH: ${weekEndStr}`)
@@ -404,6 +427,22 @@ export async function generateReflectPlan(ctx, conversation, scratchpadNote) {
     lines.push('RECENT NOTES (memory):')
     notesWithContent.forEach(n => lines.push(`[${n.date}] ${n.notes.map(e => e.body).join(' | ')}`))
   }
+  if (recentMemories.length > 0) {
+    lines.push('')
+    lines.push('PAST REVIEW MEMORY (patterns, prior commitments, ongoing struggles — use for continuity):')
+    recentMemories.slice(0, 10).forEach(m => {
+      if (!m.summary) return
+      try {
+        const parsed = JSON.parse(m.summary)
+        const parts = [parsed.summary]
+        if (parsed.commitments?.length) parts.push(`Committed to: ${parsed.commitments.join(', ')}`)
+        if (parsed.struggles?.length)   parts.push(`Struggling with: ${parsed.struggles.join(', ')}`)
+        lines.push(`[${m.date}] ${parts.join(' | ')}`)
+      } catch {
+        lines.push(`[${m.date}] ${m.summary}`)
+      }
+    })
+  }
   lines.push('')
   lines.push(`Respond with this JSON:
 {
@@ -433,9 +472,46 @@ Rules:
   return JSON.parse(cleaned)
 }
 
+// ─── Summarize conversation for persistent memory ─────────────────────────────
+
+const SUMMARY_SYSTEM = `You are summarizing a review conversation from a personal productivity app. Extract a dense, useful memory that will help an AI assistant remember what this person was dealing with, how they were feeling, and what they said they'd do.
+
+Be factual and specific — use real names, project names, and dates mentioned. Skip pleasantries and filler. Write in third person past tense ("User mentioned...", "Was feeling...", "Committed to...").
+
+Respond with valid JSON only:
+{
+  "summary": "2-4 sentence plain-text summary of the key points, mood, and commitments from this review",
+  "themes": ["theme1", "theme2"],
+  "energy": "high | medium | low | unknown",
+  "wins": ["string"],
+  "struggles": ["string"],
+  "commitments": ["thing they said they'd do"],
+  "people_mentioned": ["names"]
+}`
+
+export async function summarizeReviewConversation(conversation, reviewDate) {
+  if (!conversation || conversation.length < 3) return null
+  try {
+    const transcript = conversation
+      .map(m => `${m.role === 'ai' ? 'Coach' : 'User'}: ${m.content}`)
+      .join('\n')
+    const messages = [
+      { role: 'system', content: SUMMARY_SYSTEM },
+      { role: 'user', content: `Review date: ${reviewDate}\n\nCONVERSATION:\n${transcript}` },
+    ]
+    const raw = await callAI(messages, { temperature: 0.3 })
+    const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
+    const parsed = JSON.parse(cleaned)
+    // Store the full structured object as the summary string (compact JSON — readable and queryable)
+    return JSON.stringify(parsed)
+  } catch {
+    return null
+  }
+}
+
 // ─── Write Results to DB ──────────────────────────────────────────────────────
 
-export async function writeReflectResults(reviewId, result, targetDate = null) {
+export async function writeReflectResults(reviewId, result, conversation = [], reviewDate = null, targetDate = null) {
   let tomorrowStr
   if (targetDate) {
     tomorrowStr = targetDate
@@ -445,17 +521,20 @@ export async function writeReflectResults(reviewId, result, targetDate = null) {
     tomorrowStr = tomorrow.toLocaleDateString('en-CA')
   }
 
+  const resolvedReviewDate = reviewDate ?? new Date().toLocaleDateString('en-CA')
   const tomorrowNote = await ensureNoteForDate(tomorrowStr)
 
-  await Promise.all([
-    result.top_of_mind?.length > 0          && updateTopOfMind(tomorrowNote.id, result.top_of_mind),
-    result.agenda?.length > 0               && updateAgenda(tomorrowNote.id, result.agenda),
-    result.challenge                         && updateChallenge(tomorrowNote.id, result.challenge),
-    result.quote?.text                       && updateQuote(tomorrowNote.id, result.quote.text, result.quote.author),
-  ].filter(Boolean))
+  // Run daily note writes and memory summarization in parallel
+  const [summary] = await Promise.all([
+    summarizeReviewConversation(conversation, resolvedReviewDate),
+    result.top_of_mind?.length > 0 && updateTopOfMind(tomorrowNote.id, result.top_of_mind),
+    result.agenda?.length > 0      && updateAgenda(tomorrowNote.id, result.agenda),
+    result.challenge               && updateChallenge(tomorrowNote.id, result.challenge),
+    result.quote?.text             && updateQuote(tomorrowNote.id, result.quote.text, result.quote.author),
+  ])
 
   const suggestions = [
-    ...( result.suggestions ?? []).map(s => ({ ...s, id: crypto.randomUUID(), status: 'pending' })),
+    ...(result.suggestions ?? []).map(s => ({ ...s, id: crypto.randomUUID(), status: 'pending' })),
     result.quote && {
       type: 'insight',
       content: `Quote for tomorrow: "${result.quote.text}" — ${result.quote.author}`,
@@ -464,7 +543,10 @@ export async function writeReflectResults(reviewId, result, targetDate = null) {
     },
   ].filter(Boolean)
 
-  if (reviewId) await updateSuggestions(reviewId, suggestions)
+  if (reviewId) {
+    await updateSuggestions(reviewId, suggestions)
+    if (summary) updateReviewSummary(reviewId, summary).catch(() => {})  // fire-and-forget, non-blocking
+  }
 
   return { tomorrowStr, suggestions, result }
 }

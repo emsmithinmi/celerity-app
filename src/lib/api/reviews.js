@@ -72,6 +72,14 @@ export async function completeReview(id) {
   return data
 }
 
+export async function updateReviewSummary(id, summary) {
+  const { error } = await supabase
+    .from('reviews')
+    .update({ summary, updated_at: new Date().toISOString() })
+    .eq('id', id)
+  if (error) throw error
+}
+
 export async function updateSuggestions(id, suggestions) {
   const { data, error } = await supabase
     .from('reviews')

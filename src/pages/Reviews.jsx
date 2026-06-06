@@ -853,7 +853,7 @@ function ReflectSection({ review, locked, onSaveState, targetDate, gapStart, gap
     setGenerating(true)
     try {
       const result = await generateReflectPlan(activeCtx, activeConv, '')
-      const { suggestions: newSuggestions } = await writeReflectResults(review.id, result, targetDate)
+      const { suggestions: newSuggestions } = await writeReflectResults(review.id, result, activeConv, ctx?.today ?? null, targetDate)
       if (!mountedRef.current) return
       setSuggestions(newSuggestions)
       setShowSuggestions(true)
@@ -892,7 +892,12 @@ function ReflectSection({ review, locked, onSaveState, targetDate, gapStart, gap
     const remainingTopics = questions.slice(nextIndex)
 
     setTyping(true)
-    const dateContext = ctx ? { reviewDate: ctx.today, planDate: ctx.tomorrowStr, gapStart: ctx.gapStart, gapDays: ctx.gapDays, weekendDays: ctx.weekendDays, holidayDays: ctx.holidayDays } : {}
+    const dateContext = ctx ? {
+      reviewDate: ctx.today, planDate: ctx.tomorrowStr,
+      gapStart: ctx.gapStart, gapDays: ctx.gapDays,
+      weekendDays: ctx.weekendDays, holidayDays: ctx.holidayDays,
+      recentMemories: ctx.recentMemories,
+    } : {}
     try {
       const { message, ready } = await generateConversationalResponse(newConversation, remainingTopics, dateContext)
       if (!mountedRef.current) return
