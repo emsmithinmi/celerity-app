@@ -506,65 +506,57 @@ export default function TaskPage() {
           </section>
 
           {/* Action bar */}
-          {!isDone && (
-            <section className="pb-6">
-              <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>What's Next?</h2>
-              <div className="flex flex-wrap gap-2">
-                {task.status === 'inbox' && (
-                  <>
-                    <Button variant="danger" size="sm" onClick={() => setShowDidIt(true)}>{TASK_ACTIONS.did_it}</Button>
-                    {clarified && (
-                      <>
-                        {hasProject
-                          ? <Button variant="success" size="sm" onClick={handleQueue}>{TASK_ACTIONS.queue}</Button>
-                          : <>
-                              <Button variant="success"   size="sm" onClick={handleClarifyRoute}>{TASK_ACTIONS.next_action}</Button>
-                              <Button variant="secondary" size="sm" onClick={() => setShowRoute(true)}>Assign to Project →</Button>
-                            </>
-                        }
-                      </>
-                    )}
-                    <span className="ml-auto"><TrashBtn onClick={() => setShowDiscard(true)} /></span>
-                  </>
-                )}
-                {task.status === 'next_action' && (
-                  <>
-                    <Button variant="success"   size="sm" onClick={handleComplete}>{TASK_ACTIONS.complete}</Button>
-                    <Button variant="danger"    size="sm" onClick={() => setShowWaiting(true)}>{TASK_ACTIONS.waiting}</Button>
-                    {hasProject  && <Button variant="secondary" size="sm" onClick={handleQueue}>{TASK_ACTIONS.queue}</Button>}
-                    {!hasProject && <Button variant="secondary" size="sm" onClick={() => setShowRoute(true)}>Assign to Project →</Button>}
-                    <Button variant="ghost" size="sm" onClick={handleSomeday}>{TASK_ACTIONS.someday}</Button>
-                  </>
-                )}
-                {task.status === 'queued' && (
-                  <Button variant="success" size="sm" onClick={handleNextAction}>{TASK_ACTIONS.next_action}</Button>
-                )}
-                {task.status === 'waiting' && (
-                  <Button variant="success" size="sm" onClick={handleClearWaiting}>Clear Blocker</Button>
-                )}
-                {task.status === 'scheduled' && (
-                  <>
-                    <Button variant="success"   size="sm" onClick={handleComplete}>{TASK_ACTIONS.complete}</Button>
-                    <Button variant="secondary" size="sm" onClick={handleNextAction}>{TASK_ACTIONS.next_action}</Button>
-                  </>
-                )}
-                {task.status === 'someday' && (
-                  <>
-                    <Button variant="success" size="sm" onClick={handleNextAction}>{TASK_ACTIONS.next_action}</Button>
-                    <Button variant="ghost"   size="sm" onClick={() => setShowDiscard(true)}>{TASK_ACTIONS.discard}</Button>
-                  </>
-                )}
-              </div>
-            </section>
-          )}
-
-          {isDone && !task.is_highlight && (
-            <section className="pb-6">
-              <Button variant="secondary" size="sm" onClick={() => setShowHighlight(true)}>
-                ⭐ Add to Highlights
-              </Button>
-            </section>
-          )}
+          <section className="pb-6">
+            <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>What's Next?</h2>
+            <div className="flex flex-wrap gap-2 items-center">
+              {task.status === 'inbox' && (
+                <>
+                  <Button variant="danger" size="sm" onClick={() => setShowDidIt(true)}>{TASK_ACTIONS.did_it}</Button>
+                  {clarified && (
+                    <>
+                      {hasProject
+                        ? <Button variant="success" size="sm" onClick={handleQueue}>{TASK_ACTIONS.queue}</Button>
+                        : <>
+                            <Button variant="success"   size="sm" onClick={handleClarifyRoute}>{TASK_ACTIONS.next_action}</Button>
+                            <Button variant="secondary" size="sm" onClick={() => setShowRoute(true)}>Assign to Project →</Button>
+                          </>
+                      }
+                    </>
+                  )}
+                </>
+              )}
+              {task.status === 'next_action' && (
+                <>
+                  <Button variant="success"   size="sm" onClick={handleComplete}>{TASK_ACTIONS.complete}</Button>
+                  <Button variant="danger"    size="sm" onClick={() => setShowWaiting(true)}>{TASK_ACTIONS.waiting}</Button>
+                  {hasProject  && <Button variant="secondary" size="sm" onClick={handleQueue}>{TASK_ACTIONS.queue}</Button>}
+                  {!hasProject && <Button variant="secondary" size="sm" onClick={() => setShowRoute(true)}>Assign to Project →</Button>}
+                  <Button variant="ghost" size="sm" onClick={handleSomeday}>{TASK_ACTIONS.someday}</Button>
+                </>
+              )}
+              {task.status === 'queued' && (
+                <Button variant="success" size="sm" onClick={handleNextAction}>{TASK_ACTIONS.next_action}</Button>
+              )}
+              {task.status === 'waiting' && (
+                <Button variant="success" size="sm" onClick={handleClearWaiting}>Clear Blocker</Button>
+              )}
+              {task.status === 'scheduled' && (
+                <>
+                  <Button variant="success"   size="sm" onClick={handleComplete}>{TASK_ACTIONS.complete}</Button>
+                  <Button variant="secondary" size="sm" onClick={handleNextAction}>{TASK_ACTIONS.next_action}</Button>
+                </>
+              )}
+              {task.status === 'someday' && (
+                <Button variant="success" size="sm" onClick={handleNextAction}>{TASK_ACTIONS.next_action}</Button>
+              )}
+              {isDone && !task.is_highlight && (
+                <Button variant="secondary" size="sm" onClick={() => setShowHighlight(true)}>
+                  ⭐ Add to Highlights
+                </Button>
+              )}
+              <span className="ml-auto"><TrashBtn onClick={() => setShowDiscard(true)} /></span>
+            </div>
+          </section>
         </div>
       </div>
 
