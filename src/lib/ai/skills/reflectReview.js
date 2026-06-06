@@ -2,6 +2,7 @@
 import { callAI } from '../client'
 import { ensureNoteForDate, updateTopOfMind, updateAgenda, updateChallenge, updateQuote } from '../../api/daily'
 import { updateSuggestions, updateReviewSummary } from '../../api/reviews'
+import { cleanupExpiredDoneTasks } from '../../api/tasks'
 
 async function getSessionToken() {
   const { data: { session } } = await supabase.auth.getSession()
@@ -539,6 +540,9 @@ export async function writeReflectResults(reviewId, result, conversation = [], r
     await updateSuggestions(reviewId, suggestions)
     if (summary) updateReviewSummary(reviewId, summary).catch(() => {})  // fire-and-forget, non-blocking
   }
+
+  // Housekeeping — delete done tasks older than 30 days. Non-blocking.
+  cleanupExpiredDoneTasks().catch(() => {})
 
   return { tomorrowStr, suggestions, result }
 }

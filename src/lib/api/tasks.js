@@ -164,6 +164,19 @@ export async function permanentDeleteTask(id) {
   if (error) throw error
 }
 
+export async function cleanupExpiredDoneTasks() {
+  // Delete done tasks whose 30-day window has passed. Fire-and-forget safe.
+  const cutoff = new Date()
+  cutoff.setDate(cutoff.getDate() - 30)
+  const { error } = await supabase
+    .from('tasks')
+    .delete()
+    .eq('status', 'done')
+    .not('completed_at', 'is', null)
+    .lt('completed_at', cutoff.toISOString())
+  if (error) console.warn('cleanupExpiredDoneTasks:', error.message)
+}
+
 export async function highlightTask(id, highlightNote) {
   return updateTask(id, {
     is_highlight: true,

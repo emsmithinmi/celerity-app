@@ -4,6 +4,13 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-06 (Session 14 cont. 5)
+
+### Added
+- **Auto-delete housekeeping** — when the AI generates tomorrow's plan (`writeReflectResults`), it now silently deletes any `done` tasks whose `completed_at` is older than 30 days. Fire-and-forget, non-blocking. Archived and highlighted tasks are untouched.
+
+---
+
 ## 2026-06-06 (Session 14 cont. 4)
 
 ### Added
