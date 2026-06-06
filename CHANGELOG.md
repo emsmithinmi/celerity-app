@@ -4,6 +4,22 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-06 (Session 14 cont. 4)
+
+### Added
+- **Task Completion Flow** — clicking any "Done/Did It/Complete" button now opens a completion modal instead of instantly acting. The modal has:
+  - Optional completion note (saved to task comments)
+  - **Archive** checkbox — sets status to `archived`, kept as a permanent record, never auto-deleted
+  - **Highlight** checkbox — marks as a notable win with an optional "why" note; expands inline when checked
+  - Auto-delete warning — shown when neither box is checked, noting the task will be deleted in 30 days
+- **What's Next for done/archived tasks** — TaskPage now shows three actions for completed tasks: ⭐ Add to Highlights, 📁 Archive (done → archived), 🗑 Permanently Delete
+- **`completeTaskWithOptions()`** — new API function handling the full completion flow (comment, archive, highlight) in one call
+- **`archiveTask()` / `permanentDeleteTask()`** — new API helpers for post-completion actions
+- **DB migration** — added `completed_at timestamptz` to tasks (backfilled from `updated_at` for existing done tasks); dropped stale status check constraint to allow `archived` status
+- **Reviews Clarify section** — "Did It" buttons in ClarifyTaskRow now open the completion modal instead of immediately marking done
+
+---
+
 ## 2026-06-06 (Session 14 cont. 3)
 
 ### Changed

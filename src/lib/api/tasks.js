@@ -120,7 +120,48 @@ export async function clearWaiting(id) {
 }
 
 export async function completeTask(id) {
-  return updateTask(id, { status: 'done' })
+  return updateTask(id, { status: 'done', completed_at: new Date().toISOString() })
+}
+
+/**
+ * Full completion flow — handles comment, archive flag, and highlight flag.
+ * { comment, archive, highlight, highlightNote }
+ * - archive:   status = 'archived' (kept permanently)
+ * - highlight: is_highlight = true + highlight_note
+ * - neither:   status = 'done' + completed_at (30-day auto-delete)
+ */
+export async function completeTaskWithOptions(id, { comment, archive, highlight, highlightNote }) {
+  const updates = { completed_at: new Date().toISOString() }
+
+  if (archive) {
+    updates.status = 'archived'
+  } else {
+    updates.status = 'done'
+  }
+
+  if (highlight) {
+    updates.is_highlight    = true
+    updates.highlighted_at  = new Date().toISOString()
+    updates.highlight_note  = highlightNote ?? null
+  }
+
+  await updateTask(id, updates)
+
+  if (comment) {
+    await addTaskComment(id, comment)
+  }
+
+  return getTask(id)
+}
+
+export async function archiveTask(id) {
+  return updateTask(id, { status: 'archived' })
+}
+
+export async function permanentDeleteTask(id) {
+  // Hard delete — cascade handled by DB foreign keys
+  const { error } = await supabase.from('tasks').delete().eq('id', id)
+  if (error) throw error
 }
 
 export async function highlightTask(id, highlightNote) {

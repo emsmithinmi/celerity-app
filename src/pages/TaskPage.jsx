@@ -1,7 +1,7 @@
 ﻿import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
-  getTask, updateTask, completeTask, didIt,
+  getTask, updateTask, completeTaskWithOptions, archiveTask, permanentDeleteTask,
   moveToNextAction, moveToQueued, moveToWaiting,
   clearWaiting, highlightTask, clarifyTask, getAllContextTags,
 } from '../lib/api/tasks'
@@ -13,6 +13,7 @@ import DurationInput from '../components/tasks/DurationInput'
 import { formatDuration } from '../components/ui/DurationDisplay'
 import WaitingModal from '../components/tasks/WaitingModal'
 import HighlightModal from '../components/tasks/HighlightModal'
+import TaskCompletionModal from '../components/tasks/TaskCompletionModal'
 import RouteModal from '../components/tasks/RouteModal'
 import TaskComments from '../components/tasks/TaskComments'
 import TaskChecklist from '../components/tasks/TaskChecklist'
@@ -53,11 +54,11 @@ export default function TaskPage() {
   const [saving,    setSaving]    = useState(false)
   const [saveError, setSaveError] = useState(null)
 
-  const [showWaiting,   setShowWaiting]   = useState(false)
-  const [showHighlight, setShowHighlight] = useState(false)
-  const [showRoute,     setShowRoute]     = useState(false)
-  const [showDidIt,     setShowDidIt]     = useState(false)
-  const [showDiscard,   setShowDiscard]   = useState(false)
+  const [showWaiting,    setShowWaiting]    = useState(false)
+  const [showHighlight,  setShowHighlight]  = useState(false)
+  const [showCompletion, setShowCompletion] = useState(false)
+  const [showRoute,      setShowRoute]      = useState(false)
+  const [showDiscard,    setShowDiscard]    = useState(false)
   const [allTags,       setAllTags]       = useState([])
   const [tagInput,      setTagInput]      = useState('')
 
@@ -108,9 +109,11 @@ export default function TaskPage() {
     </div>
   )
 
-  const clarified  = isClarified(task)
-  const hasProject = !!task.project_id
-  const isDone     = task.status === 'done'
+  const clarified   = isClarified(task)
+  const hasProject  = !!task.project_id
+  const isDone      = task.status === 'done'
+  const isArchived  = task.status === 'archived'
+  const isCompleted = isDone || isArchived
 
   const startEdit  = () => { setDraft({ ...task }); setEditing(true) }
   const cancelEdit = () => { setDraft(null); setEditing(false) }
@@ -141,15 +144,16 @@ export default function TaskPage() {
     }
   }
 
-  const handleComplete = async () => {
-    await completeTask(task.id)
+  const handleCompletion = async ({ comment, archive, highlight, highlightNote }) => {
+    const updated = await completeTaskWithOptions(task.id, { comment, archive, highlight, highlightNote })
     if (task.project_id) await checkProjectStalled(task.project_id)
-    setTask(prev => ({ ...prev, status: 'done' }))
-    setShowHighlight(true)
+    setTask(prev => ({ ...prev, ...updated }))
+    setShowCompletion(false)
   }
 
-  const handleDidIt     = async () => { await didIt(task.id); navigate('/tasks') }
-  const handleDiscard   = async () => { await didIt(task.id); navigate('/tasks') }
+  const handleArchive        = async () => { const u = await archiveTask(task.id); setTask(prev => ({ ...prev, ...u })) }
+  const handlePermanentDelete = async () => { await permanentDeleteTask(task.id); navigate('/tasks') }
+  const handleDiscard        = async () => { await permanentDeleteTask(task.id); navigate('/tasks') }
 
   const handleWaiting   = async (reason) => {
     await moveToWaiting(task.id, reason)
@@ -511,7 +515,7 @@ export default function TaskPage() {
             <div className="flex flex-wrap gap-2 items-center">
               {task.status === 'inbox' && (
                 <>
-                  <Button variant="danger" size="sm" onClick={() => setShowDidIt(true)}>{TASK_ACTIONS.did_it}</Button>
+                  <Button variant="danger" size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.did_it}</Button>
                   {clarified && (
                     <>
                       {hasProject
@@ -527,8 +531,8 @@ export default function TaskPage() {
               )}
               {task.status === 'next_action' && (
                 <>
-                  <Button variant="success"   size="sm" onClick={handleComplete}>{TASK_ACTIONS.complete}</Button>
-                  <Button variant="danger"    size="sm" onClick={() => setShowDidIt(true)}>{TASK_ACTIONS.did_it}</Button>
+                  <Button variant="success"   size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.complete}</Button>
+                  <Button variant="danger"    size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.did_it}</Button>
                   <Button variant="secondary" size="sm" onClick={() => setShowWaiting(true)}>{TASK_ACTIONS.waiting}</Button>
                   {hasProject  && <Button variant="ghost" size="sm" onClick={handleQueue}>{TASK_ACTIONS.queue}</Button>}
                   {!hasProject && <Button variant="ghost" size="sm" onClick={() => setShowRoute(true)}>Assign to Project →</Button>}
@@ -537,55 +541,65 @@ export default function TaskPage() {
               {task.status === 'queued' && (
                 <>
                   <Button variant="success" size="sm" onClick={handleNextAction}>{TASK_ACTIONS.next_action}</Button>
-                  <Button variant="danger"  size="sm" onClick={() => setShowDidIt(true)}>{TASK_ACTIONS.did_it}</Button>
+                  <Button variant="danger"  size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.did_it}</Button>
                 </>
               )}
               {task.status === 'waiting' && (
                 <>
                   <Button variant="success" size="sm" onClick={handleClearWaiting}>Clear Blocker</Button>
-                  <Button variant="danger"  size="sm" onClick={() => setShowDidIt(true)}>{TASK_ACTIONS.did_it}</Button>
+                  <Button variant="danger"  size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.did_it}</Button>
                 </>
               )}
               {task.status === 'scheduled' && (
                 <>
-                  <Button variant="success"   size="sm" onClick={handleComplete}>{TASK_ACTIONS.complete}</Button>
-                  <Button variant="danger"    size="sm" onClick={() => setShowDidIt(true)}>{TASK_ACTIONS.did_it}</Button>
+                  <Button variant="success"   size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.complete}</Button>
+                  <Button variant="danger"    size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.did_it}</Button>
                   <Button variant="secondary" size="sm" onClick={handleNextAction}>{TASK_ACTIONS.next_action}</Button>
                 </>
               )}
               {task.status === 'someday' && (
                 <>
                   <Button variant="success" size="sm" onClick={handleNextAction}>{TASK_ACTIONS.next_action}</Button>
-                  <Button variant="danger"  size="sm" onClick={() => setShowDidIt(true)}>{TASK_ACTIONS.did_it}</Button>
+                  <Button variant="danger"  size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.did_it}</Button>
                 </>
               )}
-              {isDone && !task.is_highlight && (
-                <Button variant="secondary" size="sm" onClick={() => setShowHighlight(true)}>
-                  ⭐ Add to Highlights
-                </Button>
+              {isCompleted && (
+                <>
+                  {!task.is_highlight && (
+                    <Button variant="secondary" size="sm" onClick={() => setShowHighlight(true)}>
+                      ⭐ Add to Highlights
+                    </Button>
+                  )}
+                  {isDone && (
+                    <Button variant="secondary" size="sm" onClick={handleArchive}>
+                      📁 Archive
+                    </Button>
+                  )}
+                  <Button variant="danger" size="sm" onClick={() => setShowDiscard(true)}>
+                    🗑 Permanently Delete
+                  </Button>
+                </>
               )}
-              <span className="ml-auto"><TrashBtn onClick={() => setShowDiscard(true)} /></span>
+              {!isCompleted && (
+                <span className="ml-auto"><TrashBtn onClick={() => setShowDiscard(true)} /></span>
+              )}
             </div>
           </section>
         </div>
       </div>
 
-      <ConfirmDialog
-        open={showDidIt}
-        onClose={() => setShowDidIt(false)}
-        onConfirm={handleDidIt}
-        title="Did It!"
-        message="This task will be permanently deleted — it was too quick to keep track of."
-        confirmLabel="Yes, Did It"
-        variant="danger"
+      <TaskCompletionModal
+        open={showCompletion}
+        onClose={() => setShowCompletion(false)}
+        onConfirm={handleCompletion}
       />
       <ConfirmDialog
         open={showDiscard}
         onClose={() => setShowDiscard(false)}
         onConfirm={handleDiscard}
-        title="Scrap This?"
-        message="This task will be permanently deleted."
-        confirmLabel="Scrap It"
+        title="Permanently Delete?"
+        message="This task will be gone for good. No undo."
+        confirmLabel="Delete"
         variant="danger"
       />
       <WaitingModal   open={showWaiting}   onClose={() => setShowWaiting(false)}   onConfirm={handleWaiting} />

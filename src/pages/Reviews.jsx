@@ -7,7 +7,7 @@ import { useAIConfig } from '../hooks/useAI'
 import { useEnergyLevels } from '../contexts/EnergyLevelsContext'
 import { usePriorities }   from '../contexts/PrioritiesContext'
 import { useAreas }        from '../contexts/AreasContext'
-import { createTask, updateTask } from '../lib/api/tasks'
+import { createTask, updateTask, completeTaskWithOptions } from '../lib/api/tasks'
 import { createProject, updateProject } from '../lib/api/projects'
 import { createPerson, updatePerson } from '../lib/api/people'
 import { supabase } from '../lib/supabase'
@@ -18,6 +18,7 @@ import {
   QuickNoteModal,
 } from '../components/daily/QuickCaptureModals'
 import Button from '../components/ui/Button'
+import TaskCompletionModal from '../components/tasks/TaskCompletionModal'
 import { executeAction } from '../lib/ai/actions'
 
 // ─── Shared styles ────────────────────────────────────────────────────────────
@@ -128,6 +129,7 @@ function ClarifyTaskRow({ task }) {
 
   const [resolved,        setResolved]        = useState(false)
   const [resolvedLabel,   setResolvedLabel]   = useState('')
+  const [showCompletion,  setShowCompletion]  = useState(false)
   const [prompt,          setPrompt]          = useState(null)
   const [promptValue,     setPromptValue]     = useState('')
   const [projects,        setProjects]        = useState([])
@@ -287,7 +289,7 @@ function ClarifyTaskRow({ task }) {
         <div className="px-3 pb-2.5 flex flex-wrap gap-1">
           {status === 'inbox' && !task.project_id && (
             <>
-              <ActionBtn variant="danger"    title="Did It — mark done"        onClick={() => resolve(() => updateTask(task.id, { status: 'done' }),        'Done')}><CheckCheck size={13} /></ActionBtn>
+              <ActionBtn variant="danger"    title="Did It — mark done"        onClick={() => setShowCompletion(true)}><CheckCheck size={13} /></ActionBtn>
               <ActionBtn variant="success"   title="Next Action"                onClick={() => openPrompt('clarify')}><Zap size={13} /></ActionBtn>
               <ActionBtn variant="warning"   title="Schedule it"                onClick={() => openPrompt('schedule')}><CalendarDays size={13} /></ActionBtn>
               <ActionBtn variant="secondary" title="Assign to project"          onClick={() => openPrompt('route')}><Folder size={13} /></ActionBtn>
@@ -297,7 +299,7 @@ function ClarifyTaskRow({ task }) {
           )}
           {status === 'inbox' && task.project_id && (
             <>
-              <ActionBtn variant="danger"    title="Did It — mark done"        onClick={() => resolve(() => updateTask(task.id, { status: 'done' }),    'Done')}><CheckCheck size={13} /></ActionBtn>
+              <ActionBtn variant="danger"    title="Did It — mark done"        onClick={() => setShowCompletion(true)}><CheckCheck size={13} /></ActionBtn>
               <ActionBtn variant="secondary" title="Queue it"                  onClick={() => resolve(() => updateTask(task.id, { status: 'queued' }), 'Queued')}><ListPlus size={13} /></ActionBtn>
               <ActionBtn variant="warning"   title="Schedule it"               onClick={() => openPrompt('schedule')}><CalendarDays size={13} /></ActionBtn>
               <ActionBtn variant="ghost"     title="Someday/Maybe"             onClick={() => resolve(() => updateTask(task.id, { status: 'someday' }), 'Someday')}><Clock size={13} /></ActionBtn>
@@ -306,7 +308,7 @@ function ClarifyTaskRow({ task }) {
           )}
           {status === 'next_action' && (
             <>
-              <ActionBtn variant="danger"  title="Did It — mark done"    onClick={() => resolve(() => updateTask(task.id, { status: 'done' }),    'Done')}><CheckCheck size={13} /></ActionBtn>
+              <ActionBtn variant="danger"  title="Did It — mark done"    onClick={() => setShowCompletion(true)}><CheckCheck size={13} /></ActionBtn>
               <ActionBtn variant="warning" title="There's a holdup"      onClick={() => openPrompt('waiting')}><AlertCircle size={13} /></ActionBtn>
               <ActionBtn variant="warning" title="Schedule it"           onClick={() => openPrompt('schedule')}><CalendarDays size={13} /></ActionBtn>
               <ActionBtn variant="ghost"   title="Scrap it"              onClick={() => resolve(() => updateTask(task.id, { archived_at: new Date().toISOString() }), 'Scrapped')}><Trash2 size={13} /></ActionBtn>
@@ -314,19 +316,19 @@ function ClarifyTaskRow({ task }) {
           )}
           {status === 'queued' && (
             <>
-              <ActionBtn variant="danger"   title="Did It — mark done"   onClick={() => resolve(() => updateTask(task.id, { status: 'done' }),          'Done')}><CheckCheck size={13} /></ActionBtn>
+              <ActionBtn variant="danger"   title="Did It — mark done"   onClick={() => setShowCompletion(true)}><CheckCheck size={13} /></ActionBtn>
               <ActionBtn variant="success"  title="Move to next action"  onClick={() => resolve(() => updateTask(task.id, { status: 'next_action' }), 'Next Action')}><Zap size={13} /></ActionBtn>
             </>
           )}
           {status === 'waiting' && (
             <>
-              <ActionBtn variant="danger"   title="Did It — mark done"   onClick={() => resolve(() => updateTask(task.id, { status: 'done' }),                      'Done')}><CheckCheck size={13} /></ActionBtn>
+              <ActionBtn variant="danger"   title="Did It — mark done"   onClick={() => setShowCompletion(true)}><CheckCheck size={13} /></ActionBtn>
               <ActionBtn variant="success"  title="Clear blocker"        onClick={() => resolve(() => updateTask(task.id, { status: 'next_action', waiting_for: null }), 'Unblocked')}><Play size={13} /></ActionBtn>
             </>
           )}
           {status === 'scheduled' && (
             <>
-              <ActionBtn variant="danger"   title="Did It — mark done"    onClick={() => resolve(() => updateTask(task.id, { status: 'done' }),        'Done')}><CheckCheck size={13} /></ActionBtn>
+              <ActionBtn variant="danger"   title="Did It — mark done"    onClick={() => setShowCompletion(true)}><CheckCheck size={13} /></ActionBtn>
               <ActionBtn variant="success"  title="Move to next action"   onClick={() => resolve(() => updateTask(task.id, { status: 'next_action' }), 'Next Action')}><Zap size={13} /></ActionBtn>
             </>
           )}
@@ -338,6 +340,18 @@ function ClarifyTaskRow({ task }) {
           )}
         </div>
       )}
+
+      <TaskCompletionModal
+        open={showCompletion}
+        onClose={() => setShowCompletion(false)}
+        onConfirm={async (opts) => {
+          await resolve(
+            () => completeTaskWithOptions(task.id, opts),
+            opts.archive ? 'Archived' : opts.highlight ? 'Highlighted ⭐' : 'Done'
+          )
+          setShowCompletion(false)
+        }}
+      />
     </div>
   )
 }
