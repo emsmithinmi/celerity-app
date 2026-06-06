@@ -1,6 +1,7 @@
 ﻿import { supabase } from '../../supabase'
 import { callAI } from '../client'
-import { ensureNoteForDate, updateTopOfMind, updateAgenda, updateChallenge, updateQuote } from '../../api/daily'
+import { ensureNoteForDate, updateTopOfMind, updateAgenda, updateChallenge, updateQuote, updateDailyBrief } from '../../api/daily'
+import { generateDailyBrief } from './dailyBrief'
 import { updateSuggestions, updateReviewSummary } from '../../api/reviews'
 import { cleanupExpiredDoneTasks } from '../../api/tasks'
 
@@ -549,6 +550,11 @@ export async function writeReflectResults(reviewId, result, conversation = [], r
     await updateSuggestions(reviewId, suggestions)
     if (summary) updateReviewSummary(reviewId, summary).catch(() => {})  // fire-and-forget, non-blocking
   }
+
+  // Generate Daily Brief for tomorrow and save it. Non-blocking.
+  generateDailyBrief(tomorrowStr, false)
+    .then(brief => updateDailyBrief(tomorrowNote.id, brief))
+    .catch(() => {})
 
   // Housekeeping — delete done tasks older than 30 days. Non-blocking.
   cleanupExpiredDoneTasks().catch(() => {})

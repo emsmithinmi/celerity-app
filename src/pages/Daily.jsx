@@ -5,13 +5,14 @@ import { useDaily } from '../hooks/useDaily'
 import { useTasks } from '../hooks/useTasks'
 import { useProjects } from '../hooks/useProjects'
 import { createPerson } from '../lib/api/people'
-import { updateChallenge } from '../lib/api/daily'
+import { updateChallenge, updateDailyBrief } from '../lib/api/daily'
+import { generateDailyBrief } from '../lib/ai/skills/dailyBrief'
 import { getStuckSuggestions } from '../lib/ai/skills/stuckHelper'
 import { useAIConfig } from '../hooks/useAI'
 
 import DailyQuote     from '../components/daily/DailyQuote'
 import StatCards      from '../components/daily/StatCards'
-import TopOfMind      from '../components/daily/TopOfMind'
+import DailyBrief     from '../components/daily/DailyBrief'
 import AgendaSection  from '../components/daily/AgendaSection'
 import ProjectsSection from '../components/daily/ProjectsSection'
 import TasksSection   from '../components/daily/TasksSection'
@@ -146,7 +147,7 @@ export default function Daily() {
   const goToday   = () => setSelectedDate(todayStr())
 
   // ── Data for selected date ──
-  const { note, habitHistory, stats, loading, error, toggleHabit, addNote, editNote, deleteNote, updateTopOfMind, refreshStats } = useDaily(selectedDate)
+  const { note, habitHistory, stats, loading, error, toggleHabit, addNote, editNote, deleteNote, updateTopOfMind, refreshStats, refresh: reloadNote } = useDaily(selectedDate)
 
   // Quick capture hooks (separate so modals don't re-render sections)
   const { createTask }    = useTasksCapture({})
@@ -207,6 +208,14 @@ export default function Daily() {
   const handleChallengeUpdate = async (updated) => {
     if (!note) return
     await updateChallenge(note.id, updated)
+  }
+
+  const handleBriefRefresh = async () => {
+    if (!note) return
+    const isRefresh = !!note.daily_brief  // already has one → mid-day refresh
+    const brief = await generateDailyBrief(selectedDate, isRefresh)
+    await updateDailyBrief(note.id, brief)
+    await reloadNote()
   }
 
   if (loading) {
@@ -349,10 +358,13 @@ export default function Daily() {
           </div>
         )}
 
-        {/* Top of Mind */}
-        <TopOfMind
-          items={note?.top_of_mind ?? []}
-          onSave={updateTopOfMind}
+        {/* Daily Brief */}
+        <DailyBrief
+          brief={note?.daily_brief ?? null}
+          topOfMind={note?.top_of_mind ?? []}
+          noteId={note?.id}
+          onRefresh={handleBriefRefresh}
+          onSaveTopOfMind={updateTopOfMind}
         />
 
         {/* Stat cards — sit under Top of Mind */}

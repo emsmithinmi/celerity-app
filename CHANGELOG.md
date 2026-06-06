@@ -4,6 +4,18 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-06 (Session 14 cont. 8)
+
+### Added
+- **Daily Brief** replaces Top of Mind on the Daily page. AI-generated section with four subsections: 🧠 Top of Mind (your manual items + AI additions), 📌 Remember (waiting-on, birthdays, things in limbo), ✅ To Do (3-5 highest-leverage actions by name), and Words for the Day (a line of wit/wisdom that's genuinely yours).
+- **✨ Refresh button** on the Daily Brief — generates a fresh brief on demand, time-of-day aware (morning vs afternoon vs evening). Mid-day refresh acknowledges where you are in the day.
+- **Auto-generated on Daily Review** — when `writeReflectResults` runs, it fires off a brief generation for tomorrow non-blocking alongside everything else.
+- **New AI personality: Shaggy-Hawking** — Stephen Hawking's analytical brain living in Shaggy from Scooby-Doo's body. Synthesizes life data at genius level, delivers it with goofy enthusiasm and a quick joke. Always positive. Genuinely excited to help.
+- **Daily Brief DB column** — `daily_brief jsonb` added to `daily_notes`.
+- **Top of Mind still editable** — pencil icon on the brief header opens an inline editor for your manual items, which feed into the AI brief on next refresh.
+
+---
+
 ## 2026-06-06 (Session 14 cont. 7)
 
 ### Fixed
