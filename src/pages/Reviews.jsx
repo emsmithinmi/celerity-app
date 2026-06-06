@@ -1333,9 +1333,12 @@ export default function Reviews() {
     await saveContent({ clarifyComplete: true })
   }, [saveContent])
 
+  const aiReviewRef = useRef(null)
+
   const markReflectDone = useCallback(async () => {
     setReflectComplete(true)
     await saveContent({ reflectComplete: true })
+    setTimeout(() => aiReviewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150)
   }, [saveContent])
 
   const resetReview = useCallback(async () => {
@@ -1475,6 +1478,7 @@ export default function Reviews() {
               />
             </SectionWrapper>
 
+            <div ref={aiReviewRef}>
             <SectionWrapper locked={!reflectComplete} lockLabel="Complete Reflect first">
               <AIReviewSection
                 review={review}
@@ -1485,6 +1489,7 @@ export default function Reviews() {
                 gapEnd={gapEnd}
               />
             </SectionWrapper>
+            </div>
           </div>
         ) : (
           <div className="max-w-2xl mx-auto px-6 py-12 text-center">
