@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
-import { Pencil, RotateCcw, Loader2 } from 'lucide-react'
+import { Pencil, RotateCcw, Loader2, Check, CheckCheck, Zap, CalendarDays, Folder, Clock, Trash2, AlertCircle, X, ListPlus, Play } from 'lucide-react'
 import { ensureReview, updateReviewContent, completeReview, updateSuggestions } from '../lib/api/reviews'
 import { buildReflectContext, generateReflectQuestions, generateConversationalResponse, generateReflectPlan, writeReflectResults } from '../lib/ai/skills/reflectReview'
 import { useAIConfig } from '../hooks/useAI'
@@ -169,8 +169,8 @@ function ClarifyTaskRow({ task }) {
             autoFocus className="flex-1 px-2 py-1 rounded border text-xs outline-none"
             style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--accent)', color: 'var(--text-primary)' }}
           />
-          <ActionBtn variant="warning" disabled={!promptValue || saving} onClick={() => resolve(() => updateTask(task.id, { status: 'scheduled', due_date: promptValue }), 'Scheduled').then(() => setPrompt(null))}>Set</ActionBtn>
-          <ActionBtn variant="ghost" onClick={() => setPrompt(null)}>✕</ActionBtn>
+          <ActionBtn variant="warning" title="Confirm" disabled={!promptValue || saving} onClick={() => resolve(() => updateTask(task.id, { status: 'scheduled', due_date: promptValue }), 'Scheduled').then(() => setPrompt(null))}><Check size={13} /></ActionBtn>
+          <ActionBtn variant="ghost" title="Cancel" onClick={() => setPrompt(null)}><X size={13} /></ActionBtn>
         </div>
       )}
       {prompt === 'waiting' && (
@@ -182,8 +182,8 @@ function ClarifyTaskRow({ task }) {
             style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--accent)', color: 'var(--text-primary)' }}
             onKeyDown={e => e.key === 'Enter' && promptValue.trim() && resolve(() => updateTask(task.id, { status: 'waiting', waiting_for: promptValue.trim() }), 'Waiting').then(() => setPrompt(null))}
           />
-          <ActionBtn variant="danger" disabled={!promptValue.trim() || saving} onClick={() => resolve(() => updateTask(task.id, { status: 'waiting', waiting_for: promptValue.trim() }), 'Waiting').then(() => setPrompt(null))}>Set</ActionBtn>
-          <ActionBtn variant="ghost" onClick={() => setPrompt(null)}>✕</ActionBtn>
+          <ActionBtn variant="danger" title="Confirm" disabled={!promptValue.trim() || saving} onClick={() => resolve(() => updateTask(task.id, { status: 'waiting', waiting_for: promptValue.trim() }), 'Waiting').then(() => setPrompt(null))}><Check size={13} /></ActionBtn>
+          <ActionBtn variant="ghost" title="Cancel" onClick={() => setPrompt(null)}><X size={13} /></ActionBtn>
         </div>
       )}
       {prompt === 'route' && (
@@ -200,57 +200,63 @@ function ClarifyTaskRow({ task }) {
             }
           </div>
           <div className="flex gap-2">
-            <ActionBtn variant="primary" disabled={!selectedProject || saving} onClick={() => resolve(() => updateTask(task.id, { status: 'queued', project_id: selectedProject }), 'Queued').then(() => setPrompt(null))}>Queue It</ActionBtn>
-            <ActionBtn variant="ghost" onClick={() => setPrompt(null)}>✕</ActionBtn>
+            <ActionBtn variant="primary" title="Queue it" disabled={!selectedProject || saving} onClick={() => resolve(() => updateTask(task.id, { status: 'queued', project_id: selectedProject }), 'Queued').then(() => setPrompt(null))}><Check size={13} /></ActionBtn>
+            <ActionBtn variant="ghost" title="Cancel" onClick={() => setPrompt(null)}><X size={13} /></ActionBtn>
           </div>
         </div>
       )}
 
       {!prompt && (
-        <div className="px-3 pb-2.5 flex flex-wrap gap-1.5">
+        <div className="px-3 pb-2.5 flex flex-wrap gap-1">
           {status === 'inbox' && !task.project_id && (
             <>
-              <ActionBtn variant="success"   onClick={() => resolve(() => updateTask(task.id, { status: 'done' }),         'All Done')}>All Done</ActionBtn>
-              <ActionBtn variant="primary"   onClick={() => resolve(() => updateTask(task.id, { status: 'next_action' }),  'In Coach')}>Put Me in Coach</ActionBtn>
-              <ActionBtn variant="warning"   onClick={() => openPrompt('schedule')}>Let's Schedule This</ActionBtn>
-              <ActionBtn variant="secondary" onClick={() => openPrompt('route')}>Assign to Project →</ActionBtn>
-              <ActionBtn variant="ghost"     onClick={() => resolve(() => updateTask(task.id, { status: 'someday' }),      'Someday')}>Another Day</ActionBtn>
-              <ActionBtn variant="danger"    onClick={() => resolve(() => updateTask(task.id, { archived_at: new Date().toISOString() }), 'Scrapped')}>Scrap This</ActionBtn>
+              <ActionBtn variant="success"   title="Did It — mark done"        onClick={() => resolve(() => updateTask(task.id, { status: 'done' }),        'Done')}><CheckCheck size={13} /></ActionBtn>
+              <ActionBtn variant="primary"   title="Next Action"                onClick={() => resolve(() => updateTask(task.id, { status: 'next_action' }), 'Next Action')}><Zap size={13} /></ActionBtn>
+              <ActionBtn variant="warning"   title="Schedule it"                onClick={() => openPrompt('schedule')}><CalendarDays size={13} /></ActionBtn>
+              <ActionBtn variant="secondary" title="Assign to project"          onClick={() => openPrompt('route')}><Folder size={13} /></ActionBtn>
+              <ActionBtn variant="ghost"     title="Someday/Maybe"              onClick={() => resolve(() => updateTask(task.id, { status: 'someday' }),     'Someday')}><Clock size={13} /></ActionBtn>
+              <ActionBtn variant="danger"    title="Scrap it"                   onClick={() => resolve(() => updateTask(task.id, { archived_at: new Date().toISOString() }), 'Scrapped')}><Trash2 size={13} /></ActionBtn>
             </>
           )}
           {status === 'inbox' && task.project_id && (
             <>
-              <ActionBtn variant="success"   onClick={() => resolve(() => updateTask(task.id, { status: 'done' }),    'All Done')}>All Done</ActionBtn>
-              <ActionBtn variant="primary"   onClick={() => resolve(() => updateTask(task.id, { status: 'queued' }), 'Queued')}>Ready to Queue Up</ActionBtn>
-              <ActionBtn variant="warning"   onClick={() => openPrompt('schedule')}>Let's Schedule This</ActionBtn>
-              <ActionBtn variant="ghost"     onClick={() => resolve(() => updateTask(task.id, { status: 'someday' }), 'Someday')}>Another Day</ActionBtn>
-              <ActionBtn variant="danger"    onClick={() => resolve(() => updateTask(task.id, { archived_at: new Date().toISOString() }), 'Scrapped')}>Scrap This</ActionBtn>
+              <ActionBtn variant="success"   title="Did It — mark done"        onClick={() => resolve(() => updateTask(task.id, { status: 'done' }),    'Done')}><CheckCheck size={13} /></ActionBtn>
+              <ActionBtn variant="primary"   title="Queue it"                  onClick={() => resolve(() => updateTask(task.id, { status: 'queued' }), 'Queued')}><ListPlus size={13} /></ActionBtn>
+              <ActionBtn variant="warning"   title="Schedule it"               onClick={() => openPrompt('schedule')}><CalendarDays size={13} /></ActionBtn>
+              <ActionBtn variant="ghost"     title="Someday/Maybe"             onClick={() => resolve(() => updateTask(task.id, { status: 'someday' }), 'Someday')}><Clock size={13} /></ActionBtn>
+              <ActionBtn variant="danger"    title="Scrap it"                  onClick={() => resolve(() => updateTask(task.id, { archived_at: new Date().toISOString() }), 'Scrapped')}><Trash2 size={13} /></ActionBtn>
             </>
           )}
           {status === 'next_action' && (
             <>
-              <ActionBtn variant="success" onClick={() => resolve(() => updateTask(task.id, { status: 'done' }),    'All Done')}>All Done</ActionBtn>
-              <ActionBtn variant="danger"  onClick={() => openPrompt('waiting')}>There is a Holdup</ActionBtn>
-              <ActionBtn variant="warning" onClick={() => openPrompt('schedule')}>Let's Schedule This</ActionBtn>
-              <ActionBtn variant="ghost"   onClick={() => resolve(() => updateTask(task.id, { archived_at: new Date().toISOString() }), 'Scrapped')}>Scrap This</ActionBtn>
+              <ActionBtn variant="success" title="Did It — mark done"    onClick={() => resolve(() => updateTask(task.id, { status: 'done' }),    'Done')}><CheckCheck size={13} /></ActionBtn>
+              <ActionBtn variant="danger"  title="There's a holdup"      onClick={() => openPrompt('waiting')}><AlertCircle size={13} /></ActionBtn>
+              <ActionBtn variant="warning" title="Schedule it"           onClick={() => openPrompt('schedule')}><CalendarDays size={13} /></ActionBtn>
+              <ActionBtn variant="ghost"   title="Scrap it"              onClick={() => resolve(() => updateTask(task.id, { archived_at: new Date().toISOString() }), 'Scrapped')}><Trash2 size={13} /></ActionBtn>
             </>
           )}
           {status === 'queued' && (
-            <ActionBtn variant="primary" onClick={() => resolve(() => updateTask(task.id, { status: 'next_action' }), 'In Coach')}>Put Me in Coach</ActionBtn>
+            <>
+              <ActionBtn variant="success" title="Did It — mark done"   onClick={() => resolve(() => updateTask(task.id, { status: 'done' }),          'Done')}><CheckCheck size={13} /></ActionBtn>
+              <ActionBtn variant="primary" title="Move to next action"  onClick={() => resolve(() => updateTask(task.id, { status: 'next_action' }), 'Next Action')}><Zap size={13} /></ActionBtn>
+            </>
           )}
           {status === 'waiting' && (
-            <ActionBtn variant="primary" onClick={() => resolve(() => updateTask(task.id, { status: 'next_action', waiting_for: null }), 'Unblocked')}>Clear Blocker</ActionBtn>
+            <>
+              <ActionBtn variant="success" title="Did It — mark done"   onClick={() => resolve(() => updateTask(task.id, { status: 'done' }),                      'Done')}><CheckCheck size={13} /></ActionBtn>
+              <ActionBtn variant="primary" title="Clear blocker"        onClick={() => resolve(() => updateTask(task.id, { status: 'next_action', waiting_for: null }), 'Unblocked')}><Play size={13} /></ActionBtn>
+            </>
           )}
           {status === 'scheduled' && (
             <>
-              <ActionBtn variant="success"   onClick={() => resolve(() => updateTask(task.id, { status: 'done' }),          'All Done')}>All Done</ActionBtn>
-              <ActionBtn variant="secondary" onClick={() => resolve(() => updateTask(task.id, { status: 'next_action' }),   'In Coach')}>Put Me in Coach</ActionBtn>
+              <ActionBtn variant="success"   title="Did It — mark done"    onClick={() => resolve(() => updateTask(task.id, { status: 'done' }),        'Done')}><CheckCheck size={13} /></ActionBtn>
+              <ActionBtn variant="secondary" title="Move to next action"   onClick={() => resolve(() => updateTask(task.id, { status: 'next_action' }), 'Next Action')}><Zap size={13} /></ActionBtn>
             </>
           )}
           {status === 'someday' && (
             <>
-              <ActionBtn variant="primary" onClick={() => resolve(() => updateTask(task.id, { status: 'next_action' }), 'In Coach')}>Put Me in Coach</ActionBtn>
-              <ActionBtn variant="danger"  onClick={() => resolve(() => updateTask(task.id, { archived_at: new Date().toISOString() }), 'Scrapped')}>Scrap This</ActionBtn>
+              <ActionBtn variant="primary" title="Move to next action"  onClick={() => resolve(() => updateTask(task.id, { status: 'next_action' }), 'Next Action')}><Zap size={13} /></ActionBtn>
+              <ActionBtn variant="danger"  title="Scrap it"             onClick={() => resolve(() => updateTask(task.id, { archived_at: new Date().toISOString() }), 'Scrapped')}><Trash2 size={13} /></ActionBtn>
             </>
           )}
         </div>

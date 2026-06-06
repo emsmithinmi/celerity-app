@@ -528,26 +528,36 @@ export default function TaskPage() {
               {task.status === 'next_action' && (
                 <>
                   <Button variant="success"   size="sm" onClick={handleComplete}>{TASK_ACTIONS.complete}</Button>
-                  <Button variant="danger"    size="sm" onClick={() => setShowWaiting(true)}>{TASK_ACTIONS.waiting}</Button>
-                  {hasProject  && <Button variant="secondary" size="sm" onClick={handleQueue}>{TASK_ACTIONS.queue}</Button>}
-                  {!hasProject && <Button variant="secondary" size="sm" onClick={() => setShowRoute(true)}>Assign to Project →</Button>}
-                  <Button variant="ghost" size="sm" onClick={handleSomeday}>{TASK_ACTIONS.someday}</Button>
+                  <Button variant="danger"    size="sm" onClick={() => setShowDidIt(true)}>{TASK_ACTIONS.did_it}</Button>
+                  <Button variant="secondary" size="sm" onClick={() => setShowWaiting(true)}>{TASK_ACTIONS.waiting}</Button>
+                  {hasProject  && <Button variant="ghost" size="sm" onClick={handleQueue}>{TASK_ACTIONS.queue}</Button>}
+                  {!hasProject && <Button variant="ghost" size="sm" onClick={() => setShowRoute(true)}>Assign to Project →</Button>}
                 </>
               )}
               {task.status === 'queued' && (
-                <Button variant="success" size="sm" onClick={handleNextAction}>{TASK_ACTIONS.next_action}</Button>
+                <>
+                  <Button variant="success" size="sm" onClick={handleNextAction}>{TASK_ACTIONS.next_action}</Button>
+                  <Button variant="danger"  size="sm" onClick={() => setShowDidIt(true)}>{TASK_ACTIONS.did_it}</Button>
+                </>
               )}
               {task.status === 'waiting' && (
-                <Button variant="success" size="sm" onClick={handleClearWaiting}>Clear Blocker</Button>
+                <>
+                  <Button variant="success" size="sm" onClick={handleClearWaiting}>Clear Blocker</Button>
+                  <Button variant="danger"  size="sm" onClick={() => setShowDidIt(true)}>{TASK_ACTIONS.did_it}</Button>
+                </>
               )}
               {task.status === 'scheduled' && (
                 <>
                   <Button variant="success"   size="sm" onClick={handleComplete}>{TASK_ACTIONS.complete}</Button>
+                  <Button variant="danger"    size="sm" onClick={() => setShowDidIt(true)}>{TASK_ACTIONS.did_it}</Button>
                   <Button variant="secondary" size="sm" onClick={handleNextAction}>{TASK_ACTIONS.next_action}</Button>
                 </>
               )}
               {task.status === 'someday' && (
-                <Button variant="success" size="sm" onClick={handleNextAction}>{TASK_ACTIONS.next_action}</Button>
+                <>
+                  <Button variant="success" size="sm" onClick={handleNextAction}>{TASK_ACTIONS.next_action}</Button>
+                  <Button variant="danger"  size="sm" onClick={() => setShowDidIt(true)}>{TASK_ACTIONS.did_it}</Button>
+                </>
               )}
               {isDone && !task.is_highlight && (
                 <Button variant="secondary" size="sm" onClick={() => setShowHighlight(true)}>

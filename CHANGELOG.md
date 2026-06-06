@@ -9,6 +9,9 @@ All notable changes to Focus Flow are recorded here.
 ### Added
 - **Trash can in all detail modals** — TaskDetail, ProjectDetail, and PersonDetail now all have a trash icon pinned to the bottom-right of the action bar, available at any stage. No more hunting for a Discard button that only appears in certain statuses. PersonDetail gets full delete support for the first time (was only on PersonPage before).
 - **Fixed TaskPage trash only showing on inbox tasks** — TrashBtn was buried inside the inbox status branch; now pinned to the right of the What's Next bar for every status.
+- **Did It button on all active task statuses** — "Did It" (quick permanent delete for tasks done too fast to track) was previously only on inbox. Now available on next_action, queued, waiting, scheduled, and someday — in both TaskDetail and TaskPage.
+- **Icon-only clarify action buttons** — ClarifyTaskRow action buttons in the Review page now show Lucide icons instead of text labels. Cleaner, less visual noise. Tooltips still there for discoverability.
+- **Conversational AI review interview** — the Reflect section's AI chat now makes a real AI call on every user turn instead of rigidly cycling through pre-scripted questions. It reacts to what you actually said, has personality, and organically weaves in remaining topics rather than ignoring your input.
 
 ---
 
