@@ -506,11 +506,11 @@ function RefCard({ title, count, children }) {
 
 // ─── SECTION 1: CAPTURE ───────────────────────────────────────────────────────
 
-function CaptureSection({ onDone, done, todayNoteId }) {
+function CaptureSection({ onDone, done, todayNoteId, onCapture }) {
   const [modal,    setModal]    = useState(null)
   const [captured, setCaptured] = useState([])
 
-  const addCaptured = (type, title) => setCaptured(prev => [...prev, { type, title }])
+  const addCaptured = (type, title) => { setCaptured(prev => [...prev, { type, title }]); onCapture?.() }
 
   const handleCreateTask    = async (title)                  => { await createTask({ title, status: 'inbox' }); addCaptured('task', title) }
   const handleCreateProject = async (title)                  => { await createProject({ title }); addCaptured('project', title) }
@@ -592,7 +592,7 @@ function CaptureSection({ onDone, done, todayNoteId }) {
 
 // ─── SECTION 2: CLARIFY ───────────────────────────────────────────────────────
 
-function ClarifySection({ onDone, done }) {
+function ClarifySection({ onDone, done, captureVersion }) {
   const today = new Date().toLocaleDateString('en-CA')
   const [inboxTasks,    setInboxTasks]    = useState([])
   const [inboxProjects, setInboxProjects] = useState([])
@@ -627,7 +627,7 @@ function ClarifySection({ onDone, done }) {
       }
     }
     load()
-  }, [today])
+  }, [today, captureVersion])
 
   const daysDiff = (dateStr) => {
     const diff = Math.floor((new Date(today) - new Date(dateStr)) / 86400000)
@@ -1035,6 +1035,7 @@ export default function Reviews() {
   const [todayNoteId,      setTodayNoteId]      = useState(null)
   const [captureComplete,  setCaptureComplete]  = useState(false)
   const [clarifyComplete,  setClarifyComplete]  = useState(false)
+  const [captureVersion,   setCaptureVersion]   = useState(0)
   const [resetting,        setResetting]        = useState(false)
 
   const reviewRef  = useRef(null)
@@ -1154,6 +1155,7 @@ export default function Reviews() {
               done={captureComplete}
               onDone={markCaptureDone}
               todayNoteId={todayNoteId}
+              onCapture={() => setCaptureVersion(v => v + 1)}
             />
 
             <SectionWrapper locked={!captureComplete} lockLabel="Complete Capture first">
@@ -1161,6 +1163,7 @@ export default function Reviews() {
                 key={String(captureComplete)}
                 done={clarifyComplete}
                 onDone={markClarifyDone}
+                captureVersion={captureVersion}
               />
             </SectionWrapper>
 
