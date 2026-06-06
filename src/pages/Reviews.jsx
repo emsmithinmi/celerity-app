@@ -212,14 +212,19 @@ function ClarifyTaskRow({ task }) {
         </div>
       )}
       {prompt === 'clarify' && (
-        <div className="px-3 pb-3 space-y-2">
-          <p className="text-xs font-medium pt-1" style={{ color: 'var(--accent)' }}>Put me in coach — fill in the details</p>
+        <div
+          className="px-3 pb-3 space-y-2 rounded-b-lg"
+          style={{ backgroundColor: 'var(--card-task-bg)', borderTop: '1px solid var(--border)' }}
+          ref={el => el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })}
+        >
+          <p className="text-xs font-semibold pt-2" style={{ color: 'var(--accent)' }}>⚡ Put me in coach — fill in the details</p>
           <textarea
+            autoFocus
             rows={2} placeholder="What does this task actually involve?"
             value={clarifyFields.description}
             onChange={e => setClarifyFields(f => ({ ...f, description: e.target.value }))}
             className="w-full px-2 py-1.5 rounded border text-xs outline-none resize-none"
-            style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+            style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--accent)', color: 'var(--text-primary)' }}
           />
           <div className="grid grid-cols-2 gap-2">
             <select value={clarifyFields.priority} onChange={e => setClarifyFields(f => ({ ...f, priority: e.target.value }))}
@@ -826,11 +831,12 @@ function ClarifySection({ onDone, done, captureVersion }) {
 // ─── SECTION 3: REFLECT (tabbed list review) ──────────────────────────────────
 
 const REFLECT_TABS = [
-  { key: 'next_action', label: 'Next Actions', icon: '⚡', color: 'var(--accent)'        },
-  { key: 'in_progress', label: 'Projects',     icon: '📁', color: 'var(--accent-purple)' },
-  { key: 'waiting',     label: 'Waiting',      icon: '⏸',  color: 'var(--accent-yellow)' },
-  { key: 'scheduled',   label: 'Scheduled',    icon: '📅', color: 'var(--accent-pink)'   },
-  { key: 'someday',     label: 'Someday',      icon: '🌅', color: 'var(--text-secondary)'},
+  { key: 'next_action',   label: 'Next Actions',  icon: '⚡', color: 'var(--accent)'        },
+  { key: 'all_projects',  label: 'All Projects',  icon: '📁', color: 'var(--accent-purple)' },
+  { key: 'waiting',       label: 'Waiting',       icon: '⏸',  color: 'var(--accent-yellow)' },
+  { key: 'scheduled',     label: 'Scheduled',     icon: '📅', color: 'var(--accent-pink)'   },
+  { key: 'someday',       label: 'Someday',       icon: '🌅', color: 'var(--text-secondary)'},
+  { key: 'all_tasks',     label: 'All Tasks',     icon: '✅', color: 'var(--accent-green)'  },
 ]
 
 function ReflectSection({ onDone, done }) {
@@ -841,19 +847,21 @@ function ReflectSection({ onDone, done }) {
   useEffect(() => {
     async function load() {
       try {
-        const [nextRes, projRes, waitRes, schedRes, somedayRes] = await Promise.all([
+        const [nextRes, projRes, waitRes, schedRes, somedayRes, allTasksRes] = await Promise.all([
           supabase.from('tasks').select('id, title, due_date, priority').eq('status', 'next_action').is('archived_at', null).order('created_at', { ascending: false }),
-          supabase.from('projects').select('id, title, status').eq('status', 'in_progress').is('archived_at', null).order('updated_at', { ascending: false }),
+          supabase.from('projects').select('id, title, status').not('status', 'eq', 'completed').is('archived_at', null).order('updated_at', { ascending: false }),
           supabase.from('tasks').select('id, title, waiting_for').eq('status', 'waiting').is('archived_at', null).order('updated_at', { ascending: false }),
           supabase.from('tasks').select('id, title, due_date').eq('status', 'scheduled').is('archived_at', null).order('due_date', { ascending: true }),
           supabase.from('tasks').select('id, title').eq('status', 'someday').is('archived_at', null).order('updated_at', { ascending: false }),
+          supabase.from('tasks').select('id, title, status, due_date').in('status', ['next_action', 'queued', 'waiting', 'scheduled', 'someday']).is('archived_at', null).order('status', { ascending: true }).order('due_date', { ascending: true }),
         ])
         setItems({
-          next_action: nextRes.data ?? [],
-          in_progress: projRes.data ?? [],
-          waiting:     waitRes.data ?? [],
-          scheduled:   schedRes.data ?? [],
-          someday:     somedayRes.data ?? [],
+          next_action:  nextRes.data ?? [],
+          all_projects: projRes.data ?? [],
+          waiting:      waitRes.data ?? [],
+          scheduled:    schedRes.data ?? [],
+          someday:      somedayRes.data ?? [],
+          all_tasks:    allTasksRes.data ?? [],
         })
       } catch (err) {
         console.error('ReflectSection load error:', err)
@@ -915,9 +923,13 @@ function ReflectSection({ onDone, done }) {
       ) : (
         <div className="rounded-xl border mb-4 overflow-hidden" style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)' }}>
           {activeItems.map((item, i) => {
-            const isProject = activeTab === 'in_progress'
+            const isProject = activeTab === 'all_projects'
             const linkTo    = isProject ? `/projects/${item.id}` : `/tasks/${item.id}`
-            const sub       = item.due_date ? item.due_date : item.waiting_for ? `waiting: ${item.waiting_for}` : null
+            const sub       = item.status && activeTab === 'all_tasks' ? item.status.replace('_', ' ')
+                            : item.due_date ? item.due_date
+                            : item.waiting_for ? `waiting: ${item.waiting_for}`
+                            : item.status && isProject ? item.status.replace('_', ' ')
+                            : null
             return (
               <div key={item.id} className="flex items-center gap-3 px-4 py-3 border-b last:border-b-0" style={{ borderColor: 'var(--border)' }}>
                 <span className="text-base shrink-0">{activeMeta?.icon}</span>
