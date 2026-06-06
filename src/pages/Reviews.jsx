@@ -605,7 +605,7 @@ function CaptureSection({ onDone, done, todayNoteId, onCapture }) {
     <div className="rounded-2xl border p-6 mb-4" style={S.card}>
       <SectionHeader
         step={1}
-        title="What's on your mind?"
+        title="Capture"
         subtitle="Get everything out of your head. Don't filter, don't organize — just capture."
         done={done}
       />
@@ -672,6 +672,7 @@ function ClarifySection({ onDone, done, captureVersion }) {
   const [stalled,       setStalled]       = useState([])
   const [overdue,       setOverdue]       = useState([])
   const [loading,       setLoading]       = useState(true)
+  const [activeTab,     setActiveTab]     = useState('all')
 
   useEffect(() => {
     async function load() {
@@ -712,10 +713,46 @@ function ClarifySection({ onDone, done, captureVersion }) {
     <div className="rounded-2xl border p-6 mb-4" style={S.card}>
       <SectionHeader
         step={2}
-        title="What does each item mean?"
+        title="Clarify"
         subtitle="Process what's in your inbox. Mark done when sorted, scrap if it's noise."
         done={done}
       />
+
+      {/* Tab bar */}
+      {!loading && !allEmpty && (() => {
+        const tabs = [
+          { key: 'all',      label: 'All',      count: inboxTasks.length + inboxProjects.length + inboxPeople.length + stalled.length + overdue.length },
+          { key: 'tasks',    label: 'Tasks',    count: inboxTasks.length    },
+          { key: 'projects', label: 'Projects', count: inboxProjects.length },
+          { key: 'people',   label: 'People',   count: inboxPeople.length   },
+          { key: 'stalled',  label: 'Stalled',  count: stalled.length       },
+          { key: 'overdue',  label: 'Overdue',  count: overdue.length       },
+        ].filter(t => t.key === 'all' || t.count > 0)
+        return (
+          <div className="flex gap-1 mb-4 flex-wrap">
+            {tabs.map(t => (
+              <button
+                key={t.key}
+                onClick={() => setActiveTab(t.key)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors"
+                style={{
+                  backgroundColor: activeTab === t.key ? 'var(--accent)' : 'transparent',
+                  borderColor:     activeTab === t.key ? 'var(--accent)' : 'var(--border)',
+                  color:           activeTab === t.key ? 'var(--app-bg)' : 'var(--text-secondary)',
+                }}
+              >
+                {t.label}
+                {t.count > 0 && (
+                  <span className="px-1.5 py-0.5 rounded text-xs" style={{
+                    backgroundColor: activeTab === t.key ? 'rgba(255,255,255,0.25)' : 'var(--border)',
+                    color:           activeTab === t.key ? 'var(--app-bg)'           : 'var(--accent)',
+                  }}>{t.count}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        )
+      })()}
 
       {loading ? (
         <p className="text-sm py-4" style={S.muted}>Loading…</p>
@@ -726,13 +763,13 @@ function ClarifySection({ onDone, done, captureVersion }) {
         </div>
       ) : (
         <div className="space-y-3 mb-4">
-          {inboxTasks.length > 0 && (
+          {(activeTab === 'all' || activeTab === 'tasks') && inboxTasks.length > 0 && (
             <div className="rounded-xl border p-4" style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)' }}>
               <h3 className="text-xs font-semibold uppercase tracking-wide mb-3" style={S.blue}>📥 Inbox Tasks</h3>
               {inboxTasks.map(item => <ClarifyTaskRow key={item.id} task={item} />)}
             </div>
           )}
-          {inboxProjects.length > 0 && (
+          {(activeTab === 'all' || activeTab === 'projects') && inboxProjects.length > 0 && (
             <div className="rounded-xl border p-4" style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)' }}>
               <h3 className="text-xs font-semibold uppercase tracking-wide mb-3" style={S.purple}>📥 Inbox Projects</h3>
               {inboxProjects.map(item => (
@@ -743,7 +780,7 @@ function ClarifySection({ onDone, done, captureVersion }) {
               ))}
             </div>
           )}
-          {inboxPeople.length > 0 && (
+          {(activeTab === 'all' || activeTab === 'people') && inboxPeople.length > 0 && (
             <div className="rounded-xl border p-4" style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)' }}>
               <h3 className="text-xs font-semibold uppercase tracking-wide mb-3" style={S.green}>👤 Inbox People</h3>
               {inboxPeople.map(item => (
@@ -754,7 +791,7 @@ function ClarifySection({ onDone, done, captureVersion }) {
               ))}
             </div>
           )}
-          {stalled.length > 0 && (
+          {(activeTab === 'all' || activeTab === 'stalled') && stalled.length > 0 && (
             <div className="rounded-xl border p-4" style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)' }}>
               <h3 className="text-xs font-semibold uppercase tracking-wide mb-1" style={S.yellow}>⚠️ Stalled Projects</h3>
               <p className="text-xs mb-3" style={S.muted}>In progress with no active tasks</p>
@@ -766,7 +803,7 @@ function ClarifySection({ onDone, done, captureVersion }) {
               ))}
             </div>
           )}
-          {overdue.length > 0 && (
+          {(activeTab === 'all' || activeTab === 'overdue') && overdue.length > 0 && (
             <div className="rounded-xl border p-4" style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)' }}>
               <h3 className="text-xs font-semibold uppercase tracking-wide mb-1" style={S.red}>🔴 Overdue Tasks</h3>
               <p className="text-xs mb-3" style={S.muted}>Past due date, not completed</p>
@@ -786,9 +823,127 @@ function ClarifySection({ onDone, done, captureVersion }) {
   )
 }
 
-// ─── SECTION 3: REFLECT ───────────────────────────────────────────────────────
+// ─── SECTION 3: REFLECT (tabbed list review) ──────────────────────────────────
 
-function ReflectSection({ review, locked, onSaveState, targetDate, gapStart, gapEnd }) {
+const REFLECT_TABS = [
+  { key: 'next_action', label: 'Next Actions', icon: '⚡', color: 'var(--accent)'        },
+  { key: 'in_progress', label: 'Projects',     icon: '📁', color: 'var(--accent-purple)' },
+  { key: 'waiting',     label: 'Waiting',      icon: '⏸',  color: 'var(--accent-yellow)' },
+  { key: 'scheduled',   label: 'Scheduled',    icon: '📅', color: 'var(--accent-pink)'   },
+  { key: 'someday',     label: 'Someday',      icon: '🌅', color: 'var(--text-secondary)'},
+]
+
+function ReflectSection({ onDone, done }) {
+  const [activeTab,   setActiveTab]   = useState('next_action')
+  const [items,       setItems]       = useState({})
+  const [loading,     setLoading]     = useState(true)
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [nextRes, projRes, waitRes, schedRes, somedayRes] = await Promise.all([
+          supabase.from('tasks').select('id, title, due_date, priority').eq('status', 'next_action').is('archived_at', null).order('created_at', { ascending: false }),
+          supabase.from('projects').select('id, title, status').eq('status', 'in_progress').is('archived_at', null).order('updated_at', { ascending: false }),
+          supabase.from('tasks').select('id, title, waiting_for').eq('status', 'waiting').is('archived_at', null).order('updated_at', { ascending: false }),
+          supabase.from('tasks').select('id, title, due_date').eq('status', 'scheduled').is('archived_at', null).order('due_date', { ascending: true }),
+          supabase.from('tasks').select('id, title').eq('status', 'someday').is('archived_at', null).order('updated_at', { ascending: false }),
+        ])
+        setItems({
+          next_action: nextRes.data ?? [],
+          in_progress: projRes.data ?? [],
+          waiting:     waitRes.data ?? [],
+          scheduled:   schedRes.data ?? [],
+          someday:     somedayRes.data ?? [],
+        })
+      } catch (err) {
+        console.error('ReflectSection load error:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [])
+
+  const activeItems = items[activeTab] ?? []
+  const activeMeta  = REFLECT_TABS.find(t => t.key === activeTab)
+
+  return (
+    <div className="rounded-2xl border p-6 mb-4" style={S.card}>
+      <SectionHeader
+        step={3}
+        title="Reflect"
+        subtitle="Scan your lists. Make sure everything is where it should be."
+        done={done}
+      />
+
+      {/* Tab bar */}
+      <div className="flex gap-1 mb-4 flex-wrap">
+        {REFLECT_TABS.map(t => {
+          const count = (items[t.key] ?? []).length
+          const active = activeTab === t.key
+          return (
+            <button
+              key={t.key}
+              onClick={() => setActiveTab(t.key)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors"
+              style={{
+                backgroundColor: active ? t.color : 'transparent',
+                borderColor:     active ? t.color : 'var(--border)',
+                color:           active ? 'var(--app-bg)' : 'var(--text-secondary)',
+              }}
+            >
+              {t.icon} {t.label}
+              {count > 0 && (
+                <span className="px-1.5 py-0.5 rounded text-xs" style={{
+                  backgroundColor: active ? 'rgba(255,255,255,0.25)' : 'var(--border)',
+                  color:           active ? 'var(--app-bg)'           : t.color,
+                }}>{count}</span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* List */}
+      {loading ? (
+        <p className="text-sm py-4" style={S.muted}>Loading…</p>
+      ) : activeItems.length === 0 ? (
+        <div className="rounded-xl border p-6 text-center mb-4" style={{ borderColor: 'var(--border)' }}>
+          <p className="text-2xl mb-2">✨</p>
+          <p className="text-sm" style={S.muted}>Nothing in {activeMeta?.label}.</p>
+        </div>
+      ) : (
+        <div className="rounded-xl border mb-4 overflow-hidden" style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)' }}>
+          {activeItems.map((item, i) => {
+            const isProject = activeTab === 'in_progress'
+            const linkTo    = isProject ? `/projects/${item.id}` : `/tasks/${item.id}`
+            const sub       = item.due_date ? item.due_date : item.waiting_for ? `waiting: ${item.waiting_for}` : null
+            return (
+              <div key={item.id} className="flex items-center gap-3 px-4 py-3 border-b last:border-b-0" style={{ borderColor: 'var(--border)' }}>
+                <span className="text-base shrink-0">{activeMeta?.icon}</span>
+                <Link to={linkTo} className="flex-1 text-sm hover:underline truncate" style={{ color: 'var(--text-primary)' }}>
+                  {item.title ?? `${item.first_name} ${item.last_name}`}
+                </Link>
+                {sub && <span className="text-xs shrink-0" style={S.muted}>{sub}</span>}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: 'var(--border)' }}>
+        <span className="text-sm" style={S.muted}>
+          {done ? '✓ Reflect locked in' : 'Review each list, then move on to the AI Review.'}
+        </span>
+        {!done && <Button variant="primary" onClick={onDone}>Done Reviewing →</Button>}
+      </div>
+    </div>
+  )
+}
+
+// ─── SECTION 4: AI REVIEW ─────────────────────────────────────────────────────
+
+function AIReviewSection({ review, locked, onSaveState, targetDate, gapStart, gapEnd }) {
   const { configured: aiConfigured, loading: aiLoading } = useAIConfig()
   const aiConfiguredRef = useRef(false)
   useEffect(() => { aiConfiguredRef.current = aiConfigured }, [aiConfigured])
@@ -1006,8 +1161,8 @@ function ReflectSection({ review, locked, onSaveState, targetDate, gapStart, gap
   return (
     <div className="rounded-2xl border p-6 mb-4" style={S.card}>
       <SectionHeader
-        step={3}
-        title="How'd it go today?"
+        step={4}
+        title="AI Review"
         subtitle={
           <>
             {ctx && (
@@ -1155,6 +1310,7 @@ export default function Reviews() {
   const [todayNoteId,      setTodayNoteId]      = useState(null)
   const [captureComplete,  setCaptureComplete]  = useState(false)
   const [clarifyComplete,  setClarifyComplete]  = useState(false)
+  const [reflectComplete,  setReflectComplete]  = useState(false)
   const [captureVersion,   setCaptureVersion]   = useState(0)
   const [resetting,        setResetting]        = useState(false)
 
@@ -1175,6 +1331,11 @@ export default function Reviews() {
   const markClarifyDone = useCallback(async () => {
     setClarifyComplete(true)
     await saveContent({ clarifyComplete: true })
+  }, [saveContent])
+
+  const markReflectDone = useCallback(async () => {
+    setReflectComplete(true)
+    await saveContent({ reflectComplete: true })
   }, [saveContent])
 
   const resetReview = useCallback(async () => {
@@ -1205,6 +1366,7 @@ export default function Reviews() {
       setReview(r)
       setCaptureComplete(!!content.captureComplete)
       setClarifyComplete(!!content.clarifyComplete)
+      setReflectComplete(!!content.reflectComplete)
       setTodayNoteId(noteRes.data?.id ?? null)
 
       // Compute gapStart: day after last completed review, capped at 14 days back
@@ -1308,8 +1470,15 @@ export default function Reviews() {
 
             <SectionWrapper locked={!clarifyComplete} lockLabel="Complete Clarify first">
               <ReflectSection
+                done={reflectComplete}
+                onDone={markReflectDone}
+              />
+            </SectionWrapper>
+
+            <SectionWrapper locked={!reflectComplete} lockLabel="Complete Reflect first">
+              <AIReviewSection
                 review={review}
-                locked={!clarifyComplete}
+                locked={!reflectComplete}
                 onSaveState={saveContent}
                 targetDate={targetDate}
                 gapStart={gapStart}

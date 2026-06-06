@@ -4,6 +4,16 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-06 (Session 14 cont.)
+
+### Changed
+- **Review sections renamed to GTD terms** — "What's on your mind?" → **Capture**, "What does each item mean?" → **Clarify**. The old Reflect section is now two separate sections.
+- **Clarify section now has tabs** — filter inbox items by category: All | Tasks | Projects | People | Stalled | Overdue. Each tab shows a count badge. Tabs that have zero items are hidden.
+- **New Reflect section (step 3)** — a dedicated tabbed list review showing all your active lists: Next Actions | Projects | Waiting | Scheduled | Someday. Click through to any item, scan your system, then hit "Done Reviewing" to unlock the next step.
+- **AI Review is now its own section (step 4)** — the AI chat, plan generation, and suggestion cards are separated from the list review. Gated behind Reflect so you scan your system before the interview starts.
+
+---
+
 ## 2026-06-06 (Session 14)
 
 ### Added
