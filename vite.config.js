@@ -38,6 +38,8 @@ export default defineConfig({
         ],
       },
       workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
         // Cache all JS/CSS/HTML/SVG assets for offline use
         globPatterns: ['**/*.{js,css,html,svg,ico,woff2}'],
         // Don't cache Supabase API calls
