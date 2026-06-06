@@ -4,6 +4,9 @@ import { Pencil, RotateCcw, Loader2, Check, CheckCheck, Zap, CalendarDays, Folde
 import { ensureReview, updateReviewContent, completeReview, updateSuggestions } from '../lib/api/reviews'
 import { buildReflectContext, generateReflectQuestions, generateConversationalResponse, generateReflectPlan, writeReflectResults } from '../lib/ai/skills/reflectReview'
 import { useAIConfig } from '../hooks/useAI'
+import { useEnergyLevels } from '../contexts/EnergyLevelsContext'
+import { usePriorities }   from '../contexts/PrioritiesContext'
+import { useAreas }        from '../contexts/AreasContext'
 import { createTask, updateTask } from '../lib/api/tasks'
 import { createProject, updateProject } from '../lib/api/projects'
 import { createPerson, updatePerson } from '../lib/api/people'
@@ -118,6 +121,10 @@ function ActionBtn({ variant = 'ghost', onClick, disabled, children }) {
 // ─── Clarify task row ─────────────────────────────────────────────────────────
 
 function ClarifyTaskRow({ task }) {
+  const { levels }      = useEnergyLevels()
+  const { priorities }  = usePriorities()
+  const { areas }       = useAreas()
+
   const [resolved,        setResolved]        = useState(false)
   const [resolvedLabel,   setResolvedLabel]   = useState('')
   const [prompt,          setPrompt]          = useState(null)
@@ -125,6 +132,13 @@ function ClarifyTaskRow({ task }) {
   const [projects,        setProjects]        = useState([])
   const [selectedProject, setSelectedProject] = useState(null)
   const [saving,          setSaving]          = useState(false)
+  const [clarifyFields,   setClarifyFields]   = useState({
+    description: task.description ?? '',
+    priority:    task.priority    ?? '',
+    energy_level:task.energy_level ?? '',
+    duration:    task.duration    ?? '',
+    area:        task.area        ?? '',
+  })
 
   const resolve = async (fn, label) => {
     setSaving(true)
@@ -142,6 +156,16 @@ function ClarifyTaskRow({ task }) {
     }
     setPrompt(type)
   }
+
+  const handleClarifyConfirm = () => {
+    resolve(() => updateTask(task.id, {
+      ...clarifyFields,
+      duration: clarifyFields.duration ? Number(clarifyFields.duration) : null,
+      status: 'next_action',
+    }), 'Next Action')
+    setPrompt(null)
+  }
+  const clarifyReady = clarifyFields.priority && clarifyFields.energy_level && clarifyFields.duration && clarifyFields.area
 
   if (resolved) {
     return (
@@ -186,6 +210,47 @@ function ClarifyTaskRow({ task }) {
           <ActionBtn variant="ghost" title="Cancel" onClick={() => setPrompt(null)}><X size={13} /></ActionBtn>
         </div>
       )}
+      {prompt === 'clarify' && (
+        <div className="px-3 pb-3 space-y-2">
+          <p className="text-xs font-medium pt-1" style={{ color: 'var(--accent)' }}>Put me in coach — fill in the details</p>
+          <textarea
+            rows={2} placeholder="What does this task actually involve?"
+            value={clarifyFields.description}
+            onChange={e => setClarifyFields(f => ({ ...f, description: e.target.value }))}
+            className="w-full px-2 py-1.5 rounded border text-xs outline-none resize-none"
+            style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <select value={clarifyFields.priority} onChange={e => setClarifyFields(f => ({ ...f, priority: e.target.value }))}
+              className="px-2 py-1.5 rounded border text-xs outline-none"
+              style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)', color: clarifyFields.priority ? 'var(--text-primary)' : 'var(--text-dim)' }}>
+              <option value="">Priority…</option>
+              {priorities.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+            </select>
+            <select value={clarifyFields.energy_level} onChange={e => setClarifyFields(f => ({ ...f, energy_level: e.target.value }))}
+              className="px-2 py-1.5 rounded border text-xs outline-none"
+              style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)', color: clarifyFields.energy_level ? 'var(--text-primary)' : 'var(--text-dim)' }}>
+              <option value="">Energy…</option>
+              {levels.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
+            </select>
+            <input type="number" min="1" placeholder="Duration (min)"
+              value={clarifyFields.duration} onChange={e => setClarifyFields(f => ({ ...f, duration: e.target.value }))}
+              className="px-2 py-1.5 rounded border text-xs outline-none"
+              style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+            />
+            <input list={`area-list-${task.id}`} placeholder="Area…"
+              value={clarifyFields.area} onChange={e => setClarifyFields(f => ({ ...f, area: e.target.value }))}
+              className="px-2 py-1.5 rounded border text-xs outline-none"
+              style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+            />
+            <datalist id={`area-list-${task.id}`}>{areas.map(a => <option key={a.id} value={a.label} />)}</datalist>
+          </div>
+          <div className="flex gap-2">
+            <ActionBtn variant="primary" title="Send to Next Actions" disabled={!clarifyReady || saving} onClick={handleClarifyConfirm}><Check size={13} /></ActionBtn>
+            <ActionBtn variant="ghost"   title="Cancel"               onClick={() => setPrompt(null)}><X size={13} /></ActionBtn>
+          </div>
+        </div>
+      )}
       {prompt === 'route' && (
         <div className="px-3 pb-2.5 space-y-1.5">
           <div className="space-y-1 max-h-28 overflow-y-auto">
@@ -211,7 +276,7 @@ function ClarifyTaskRow({ task }) {
           {status === 'inbox' && !task.project_id && (
             <>
               <ActionBtn variant="success"   title="Did It — mark done"        onClick={() => resolve(() => updateTask(task.id, { status: 'done' }),        'Done')}><CheckCheck size={13} /></ActionBtn>
-              <ActionBtn variant="primary"   title="Next Action"                onClick={() => resolve(() => updateTask(task.id, { status: 'next_action' }), 'Next Action')}><Zap size={13} /></ActionBtn>
+              <ActionBtn variant="primary"   title="Next Action"                onClick={() => openPrompt('clarify')}><Zap size={13} /></ActionBtn>
               <ActionBtn variant="warning"   title="Schedule it"                onClick={() => openPrompt('schedule')}><CalendarDays size={13} /></ActionBtn>
               <ActionBtn variant="secondary" title="Assign to project"          onClick={() => openPrompt('route')}><Folder size={13} /></ActionBtn>
               <ActionBtn variant="ghost"     title="Someday/Maybe"              onClick={() => resolve(() => updateTask(task.id, { status: 'someday' }),     'Someday')}><Clock size={13} /></ActionBtn>
