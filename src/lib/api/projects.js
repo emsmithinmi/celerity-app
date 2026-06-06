@@ -170,7 +170,7 @@ export async function checkProjectStalled(projectId) {
     .from('tasks')
     .select('id, status')
     .eq('project_id', projectId)
-    .in('status', ['next_action', 'waiting'])
+    .in('status', ['next_action', 'waiting', 'scheduled'])
 
   const { data: project } = await supabase
     .from('projects')

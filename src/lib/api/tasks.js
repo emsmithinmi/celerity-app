@@ -86,7 +86,18 @@ export async function clarifyTask(id, fields) {
 // ─── Status Transitions ───────────────────────────────────────────────────────
 
 export async function moveToNextAction(id) {
-  return updateTask(id, { status: 'next_action' })
+  const task = await getTask(id)
+  await updateTask(id, { status: 'next_action' })
+  // If the parent project is stalled, promote it back to in_progress
+  if (task.project_id) {
+    const { data: project } = await supabase.from('projects').select('status').eq('id', task.project_id).single()
+    if (project?.status === 'stalled') {
+      await supabase.from('projects')
+        .update({ status: 'in_progress', updated_at: new Date().toISOString() })
+        .eq('id', task.project_id)
+    }
+  }
+  return getTask(id)
 }
 
 export async function moveToQueued(id) {

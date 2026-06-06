@@ -4,6 +4,15 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-06 (Session 14 cont. 7)
+
+### Fixed
+- **Stalled project bug** — projects were staying in "Stalled" status even after tasks were promoted to Next Action. Root cause: `checkProjectStalled` was only called after task completion, never when tasks moved *to* next_action. Fixed in two places:
+  - `moveToNextAction` in `tasks.js` now auto-promotes a stalled parent project back to `in_progress` — no extra call needed anywhere.
+  - `checkProjectStalled` in `projects.js` now also counts `scheduled` tasks as "active" (previously only `next_action` + `waiting`).
+
+---
+
 ## 2026-06-06 (Session 14 cont. 6)
 
 ### Added
