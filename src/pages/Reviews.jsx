@@ -102,12 +102,13 @@ const ACTION_STYLES = {
   danger:    { bg: 'var(--state-error-bg)',     border: 'var(--accent-red)',    text: 'var(--accent-red)'    },
 }
 
-function ActionBtn({ variant = 'ghost', onClick, disabled, children }) {
+function ActionBtn({ variant = 'ghost', onClick, disabled, title, children }) {
   const s = ACTION_STYLES[variant] ?? ACTION_STYLES.ghost
   return (
     <button
       onClick={onClick}
       disabled={disabled}
+      title={title}
       className="px-2 py-1 rounded text-xs font-medium border transition-colors"
       style={{ backgroundColor: s.bg, borderColor: s.border, color: s.text, opacity: disabled ? 0.4 : 1, cursor: disabled ? 'default' : 'pointer' }}
       onMouseEnter={e => { if (!disabled) { e.currentTarget.style.backgroundColor = s.border; e.currentTarget.style.color = 'var(--app-bg)' } }}
