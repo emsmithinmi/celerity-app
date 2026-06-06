@@ -12,6 +12,8 @@ All notable changes to Focus Flow are recorded here.
 - **Did It button on all active task statuses** — "Did It" (quick permanent delete for tasks done too fast to track) was previously only on inbox. Now available on next_action, queued, waiting, scheduled, and someday — in both TaskDetail and TaskPage.
 - **Icon-only clarify action buttons** — ClarifyTaskRow action buttons in the Review page now show Lucide icons instead of text labels. Cleaner, less visual noise. Tooltips still there for discoverability.
 - **Conversational AI review interview** — the Reflect section's AI chat now makes a real AI call on every user turn instead of rigidly cycling through pre-scripted questions. It reacts to what you actually said, has personality, and organically weaves in remaining topics rather than ignoring your input.
+- **Missed review banner** — the Reviews page now detects gaps in the past 7 days of daily reviews and shows an orange banner at the top if any were missed, listing the specific dates.
+- **Morning review date fix** — when running a review via `?gate=today` (morning mode), the AI context now reads yesterday's habits and plans for today instead of incorrectly reading today's empty habit state and planning for tomorrow.
 
 ---
 

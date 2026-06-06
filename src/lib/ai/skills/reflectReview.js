@@ -43,10 +43,12 @@ async function getGmailContext() {
 
 // ─── Context Builder ──────────────────────────────────────────────────────────
 
-export async function buildReflectContext() {
+export async function buildReflectContext({ reviewDate } = {}) {
   const today = new Date().toLocaleDateString('en-CA')
+  // reviewDate: the day being reviewed (yesterday for morning reviews, today for evening)
+  const targetDay = reviewDate ?? today
 
-  const lookAheadEnd = new Date(today + 'T12:00:00')
+  const lookAheadEnd = new Date(targetDay + 'T12:00:00')
   lookAheadEnd.setDate(lookAheadEnd.getDate() + 7)
   const lookAheadEndStr = lookAheadEnd.toLocaleDateString('en-CA')
 
@@ -59,7 +61,7 @@ export async function buildReflectContext() {
     birthdayWindow.push({ monthDay: `${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`, date: dt.toLocaleDateString('en-CA'), daysOut: d })
   }
 
-  const [projectsRes, activeTasksRes, inboxRes, notesRes, todayNoteRes, peopleRes] = await Promise.all([
+  const [projectsRes, activeTasksRes, inboxRes, notesRes, targetDayNoteRes, peopleRes] = await Promise.all([
     supabase
       .from('projects')
       .select('id, title, status, area, priority, end_date, description')
@@ -87,7 +89,7 @@ export async function buildReflectContext() {
       .order('date', { ascending: false })
       .limit(30),
 
-    supabase.from('daily_notes').select('*').eq('date', today).maybeSingle(),
+    supabase.from('daily_notes').select('*').eq('date', targetDay).maybeSingle(),
 
     supabase
       .from('people')
@@ -100,7 +102,7 @@ export async function buildReflectContext() {
   const activeTasks = activeTasksRes.data ?? []
   const inboxTasks  = inboxRes.data       ?? []
   const recentNotes = notesRes.data       ?? []
-  const todayNote   = todayNoteRes.data
+  const todayNote   = targetDayNoteRes.data
 
   const allPeople = peopleRes.data ?? []
   const upcomingBirthdays = allPeople
@@ -116,8 +118,7 @@ export async function buildReflectContext() {
   const activeProjectIds = new Set(activeTasks.filter(t => t.project_id).map(t => t.project_id))
   const stalledProjects  = projects.filter(p => p.status === 'in_progress' && !activeProjectIds.has(p.id))
 
-  const today_date = new Date()
-  const overdueTasks = activeTasks.filter(t => t.due_date && t.due_date < today)
+  const overdueTasks = activeTasks.filter(t => t.due_date && t.due_date < targetDay)
 
   const habits = todayNote ? {
     morning_meds:    todayNote.habit_morning_meds,
@@ -129,9 +130,10 @@ export async function buildReflectContext() {
     health_tracking: todayNote.habit_health_tracking,
   } : {}
 
-  const tomorrow = new Date(today + 'T12:00:00')
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  const tomorrowStr = tomorrow.toLocaleDateString('en-CA')
+  // Plan for the next day after the reviewed day
+  const planDay = new Date(targetDay + 'T12:00:00')
+  planDay.setDate(planDay.getDate() + 1)
+  const tomorrowStr = planDay.toLocaleDateString('en-CA')
   const weekEnd = new Date(tomorrowStr + 'T12:00:00')
   weekEnd.setDate(weekEnd.getDate() + 6)
   const weekEndStr = weekEnd.toLocaleDateString('en-CA')
@@ -141,7 +143,7 @@ export async function buildReflectContext() {
     getGmailContext(),
   ])
 
-  return { today, tomorrowStr, weekEndStr, projects, activeTasks, inboxTasks, recentNotes, stalledProjects, overdueTasks, habits, calendarEvents, gmail, upcomingBirthdays }
+  return { today: targetDay, tomorrowStr, weekEndStr, projects, activeTasks, inboxTasks, recentNotes, stalledProjects, overdueTasks, habits, calendarEvents, gmail, upcomingBirthdays }
 }
 
 // ─── Conversational Interview Turn ───────────────────────────────────────────

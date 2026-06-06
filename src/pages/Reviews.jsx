@@ -722,7 +722,7 @@ function ClarifySection({ onDone, done, captureVersion }) {
 
 // ─── SECTION 3: REFLECT ───────────────────────────────────────────────────────
 
-function ReflectSection({ review, locked, onSaveState, targetDate }) {
+function ReflectSection({ review, locked, onSaveState, targetDate, reviewDate }) {
   const { configured: aiConfigured, loading: aiLoading } = useAIConfig()
   const aiConfiguredRef = useRef(false)
   useEffect(() => { aiConfiguredRef.current = aiConfigured }, [aiConfigured])
@@ -786,7 +786,7 @@ function ReflectSection({ review, locked, onSaveState, targetDate }) {
 
     async function init() {
       const [ctxData, nextRes, projRes] = await Promise.all([
-        buildReflectContext(),
+        buildReflectContext({ reviewDate }),
         supabase.from('tasks').select('id, title, due_date').eq('status', 'next_action').is('archived_at', null).limit(8),
         supabase.from('projects').select('id, title, status').eq('status', 'in_progress').is('archived_at', null).limit(6),
       ])
@@ -837,7 +837,7 @@ function ReflectSection({ review, locked, onSaveState, targetDate }) {
 
     init()
     return () => { cancelled = true }
-  }, [aiLoading, locked]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [aiLoading, locked, reviewDate]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const triggerGenerate = async (ctxOverride, convOverride) => {
     const activeCtx  = ctxOverride  ?? ctx
@@ -1042,9 +1042,18 @@ export default function Reviews() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const today = new Date().toLocaleDateString('en-CA')
-  const targetDate = searchParams.get('gate') === 'today' ? today : null
 
   const activeType = ['daily', 'weekly', 'monthly'].includes(urlType) ? urlType : 'daily'
+
+  // For morning reviews (?gate=today), we review yesterday's habits and plan for today
+  const yesterday = (() => {
+    const d = new Date(today + 'T12:00:00')
+    d.setDate(d.getDate() - 1)
+    return d.toLocaleDateString('en-CA')
+  })()
+  const isMorningReview = searchParams.get('gate') === 'today'
+  const reviewDate  = isMorningReview ? yesterday : today   // day whose habits/data to read
+  const targetDate  = isMorningReview ? today : null        // day to write the plan to (null = tomorrow)
 
   const [review,           setReview]           = useState(null)
   const [loading,          setLoading]          = useState(true)
@@ -1055,6 +1064,7 @@ export default function Reviews() {
   const [clarifyComplete,  setClarifyComplete]  = useState(false)
   const [captureVersion,   setCaptureVersion]   = useState(0)
   const [resetting,        setResetting]        = useState(false)
+  const [missedDays,       setMissedDays]       = useState([])
 
   const reviewRef  = useRef(null)
   const contentRef = useRef({})
@@ -1089,10 +1099,21 @@ export default function Reviews() {
   useEffect(() => {
     setLoading(true)
     setLoadError(null)
+    // Build list of the 7 days before today to check for missed reviews
+    const checkDays = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(today + 'T12:00:00')
+      d.setDate(d.getDate() - (i + 1))
+      return d.toLocaleDateString('en-CA')
+    })
+    const sevenDaysAgo = checkDays[checkDays.length - 1]
+
     Promise.all([
       ensureReview(activeType, today),
       supabase.from('daily_notes').select('id').eq('date', today).maybeSingle(),
-    ]).then(([r, noteRes]) => {
+      activeType === 'daily'
+        ? supabase.from('reviews').select('date, status').eq('type', 'daily').gte('date', sevenDaysAgo).lt('date', today)
+        : Promise.resolve({ data: [] }),
+    ]).then(([r, noteRes, pastReviewsRes]) => {
       reviewRef.current = r
       const content = r.content ?? {}
       contentRef.current = content
@@ -1100,6 +1121,13 @@ export default function Reviews() {
       setCaptureComplete(!!content.captureComplete)
       setClarifyComplete(!!content.clarifyComplete)
       setTodayNoteId(noteRes.data?.id ?? null)
+
+      // Detect missed days — days with no review row or non-completed review
+      const completedDates = new Set(
+        (pastReviewsRes.data ?? []).filter(rv => rv.status === 'completed').map(rv => rv.date)
+      )
+      const missed = checkDays.filter(d => !completedDates.has(d))
+      setMissedDays(missed)
     }).catch(err => {
       console.error('Reviews load error:', err)
       setLoadError(err.message ?? 'Failed to load review session.')
@@ -1155,6 +1183,23 @@ export default function Reviews() {
         ))}
       </div>
 
+      {/* Missed review banner */}
+      {!loading && activeType === 'daily' && missedDays.length > 0 && (
+        <div
+          className="mx-6 mt-4 px-4 py-3 rounded-xl border text-sm flex items-start gap-3"
+          style={{ backgroundColor: 'var(--card-reminder-bg)', borderColor: 'var(--accent-orange)', color: 'var(--accent-orange)' }}
+        >
+          <span className="text-lg shrink-0">⚠️</span>
+          <div>
+            <p className="font-semibold mb-0.5">Missed {missedDays.length} review{missedDays.length !== 1 ? 's' : ''}</p>
+            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+              No completed review on: {missedDays.slice(0, 3).map(d => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })).join(', ')}
+              {missedDays.length > 3 ? ` +${missedDays.length - 3} more` : ''}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Body */}
       <div className="flex-1 overflow-y-auto">
         {loading ? (
@@ -1191,6 +1236,7 @@ export default function Reviews() {
                 locked={!clarifyComplete}
                 onSaveState={saveContent}
                 targetDate={targetDate}
+                reviewDate={reviewDate}
               />
             </SectionWrapper>
           </div>
