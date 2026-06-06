@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { Pencil, RotateCcw, Loader2 } from 'lucide-react'
 import { ensureReview, updateReviewContent, completeReview, updateSuggestions } from '../lib/api/reviews'
-import { buildReflectContext, generateReflectQuestions, generateReflectPlan, writeReflectResults } from '../lib/ai/skills/reflectReview'
+import { buildReflectContext, generateReflectQuestions, generateConversationalResponse, generateReflectPlan, writeReflectResults } from '../lib/ai/skills/reflectReview'
 import { useAIConfig } from '../hooks/useAI'
 import { createTask, updateTask } from '../lib/api/tasks'
 import { createProject, updateProject } from '../lib/api/projects'
@@ -726,6 +726,7 @@ function ReflectSection({ review, locked, onSaveState, targetDate }) {
   const [questions,       setQuestions]       = useState(saved.questions ?? [])
   const [conversation,    setConversation]    = useState(saved.conversation ?? [])
   const [qIndex,          setQIndex]          = useState(saved.qIndex ?? 0)
+  const [readyToGenerate, setReadyToGenerate] = useState(saved.readyToGenerate ?? false)
   const [typing,          setTyping]          = useState(false)
   const [inputVal,        setInputVal]        = useState('')
   const [inputActive,     setInputActive]     = useState(false)
@@ -747,7 +748,7 @@ function ReflectSection({ review, locked, onSaveState, targetDate }) {
   // Persist conversation to DB on change
   useEffect(() => {
     if (conversation.length === 0) return
-    onSaveState?.({ conversation, qIndex })
+    onSaveState?.({ conversation, qIndex, readyToGenerate })
   }, [conversation, qIndex]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const scrollChat = () => setTimeout(() => chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: 'smooth' }), 50)
@@ -792,17 +793,13 @@ function ReflectSection({ review, locked, onSaveState, targetDate }) {
 
       // Rehydrate saved conversation — skip question generation
       if (saved.conversation?.length > 0) {
-        const qs = saved.questions ?? []
-        const qi = saved.qIndex ?? 0
-        // Still mid-interview
-        if (qi <= qs.length) {
-          setInputActive(true)
-          setTimeout(() => inputRef.current?.focus(), 50)
-        }
-        // Past the ready question but plan not yet generated — re-trigger
-        if (qi > qs.length && !review?.suggestions?.length) {
+        // Plan not yet generated but was ready — re-trigger
+        if (saved.readyToGenerate && !review?.suggestions?.length) {
           triggerGenerate(ctxData, saved.conversation ?? [])
+          return
         }
+        setInputActive(true)
+        setTimeout(() => inputRef.current?.focus(), 50)
         return
       }
 
@@ -862,7 +859,7 @@ function ReflectSection({ review, locked, onSaveState, targetDate }) {
     }
   }
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const val = inputVal.trim()
     if (!val || !inputActive) return
     addBubble('user', val)
@@ -872,22 +869,37 @@ function ReflectSection({ review, locked, onSaveState, targetDate }) {
     const nextIndex = qIndex + 1
     setQIndex(nextIndex)
 
-    if (nextIndex < questions.length) {
-      // More interview questions
-      askQuestion(questions[nextIndex])
-    } else if (nextIndex === questions.length) {
-      // Just answered the last question — ask if ready
-      setTyping(true)
-      setTimeout(() => {
-        if (!mountedRef.current) return
-        setTyping(false)
-        addBubble('ai', "That's what I needed. Anything else to add before I lock in tomorrow — drop it here. Or just say go.")
-        setInputActive(true)
-        setTimeout(() => inputRef.current?.focus(), 50)
-      }, 1200)
-    } else {
-      // User replied to the ready question — generate
+    // If AI already signalled ready, next user message triggers generation
+    if (readyToGenerate) {
       triggerGenerate()
+      return
+    }
+
+    // Build the full conversation including the message just sent
+    const newConversation = [...conversation, { role: 'user', content: val }]
+    const remainingTopics = questions.slice(nextIndex)
+
+    setTyping(true)
+    try {
+      const { message, ready } = await generateConversationalResponse(newConversation, remainingTopics)
+      if (!mountedRef.current) return
+      setTyping(false)
+      addBubble('ai', message)
+      if (ready) setReadyToGenerate(true)
+      setInputActive(true)
+      setTimeout(() => inputRef.current?.focus(), 50)
+    } catch {
+      if (!mountedRef.current) return
+      setTyping(false)
+      // Fallback: next scripted question or wrap-up
+      if (remainingTopics.length > 0) {
+        addBubble('ai', remainingTopics[0])
+      } else {
+        addBubble('ai', "That's what I needed. Anything else before I lock in tomorrow — or just say go.")
+        setReadyToGenerate(true)
+      }
+      setInputActive(true)
+      setTimeout(() => inputRef.current?.focus(), 50)
     }
   }
 

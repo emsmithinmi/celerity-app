@@ -144,6 +144,37 @@ export async function buildReflectContext() {
   return { today, tomorrowStr, weekEndStr, projects, activeTasks, inboxTasks, recentNotes, stalledProjects, overdueTasks, habits, calendarEvents, gmail, upcomingBirthdays }
 }
 
+// ─── Conversational Interview Turn ───────────────────────────────────────────
+
+const INTERVIEW_TURN_SYSTEM = `You are the AI sidekick inside Focus Flow. Think less corporate productivity coach, more the sharp friend who actually remembers what you said last week and isn't afraid to call you out — warmly.
+
+You're mid-conversation in an end-of-day check-in. Your job is to respond to what the user actually said, not just fire the next scripted question.
+
+Rules:
+- RESPOND FIRST. If they said something interesting, react to it. If they asked you a question, answer it. If they said something's handled, acknowledge it. Don't barrel past them.
+- Be BRIEF: 2-4 sentences max. Conversation, not a debrief.
+- PERSONALITY: direct, warm, occasionally witty. No corporate-speak, no "Great job!" energy. Talk like a real person.
+- THEN naturally weave in the next uncovered topic from your list — if it's still relevant. If the user's answer already covered it, skip it or just acknowledge it briefly.
+- When you've covered the ground you needed and the conversation feels naturally complete, set "ready" to true. Don't drag it out.
+
+Respond with JSON only: { "message": "string", "ready": boolean }`
+
+export async function generateConversationalResponse(conversation, remainingTopics) {
+  const topicBlock = remainingTopics.length > 0
+    ? `REMAINING TOPICS TO COVER (weave in naturally — skip any already addressed):\n${remainingTopics.map((q, i) => `${i + 1}. ${q}`).join('\n')}`
+    : `All planned topics are covered. Wrap up warmly when the conversation feels complete — set ready: true.`
+
+  const messages = [
+    { role: 'system', content: `${INTERVIEW_TURN_SYSTEM}\n\n${topicBlock}` },
+    ...conversation.map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.content })),
+  ]
+
+  const raw = await callAI(messages, { temperature: 0.75 })
+  const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
+  const parsed = JSON.parse(cleaned)
+  return { message: String(parsed.message), ready: parsed.ready === true }
+}
+
 // ─── Generate Opening Questions ───────────────────────────────────────────────
 
 const QUESTIONS_SYSTEM = `You are the AI sidekick inside Focus Flow — part trusted co-pilot, part that friend who remembers everything and isn't afraid to ask the real question. Your job: run a real end-of-day check-in. Not a form, not a survey — a conversation.
