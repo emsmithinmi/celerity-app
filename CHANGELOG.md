@@ -4,6 +4,18 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-06 (Session 14 cont. 9)
+
+### Changed
+- **AI personality overhaul — "Tommy Chong, but a genius"** — replaced the Shaggy-Hawking concept across all four AI skill prompts (Daily Brief, Daily Review, Reflect Interview, Stuck Helper). New voice: laid-back, groovy, warm, unhurried — but brilliant underneath. Natural sixties/seventies speech ("like," "man," "far out," "right on") used organically, never forced.
+- **Removed "zoinks"** — Scooby-Doo-isms dropped entirely. Hippie idioms now drive the personality instead.
+- **Added colorful idioms** — "monkey on your back," "name the gorilla in the room," "what's been sitting heavy" baked into interview prompts as preferred alternatives to corporate language.
+- **Pop culture reference pool** — all AI prompts now carry a reference list (Star Wars OT, Matrix, Back to the Future, Pulp Fiction, Jurassic Park, Top Gun, Goonies, Fight Club, MCU, A-Team, Miami Vice, Star Trek) with instruction to use them when the moment earns it.
+- **Super positive, super capable** — baked into the brief prompt as the baseline energy. No hedging, no hand-wringing.
+- **Portable personality prompt** — standalone `.md` file created (`tommy-chong-genius-personality.md`) with full system prompt + one-liner for dropping this personality into any AI tool.
+
+---
+
 ## 2026-06-06 (Session 14 cont. 8)
 
 ### Added
