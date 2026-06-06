@@ -4,6 +4,13 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-06 (Session 14 cont. 2)
+
+### Fixed
+- **Consistent action button colors in Reviews** — "Did It" now uses red (danger) and "Next Action / Move to Next Action / Clear Blocker" uses green (success) throughout all task status groups in the Clarify section. Matches the color semantics used in TaskPage and TaskDetail. "Scrap it" downgraded from red to ghost since scrap ≠ done. "Queue it" aligned to secondary (neutral organizational move).
+
+---
+
 ## 2026-06-06 (Session 14 cont.)
 
 ### Changed
