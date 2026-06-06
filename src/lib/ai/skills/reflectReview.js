@@ -274,14 +274,6 @@ export async function generateReflectQuestions(ctx) {
     lines.push('OVERDUE:')
     overdueTasks.forEach(t => lines.push(`- ${t.title} (due ${t.due_date})`))
   }
-  const completedHabits = Object.entries(habits).filter(([, v]) => v).map(([k]) => k.replace(/_/g, ' '))
-  const missedHabits    = Object.entries(habits).filter(([, v]) => !v).map(([k]) => k.replace(/_/g, ' '))
-  if (completedHabits.length || missedHabits.length) {
-    lines.push('')
-    lines.push(`HABITS ON ${gapEnd}:`)
-    if (completedHabits.length) lines.push(`Completed: ${completedHabits.join(', ')}`)
-    if (missedHabits.length)    lines.push(`Missed: ${missedHabits.join(', ')}`)
-  }
   const notesWithContent = recentNotes.filter(n => n.notes?.length > 0).slice(0, 7)
   if (notesWithContent.length) {
     lines.push('')

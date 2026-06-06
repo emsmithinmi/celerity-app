@@ -56,15 +56,38 @@ function computeLongestStreak(history, habitKey) {
   return longest
 }
 
-function computePercent(dateMap, habitKey, days) {
+function getTimeframeRange(key) {
   const today = new Date()
+  const todayStr = today.toLocaleDateString('en-CA')
+  if (key === 'today') return { start: todayStr, end: todayStr }
+  if (key === 'week') {
+    const weekStart = new Date(today)
+    weekStart.setDate(today.getDate() - today.getDay()) // Sunday = 0
+    return { start: weekStart.toLocaleDateString('en-CA'), end: todayStr }
+  }
+  if (key === 'month') {
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
+    return { start: monthStart.toLocaleDateString('en-CA'), end: todayStr }
+  }
+  // year
+  const yearStart = new Date(today.getFullYear(), 0, 1)
+  return { start: yearStart.toLocaleDateString('en-CA'), end: todayStr }
+}
+
+function computePercent(dateMap, habitKey, timeframeKey) {
+  const { start, end } = getTimeframeRange(timeframeKey)
+  if (timeframeKey === 'today') {
+    const row = dateMap[start]
+    return row ? (row[habitKey] ? 100 : 0) : null
+  }
   let completed = 0, total = 0
-  for (let i = 0; i < days; i++) {
-    const d = new Date(today)
-    d.setDate(d.getDate() - i)
+  let d = new Date(start + 'T12:00:00')
+  const endDate = new Date(end + 'T12:00:00')
+  while (d <= endDate) {
     const dateStr = d.toLocaleDateString('en-CA')
     const row = dateMap[dateStr]
     if (row) { total++; if (row[habitKey]) completed++ }
+    d.setDate(d.getDate() + 1)
   }
   return total === 0 ? 0 : Math.round((completed / total) * 100)
 }
@@ -74,10 +97,10 @@ function computePercent(dateMap, habitKey, days) {
 const DOW_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
 const TIMEFRAMES = [
-  { key: 7,   label: '7 days'  },
-  { key: 30,  label: '30 days' },
-  { key: 90,  label: '90 days' },
-  { key: 365, label: '1 year'  },
+  { key: 'today', label: 'Today'      },
+  { key: 'week',  label: 'This Week'  },
+  { key: 'month', label: 'This Month' },
+  { key: 'year',  label: 'This Year'  },
 ]
 
 function HabitCalendar({ habitKey, calYear, calMonth, dateMap, onPrev, onNext }) {
@@ -178,7 +201,7 @@ export default function HabitPage() {
   const today = new Date()
   const [history,   setHistory]   = useState([])
   const [loading,   setLoading]   = useState(true)
-  const [timeframe, setTimeframe] = useState(30)
+  const [timeframe, setTimeframe] = useState('week')
   const [calYear,   setCalYear]   = useState(today.getFullYear())
   const [calMonth,  setCalMonth]  = useState(today.getMonth())
 
@@ -193,7 +216,7 @@ export default function HabitPage() {
   const longestStreak = useMemo(() => computeLongestStreak(history, habitKey), [history, habitKey])
   const percent       = useMemo(() => computePercent(dateMap, habitKey, timeframe), [dateMap, habitKey, timeframe])
 
-  const barColor = percent >= 70 ? 'var(--habit-done-bg)' : percent >= 40 ? 'var(--state-warning-text)' : 'var(--danger)'
+  const barColor = percent === null ? 'var(--text-dim)' : percent >= 70 ? 'var(--habit-done-bg)' : percent >= 40 ? 'var(--state-warning-text)' : 'var(--danger)'
 
   const handlePrevMonth = () => {
     if (calMonth === 0) { setCalYear(y => y - 1); setCalMonth(11) }
@@ -247,9 +270,11 @@ export default function HabitPage() {
                 <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>Best Streak</p>
               </div>
               <div className="rounded-xl border p-4 text-center" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
-                <p className="text-3xl font-bold" style={{ color: barColor }}>{percent}%</p>
+                <p className="text-3xl font-bold" style={{ color: barColor }}>
+                  {percent === null ? '—' : timeframe === 'today' ? (percent === 100 ? '✓' : '✗') : `${percent}%`}
+                </p>
                 <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
-                  {TIMEFRAMES.find(t => t.key === timeframe)?.label} completion
+                  {TIMEFRAMES.find(t => t.key === timeframe)?.label}
                 </p>
               </div>
             </div>

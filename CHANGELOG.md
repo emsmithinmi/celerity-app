@@ -4,6 +4,15 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-06 (Session 14 cont. 3)
+
+### Changed
+- **AI Review — removed Next Actions reference card** — already visible in the Reflect step; no need to show it again in the AI interview.
+- **AI interview no longer mentions habits** — habit data stripped from the interview prompt entirely. Habits are optional and shouldn't come up unless you bring them up.
+- **Habit detail page — timeframe selector overhauled** — replaced "7 days / 30 days / 90 days / 1 year" with **Today / This Week / This Month / This Year**. Weeks start on Sunday. "Today" shows ✓ or ✗ instead of a percentage.
+
+---
+
 ## 2026-06-06 (Session 14 cont. 2)
 
 ### Fixed

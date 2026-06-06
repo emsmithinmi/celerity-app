@@ -979,7 +979,6 @@ function AIReviewSection({ review, locked, onSaveState, targetDate, gapStart, ga
   const [suggestions,     setSuggestions]     = useState(review?.suggestions ?? [])
   const [showSuggestions, setShowSuggestions] = useState(review?.suggestions?.length > 0)
   const [completed,       setCompleted]       = useState(review?.status === 'completed')
-  const [nextActions,     setNextActions]     = useState([])
   const [inProgress,      setInProgress]      = useState([])
   const chatRef  = useRef(null)
   const inputRef = useRef(null)
@@ -1024,14 +1023,12 @@ function AIReviewSection({ review, locked, onSaveState, targetDate, gapStart, ga
     let cancelled = false
 
     async function init() {
-      const [ctxData, nextRes, projRes] = await Promise.all([
+      const [ctxData, projRes] = await Promise.all([
         buildReflectContext({ gapStart, gapEnd }),
-        supabase.from('tasks').select('id, title, due_date').eq('status', 'next_action').is('archived_at', null).limit(8),
         supabase.from('projects').select('id, title, status').eq('status', 'in_progress').is('archived_at', null).limit(6),
       ])
       if (cancelled || !mountedRef.current) return
       setCtx(ctxData)
-      setNextActions(nextRes.data ?? [])
       setInProgress(projRes.data ?? [])
 
       if (review?.status === 'completed') return
@@ -1201,18 +1198,6 @@ function AIReviewSection({ review, locked, onSaveState, targetDate, gapStart, ga
       />
 
       {/* Reference cards */}
-      {nextActions.length > 0 && (
-        <RefCard title="⚡ Next Actions" count={nextActions.length}>
-          <div className="space-y-1">
-            {nextActions.map(t => (
-              <Link key={t.id} to={`/tasks/${t.id}`} className="block text-sm py-1.5 border-b hover:underline" style={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>
-                {t.title}
-                {t.due_date && <span className="ml-2 text-xs" style={S.muted}>{t.due_date}</span>}
-              </Link>
-            ))}
-          </div>
-        </RefCard>
-      )}
       {inProgress.length > 0 && (
         <RefCard title="📁 Projects In Progress" count={inProgress.length}>
           <div className="space-y-1">
