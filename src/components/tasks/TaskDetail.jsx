@@ -9,7 +9,7 @@ import { checkProjectStalled } from '../../lib/api/projects'
 import Modal          from '../ui/Modal'
 import Button         from '../ui/Button'
 import ConfirmDialog  from '../ui/ConfirmDialog'
-import { StatusPill, PriorityBadge, EnergyBadge, ContextTagList } from '../ui'
+import { StatusPill, PriorityBadge, EnergyBadge, ContextTagList, TrashBtn } from '../ui'
 import DurationInput  from './DurationInput'
 import TaskComments   from './TaskComments'
 import WaitingModal   from './WaitingModal'
@@ -467,106 +467,98 @@ export default function TaskDetail({ task: initialTask, open, onClose, onRefresh
         {tab === 'notes' && <TaskComments taskId={task.id} />}
 
         {/* ── Action buttons ── */}
-        {!isDone && (
-          <div
-            className="mt-6 pt-5 border-t flex flex-wrap gap-2"
-            style={{ borderColor: 'var(--border)' }}
-          >
-            {/* INBOX actions */}
-            {task.status === 'inbox' && (
-              <>
-                <Button variant="danger"  size="sm" onClick={() => setShowDidIt(true)}>
-                  {TASK_ACTIONS.did_it}
-                </Button>
-                <Button variant="ghost"   size="sm" onClick={() => setShowDiscard(true)}>
-                  {TASK_ACTIONS.discard}
-                </Button>
-                {clarified && (
-                  <>
-                    <Button variant="success" size="sm" onClick={handleClarifyRoute}>
-                      {TASK_ACTIONS.next_action}
-                    </Button>
-                    <Button variant="secondary" size="sm" onClick={() => setShowRoute(true)}>
-                      Assign to Project →
-                    </Button>
-                  </>
-                )}
-              </>
-            )}
-
-            {/* NEXT ACTION actions */}
-            {task.status === 'next_action' && (
-              <>
-                <Button variant="success"   size="sm" onClick={handleComplete}>
-                  {TASK_ACTIONS.complete}
-                </Button>
-                <Button variant="danger"    size="sm" onClick={() => setShowWaiting(true)}>
-                  {TASK_ACTIONS.waiting}
-                </Button>
-                {hasProject && (
-                  <Button variant="secondary" size="sm" onClick={handleQueue}>
-                    {TASK_ACTIONS.queue}
+        <div
+          className="mt-6 pt-5 border-t flex flex-wrap gap-2 items-center"
+          style={{ borderColor: 'var(--border)' }}
+        >
+          {/* INBOX actions */}
+          {task.status === 'inbox' && (
+            <>
+              <Button variant="danger"  size="sm" onClick={() => setShowDidIt(true)}>
+                {TASK_ACTIONS.did_it}
+              </Button>
+              {clarified && (
+                <>
+                  <Button variant="success" size="sm" onClick={handleClarifyRoute}>
+                    {TASK_ACTIONS.next_action}
                   </Button>
-                )}
-                {!hasProject && (
                   <Button variant="secondary" size="sm" onClick={() => setShowRoute(true)}>
                     Assign to Project →
                   </Button>
-                )}
-                <Button variant="ghost"     size="sm" onClick={handleSomeday}>
-                  {TASK_ACTIONS.someday}
-                </Button>
-              </>
-            )}
+                </>
+              )}
+            </>
+          )}
 
-            {/* QUEUED actions */}
-            {task.status === 'queued' && (
-              <Button variant="success" size="sm" onClick={handleNextAction}>
+          {/* NEXT ACTION actions */}
+          {task.status === 'next_action' && (
+            <>
+              <Button variant="success"   size="sm" onClick={handleComplete}>
+                {TASK_ACTIONS.complete}
+              </Button>
+              <Button variant="danger"    size="sm" onClick={() => setShowWaiting(true)}>
+                {TASK_ACTIONS.waiting}
+              </Button>
+              {hasProject && (
+                <Button variant="secondary" size="sm" onClick={handleQueue}>
+                  {TASK_ACTIONS.queue}
+                </Button>
+              )}
+              {!hasProject && (
+                <Button variant="secondary" size="sm" onClick={() => setShowRoute(true)}>
+                  Assign to Project →
+                </Button>
+              )}
+              <Button variant="ghost"     size="sm" onClick={handleSomeday}>
+                {TASK_ACTIONS.someday}
+              </Button>
+            </>
+          )}
+
+          {/* QUEUED actions */}
+          {task.status === 'queued' && (
+            <Button variant="success" size="sm" onClick={handleNextAction}>
+              {TASK_ACTIONS.next_action}
+            </Button>
+          )}
+
+          {/* WAITING actions */}
+          {task.status === 'waiting' && (
+            <Button variant="success" size="sm" onClick={handleClearWaiting}>
+              Clear Blocker
+            </Button>
+          )}
+
+          {/* SCHEDULED actions */}
+          {task.status === 'scheduled' && (
+            <>
+              <Button variant="success"   size="sm" onClick={handleComplete}>
+                {TASK_ACTIONS.complete}
+              </Button>
+              <Button variant="secondary" size="sm" onClick={handleNextAction}>
                 {TASK_ACTIONS.next_action}
               </Button>
-            )}
+            </>
+          )}
 
-            {/* WAITING actions */}
-            {task.status === 'waiting' && (
-              <Button variant="success" size="sm" onClick={handleClearWaiting}>
-                Clear Blocker
-              </Button>
-            )}
+          {/* SOMEDAY actions */}
+          {task.status === 'someday' && (
+            <Button variant="success" size="sm" onClick={handleNextAction}>
+              {TASK_ACTIONS.next_action}
+            </Button>
+          )}
 
-            {/* SCHEDULED actions */}
-            {task.status === 'scheduled' && (
-              <>
-                <Button variant="success"   size="sm" onClick={handleComplete}>
-                  {TASK_ACTIONS.complete}
-                </Button>
-                <Button variant="secondary" size="sm" onClick={handleNextAction}>
-                  {TASK_ACTIONS.next_action}
-                </Button>
-              </>
-            )}
-
-            {/* SOMEDAY actions */}
-            {task.status === 'someday' && (
-              <>
-                <Button variant="success" size="sm" onClick={handleNextAction}>
-                  {TASK_ACTIONS.next_action}
-                </Button>
-                <Button variant="ghost"   size="sm" onClick={() => setShowDiscard(true)}>
-                  {TASK_ACTIONS.discard}
-                </Button>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* DONE actions */}
-        {isDone && !task.is_highlight && (
-          <div className="mt-6 pt-5 border-t" style={{ borderColor: 'var(--border)' }}>
+          {/* DONE actions */}
+          {isDone && !task.is_highlight && (
             <Button variant="secondary" size="sm" onClick={() => setShowHighlight(true)}>
               ⭐ Add to Highlights
             </Button>
-          </div>
-        )}
+          )}
+
+          <span className="ml-auto">
+            <TrashBtn onClick={() => setShowDiscard(true)} title="Delete task" />
+          </span>
+        </div>
       </Modal>
 
       {/* Sub-modals */}

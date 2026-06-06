@@ -1,9 +1,10 @@
 ﻿import { useState, useEffect } from 'react'
-import { updatePerson, activatePerson, getPersonTasks, getPersonProjects } from '../../lib/api/people'
+import { updatePerson, activatePerson, deletePerson, getPersonTasks, getPersonProjects } from '../../lib/api/people'
 
 import Modal         from '../ui/Modal'
 import Button        from '../ui/Button'
-import { StatusPill, PriorityBadge } from '../ui'
+import ConfirmDialog from '../ui/ConfirmDialog'
+import { StatusPill, PriorityBadge, TrashBtn } from '../ui'
 import PersonComments from './PersonComments'
 import TaskDetail    from '../tasks/TaskDetail'
 import ProjectDetail from '../projects/ProjectDetail'
@@ -123,8 +124,10 @@ function PersonProjectsTab({ personId }) {
 export default function PersonDetail({ person: initialPerson, open, onClose, onRefresh }) {
   const [person, setPerson] = useState(initialPerson)
   const [tab,    setTab]    = useState('details')
-  const [saving, setSaving] = useState(false)
-  const [dirty,  setDirty]  = useState(false)
+  const [saving,     setSaving]     = useState(false)
+  const [dirty,      setDirty]      = useState(false)
+  const [showDelete, setShowDelete] = useState(false)
+  const [deleting,   setDeleting]   = useState(false)
 
   useEffect(() => { setPerson(initialPerson); setDirty(false) }, [initialPerson])
 
@@ -169,6 +172,18 @@ export default function PersonDetail({ person: initialPerson, open, onClose, onR
     onRefresh?.()
   }
 
+  // ── Delete ──
+  const handleDelete = async () => {
+    setDeleting(true)
+    try {
+      await deletePerson(person.id)
+      onRefresh?.()
+      onClose()
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   // ── Re-activate stale person ──
   const handleReactivate = async () => {
     const updated = await updatePerson(person.id, {
@@ -181,6 +196,7 @@ export default function PersonDetail({ person: initialPerson, open, onClose, onR
   }
 
   return (
+    <>
     <Modal
       open={open}
       onClose={() => { if (dirty) handleSave(); onClose() }}
@@ -335,7 +351,7 @@ export default function PersonDetail({ person: initialPerson, open, onClose, onR
       {tab === 'notes' && <PersonComments personId={person.id} />}
 
       {/* ── Action buttons ── */}
-      <div className="mt-6 pt-5 border-t flex flex-wrap gap-2" style={{ borderColor: 'var(--border)' }}>
+      <div className="mt-6 pt-5 border-t flex flex-wrap gap-2 items-center" style={{ borderColor: 'var(--border)' }}>
         {person.status === 'inbox' && (
           <Button variant="success" size="sm" onClick={handleActivate}>
             Activate Contact
@@ -353,7 +369,21 @@ export default function PersonDetail({ person: initialPerson, open, onClose, onR
             </Button>
           </a>
         )}
+        <span className="ml-auto">
+          <TrashBtn onClick={() => setShowDelete(true)} title="Delete contact" />
+        </span>
       </div>
     </Modal>
+
+    <ConfirmDialog
+      open={showDelete}
+      onClose={() => setShowDelete(false)}
+      onConfirm={handleDelete}
+      title="Delete this contact?"
+      message="This permanently deletes the contact and all their comments. Their linked tasks and projects are not deleted."
+      confirmLabel={deleting ? 'Deleting…' : 'Delete'}
+      variant="danger"
+    />
+    </>
   )
 }

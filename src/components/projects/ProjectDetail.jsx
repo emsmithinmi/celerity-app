@@ -10,7 +10,7 @@ import { useTasks } from '../../hooks/useTasks'
 import Modal           from '../ui/Modal'
 import Button          from '../ui/Button'
 import ConfirmDialog   from '../ui/ConfirmDialog'
-import { StatusPill, PriorityBadge } from '../ui'
+import { StatusPill, PriorityBadge, TrashBtn } from '../ui'
 import HighlightModal  from '../tasks/HighlightModal'
 import ProjectComments from './ProjectComments'
 import ProjectTaskList from './ProjectTaskList'
@@ -364,91 +364,78 @@ export default function ProjectDetail({ project: initialProject, open, onClose, 
         {tab === 'notes' && <ProjectComments projectId={project.id} />}
 
         {/* ── Action buttons ── */}
-        {!isCompleted && !isArchived && (
-          <div className="mt-6 pt-5 border-t flex flex-wrap gap-2" style={{ borderColor: 'var(--border)' }}>
+        <div className="mt-6 pt-5 border-t flex flex-wrap gap-2 items-center" style={{ borderColor: 'var(--border)' }}>
 
-            {/* INBOX */}
-            {project.status === 'inbox' && (
-              <>
-                <Button variant="primary"   size="sm" onClick={handleStartPlanning} disabled={!clarified}>
-                  {PROJECT_ACTIONS.start_planning}
-                </Button>
-                <Button variant="secondary" size="sm" onClick={handleDefer}>
-                  {PROJECT_ACTIONS.someday}
-                </Button>
-                <Button variant="ghost"     size="sm" onClick={() => setShowDiscard(true)}>
-                  {PROJECT_ACTIONS.discard}
-                </Button>
-              </>
-            )}
-
-            {/* SOMEDAY/MAYBE */}
-            {project.status === 'someday' && (
-              <>
-                <Button variant="primary"   size="sm" onClick={handleStartPlanning} disabled={!clarified}
-                  title={!clarified ? `Fill in: ${missing.join(', ')}` : undefined}>
-                  {PROJECT_ACTIONS.start_planning}
-                </Button>
-                <Button variant="ghost"     size="sm" onClick={() => setShowDiscard(true)}>
-                  {PROJECT_ACTIONS.discard}
-                </Button>
-              </>
-            )}
-
-            {/* PLANNING */}
-            {project.status === 'planning' && (
-              <>
-                <Button variant="success"   size="sm" onClick={handleStartProject} disabled={!canStart}
-                  title={!canStart ? `Need ${Math.max(0, 2 - taskCount)} more task(s)` : undefined}>
-                  {PROJECT_ACTIONS.start}
-                </Button>
-                <Button variant="secondary" size="sm" onClick={handleComplete}>
-                  {PROJECT_ACTIONS.complete}
-                </Button>
-                <Button variant="ghost"     size="sm" onClick={() => setShowDiscard(true)}>
-                  {PROJECT_ACTIONS.discard}
-                </Button>
-              </>
-            )}
-
-            {/* IN PROGRESS */}
-            {project.status === 'in_progress' && (
-              <Button variant="success" size="sm" onClick={handleComplete} disabled={completing}>
-                {completing ? 'Completing…' : PROJECT_ACTIONS.complete}
+          {/* INBOX */}
+          {project.status === 'inbox' && (
+            <>
+              <Button variant="primary"   size="sm" onClick={handleStartPlanning} disabled={!clarified}>
+                {PROJECT_ACTIONS.start_planning}
               </Button>
-            )}
+              <Button variant="secondary" size="sm" onClick={handleDefer}>
+                {PROJECT_ACTIONS.someday}
+              </Button>
+            </>
+          )}
 
-            {/* STALLED — no direct action, handled by tasks */}
-            {project.status === 'stalled' && (
-              <Button variant="secondary" size="sm" onClick={() => setTab('tasks')}>
-                View Tasks →
-              </Button>
-            )}
+          {/* SOMEDAY/MAYBE */}
+          {project.status === 'someday' && (
+            <Button variant="primary" size="sm" onClick={handleStartPlanning} disabled={!clarified}
+              title={!clarified ? `Fill in: ${missing.join(', ')}` : undefined}>
+              {PROJECT_ACTIONS.start_planning}
+            </Button>
+          )}
 
-            {/* WAITING — no direct action */}
-            {project.status === 'waiting' && (
-              <Button variant="secondary" size="sm" onClick={() => setTab('tasks')}>
-                View Blocked Tasks →
+          {/* PLANNING */}
+          {project.status === 'planning' && (
+            <>
+              <Button variant="success"   size="sm" onClick={handleStartProject} disabled={!canStart}
+                title={!canStart ? `Need ${Math.max(0, 2 - taskCount)} more task(s)` : undefined}>
+                {PROJECT_ACTIONS.start}
               </Button>
-            )}
-          </div>
-        )}
+              <Button variant="secondary" size="sm" onClick={handleComplete}>
+                {PROJECT_ACTIONS.complete}
+              </Button>
+            </>
+          )}
 
-        {/* COMPLETED actions */}
-        {isCompleted && (
-          <div className="mt-6 pt-5 border-t flex flex-wrap gap-2" style={{ borderColor: 'var(--border)' }}>
-            {!project.is_highlight && (
-              <Button variant="secondary" size="sm" onClick={() => setShowHighlight(true)}>
-                ⭐ Add to Highlights
-              </Button>
-            )}
-            {!isArchived && (
-              <Button variant="ghost" size="sm" onClick={() => setShowArchive(true)}>
-                Archive
-              </Button>
-            )}
-          </div>
-        )}
+          {/* IN PROGRESS */}
+          {project.status === 'in_progress' && (
+            <Button variant="success" size="sm" onClick={handleComplete} disabled={completing}>
+              {completing ? 'Completing…' : PROJECT_ACTIONS.complete}
+            </Button>
+          )}
+
+          {/* STALLED */}
+          {project.status === 'stalled' && (
+            <Button variant="secondary" size="sm" onClick={() => setTab('tasks')}>
+              View Tasks →
+            </Button>
+          )}
+
+          {/* WAITING */}
+          {project.status === 'waiting' && (
+            <Button variant="secondary" size="sm" onClick={() => setTab('tasks')}>
+              View Blocked Tasks →
+            </Button>
+          )}
+
+          {/* COMPLETED */}
+          {isCompleted && !project.is_highlight && (
+            <Button variant="secondary" size="sm" onClick={() => setShowHighlight(true)}>
+              ⭐ Add to Highlights
+            </Button>
+          )}
+          {isCompleted && !isArchived && (
+            <Button variant="ghost" size="sm" onClick={() => setShowArchive(true)}>
+              Archive
+            </Button>
+          )}
+
+          <span className="ml-auto">
+            <TrashBtn onClick={() => setShowDiscard(true)} title="Delete project" />
+          </span>
+        </div>
       </Modal>
 
       {/* ── Sub-modals ── */}

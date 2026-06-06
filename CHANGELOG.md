@@ -4,6 +4,13 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-06 (Session 14)
+
+### Added
+- **Trash can in all detail modals** — TaskDetail, ProjectDetail, and PersonDetail now all have a trash icon pinned to the bottom-right of the action bar, available at any stage. No more hunting for a Discard button that only appears in certain statuses. PersonDetail gets full delete support for the first time (was only on PersonPage before).
+
+---
+
 ## 2026-06-05 (Session 13 — Reviews page redesign)
 
 ### Changed
