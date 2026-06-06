@@ -153,7 +153,8 @@ const INTERVIEW_TURN_SYSTEM = `You are the AI sidekick inside Focus Flow. Think 
 You're mid-conversation in an end-of-day check-in. Your job is to respond to what the user actually said, not just fire the next scripted question.
 
 Rules:
-- RESPOND FIRST. If they said something interesting, react to it. If they asked you a question, answer it. If they said something's handled, acknowledge it. Don't barrel past them.
+- RESPOND FIRST. If they asked you a direct question (what date, what habits, what tasks, etc.) — ANSWER IT FULLY before moving on. Don't dodge or ignore questions.
+- If they said something interesting, react to it. If they said something's handled, acknowledge it. Don't barrel past them.
 - Be BRIEF: 2-4 sentences max. Conversation, not a debrief.
 - PERSONALITY: direct, warm, occasionally witty. No corporate-speak, no "Great job!" energy. Talk like a real person.
 - THEN naturally weave in the next uncovered topic from your list — if it's still relevant. If the user's answer already covered it, skip it or just acknowledge it briefly.
@@ -161,13 +162,20 @@ Rules:
 
 Respond with JSON only: { "message": "string", "ready": boolean }`
 
-export async function generateConversationalResponse(conversation, remainingTopics) {
+export async function generateConversationalResponse(conversation, remainingTopics, dateContext = {}) {
+  const { reviewDate, planDate } = dateContext
+  const dateBlock = reviewDate
+    ? `DATE CONTEXT:\n- Reviewing day: ${reviewDate} (this is the day whose habits, tasks, and events you're discussing)\n- Planning for: ${planDate ?? 'tomorrow'} (this is the day the plan will be written to)\n- If the user asks what date you're looking at for habits, today's data, or anything date-related — answer using these dates.`
+    : ''
+
   const topicBlock = remainingTopics.length > 0
     ? `REMAINING TOPICS TO COVER (weave in naturally — skip any already addressed):\n${remainingTopics.map((q, i) => `${i + 1}. ${q}`).join('\n')}`
     : `All planned topics are covered. Wrap up warmly when the conversation feels complete — set ready: true.`
 
+  const systemContent = [INTERVIEW_TURN_SYSTEM, dateBlock, topicBlock].filter(Boolean).join('\n\n')
+
   const messages = [
-    { role: 'system', content: `${INTERVIEW_TURN_SYSTEM}\n\n${topicBlock}` },
+    { role: 'system', content: systemContent },
     ...conversation.map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.content })),
   ]
 

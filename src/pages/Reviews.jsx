@@ -83,7 +83,7 @@ function SectionHeader({ step, title, subtitle, done }) {
           </span>
         )}
       </div>
-      <p className="text-sm ml-7" style={S.muted}>{subtitle}</p>
+      <div className="text-sm ml-7" style={S.muted}>{subtitle}</div>
     </div>
   )
 }
@@ -819,7 +819,10 @@ function ReflectSection({ review, locked, onSaveState, targetDate, reviewDate })
             setQuestions(qs)
             onSaveState?.({ questions: qs })
             setTyping(false)
-            addBubble('ai', qs[0])
+            const reviewLabel = new Date(ctxData.today + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+            const planLabel   = new Date(ctxData.tomorrowStr + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+            addBubble('ai', `Welcome to your review for <strong>${reviewLabel}</strong>. I've been through your tasks, projects, and the last month of notes — planning ahead to ${planLabel}. Let's get into it.`)
+            setTimeout(() => { if (mountedRef.current) addBubble('ai', qs[0]) }, 900)
             setInputActive(true)
             setTimeout(() => inputRef.current?.focus(), 50)
           } catch {
@@ -886,8 +889,9 @@ function ReflectSection({ review, locked, onSaveState, targetDate, reviewDate })
     const remainingTopics = questions.slice(nextIndex)
 
     setTyping(true)
+    const dateContext = ctx ? { reviewDate: ctx.today, planDate: ctx.tomorrowStr } : {}
     try {
-      const { message, ready } = await generateConversationalResponse(newConversation, remainingTopics)
+      const { message, ready } = await generateConversationalResponse(newConversation, remainingTopics, dateContext)
       if (!mountedRef.current) return
       setTyping(false)
       addBubble('ai', message)
@@ -927,9 +931,17 @@ function ReflectSection({ review, locked, onSaveState, targetDate, reviewDate })
         step={3}
         title="How'd it go today?"
         subtitle={
-          aiConfigured
-            ? "Your AI sidekick has been snooping through your tasks, projects, and last 30 days of notes. Answer however feels right."
-            : "Take a few minutes to reflect on your day and wrap it up."
+          <>
+            {ctx && (
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium mr-2" style={{ backgroundColor: 'var(--border)', color: 'var(--accent)' }}>
+                📅 Reviewing {new Date(ctx.today + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                {' → '}Planning {new Date(ctx.tomorrowStr + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+              </span>
+            )}
+            {aiConfigured
+              ? "Your AI sidekick has been snooping through your tasks, projects, and last 30 days of notes. Answer however feels right."
+              : "Take a few minutes to reflect on your day and wrap it up."}
+          </>
         }
         done={completed}
       />
