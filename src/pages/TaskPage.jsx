@@ -455,37 +455,40 @@ export default function TaskPage() {
               </div>
 
 
-              {/* Linked people */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <p className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>People</p>
-                  <button
-                    onClick={openPeoplePicker}
-                    className="text-xs px-2 py-0.5 rounded-lg border hover:opacity-80 transition-opacity"
-                    style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}
-                  >+ Add Person</button>
+            </div>
+          </section>
+
+          {/* People section */}
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>People</h2>
+              <button
+                onClick={openPeoplePicker}
+                className="text-xs px-2 py-0.5 rounded-lg border hover:opacity-80 transition-opacity"
+                style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}
+              >+ Add Person</button>
+            </div>
+            <div className="rounded-xl border p-4" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
+              {task.task_people?.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {task.task_people.map(tp => tp.people && (
+                    <span
+                      key={tp.person_id}
+                      className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs border"
+                      style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+                    >
+                      👤 {tp.people.preferred_name ?? tp.people.first_name} {tp.people.last_name}
+                      <button
+                        onClick={() => handleUnlinkPerson(tp.person_id)}
+                        className="ml-1 hover:opacity-60"
+                        style={{ color: 'var(--text-secondary)' }}
+                      >×</button>
+                    </span>
+                  ))}
                 </div>
-                {task.task_people?.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {task.task_people.map(tp => tp.people && (
-                      <span
-                        key={tp.person_id}
-                        className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs border"
-                        style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
-                      >
-                        👤 {tp.people.preferred_name ?? tp.people.first_name} {tp.people.last_name}
-                        <button
-                          onClick={() => handleUnlinkPerson(tp.person_id)}
-                          className="ml-1 hover:opacity-60"
-                          style={{ color: 'var(--text-secondary)' }}
-                        >×</button>
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs" style={{ color: 'var(--text-dim)' }}>No people linked yet</p>
-                )}
-              </div>
+              ) : (
+                <p className="text-sm" style={{ color: 'var(--text-dim)' }}>No people linked yet</p>
+              )}
             </div>
           </section>
 
