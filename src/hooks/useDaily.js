@@ -20,9 +20,14 @@ export function useDaily(date) {
     setLoading(true)
     setError(null)
     try {
+      const now = new Date(date + 'T12:00:00')
+      const weekSunday = new Date(now)
+      weekSunday.setDate(now.getDate() - now.getDay())
+      const weekStart = weekSunday.toLocaleDateString('en-CA')
+
       const [dayNote, history, dailyStats] = await Promise.all([
         ensureNoteForDate(date),
-        getHabitHistory(7),
+        getHabitHistory(weekStart),
         getDailyStats(date),
       ])
       setNote(dayNote)
@@ -44,7 +49,10 @@ export function useDaily(date) {
     try {
       const updated = await toggleHabit(note.id, habitKey, value)
       setNote(updated)
-      const history = await getHabitHistory(7)
+      const d = new Date(date + 'T12:00:00')
+      const sun = new Date(d)
+      sun.setDate(d.getDate() - d.getDay())
+      const history = await getHabitHistory(sun.toLocaleDateString('en-CA'))
       setHabitHistory(history)
     } catch {
       // Revert on error

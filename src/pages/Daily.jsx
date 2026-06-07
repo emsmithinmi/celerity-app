@@ -7,6 +7,7 @@ import { useProjects } from '../hooks/useProjects'
 import { createPerson } from '../lib/api/people'
 import { updateChallenge, updateDailyBrief } from '../lib/api/daily'
 import { generateDailyBrief } from '../lib/ai/skills/dailyBrief'
+import { refreshChallenge } from '../lib/ai/skills/refreshChallenge'
 import { getStuckSuggestions } from '../lib/ai/skills/stuckHelper'
 import { useAIConfig } from '../hooks/useAI'
 
@@ -210,6 +211,12 @@ export default function Daily() {
     await updateChallenge(note.id, updated)
   }
 
+  const handleChallengeRefresh = async () => {
+    if (!note) return
+    await refreshChallenge(note.id)
+    reloadNote()
+  }
+
   const handleBriefRefresh = async () => {
     if (!note) return
     const isRefresh = !!note.daily_brief  // already has one → mid-day refresh
@@ -410,6 +417,7 @@ export default function Daily() {
           challenge={note?.code_challenge}
           onUpdate={handleChallengeUpdate}
           onComplete={() => toggleHabit('habit_code_challenge', true)}
+          onRefresh={handleChallengeRefresh}
         />
 
 

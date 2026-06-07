@@ -207,7 +207,8 @@ export default function HabitPage() {
 
   useEffect(() => {
     setLoading(true)
-    getHabitHistory(365).then(setHistory).finally(() => setLoading(false))
+    const yearAgo = new Date(); yearAgo.setFullYear(yearAgo.getFullYear() - 1)
+    getHabitHistory(yearAgo.toLocaleDateString('en-CA')).then(setHistory).finally(() => setLoading(false))
   }, [])
 
   const dateMap = useMemo(() => buildDateMap(history), [history])

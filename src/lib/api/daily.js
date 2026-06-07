@@ -73,15 +73,11 @@ export async function toggleHabit(noteId, habitKey, value) {
   return data
 }
 
-export async function getHabitHistory(days = 30) {
-  const since = new Date()
-  since.setDate(since.getDate() - days)
-  const sinceStr = since.toLocaleDateString('en-CA')
-
+export async function getHabitHistory(since) {
   const { data, error } = await supabase
     .from('daily_notes')
     .select('date, habit_morning_meds, habit_evening_meds, habit_journal, habit_meditation, habit_breathwork, habit_stretching, habit_health_tracking, habit_code_challenge')
-    .gte('date', sinceStr)
+    .gte('date', since)
     .order('date', { ascending: true })
   if (error) throw error
   return data

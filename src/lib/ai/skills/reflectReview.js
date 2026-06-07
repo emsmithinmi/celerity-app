@@ -353,6 +353,9 @@ Each suggestion can include an optional "action" field with a machine-executable
 Action types and required fields:
 - update_task:           { type, task_id, fields: { status?, due_date?, title?, waiting_for? } }
 - create_task:           { type, fields: { title, status: "inbox"|"next_action", project_id?, due_date? } }
+  Status rules for create_task:
+  • Use "next_action" ONLY if you explicitly asked the user during this interview and confirmed: what the task is, what the concrete next physical action is, and which project it belongs to (if any). The interview IS the clarification — if you gathered it here, you earned the status.
+  • Use "inbox" for anything mentioned in passing, inferred, or not yet fully clarified. When in doubt, inbox it.
 - update_project:        { type, project_id, fields: { status? } }
 - archive_email:         { type, thread_id }
 - trash_email:           { type, thread_id }

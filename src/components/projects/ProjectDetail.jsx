@@ -17,6 +17,7 @@ import ProjectTaskList from './ProjectTaskList'
 import { PROJECT_ACTIONS } from '../../lib/constants'
 import { usePriorities } from '../../contexts/PrioritiesContext'
 import { useAreas }      from '../../contexts/AreasContext'
+import { sumDurations, parseDuration } from '../ui/DurationDisplay'
 
 // ─── Required fields for each gate ────────────────────────────────────────────
 const PLAN_REQUIRED = ['area', 'description', 'start_date', 'end_date']
@@ -55,9 +56,16 @@ export default function ProjectDetail({ project: initialProject, open, onClose, 
   const [showDiscard,   setShowDiscard]   = useState(false)
   const [completing,    setCompleting]    = useState(false)
 
-  // Fetch task count for the planning gate
+  // Fetch task count for the planning gate + progress stats
   const { tasks } = useTasks({ project_id: project?.id })
   const totalTasks = tasks.length
+  const doneTasks  = tasks.filter(t => t.status === 'done').length
+  const pct        = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0
+  const totalTime  = sumDurations(tasks.map(t => t.duration).filter(Boolean))
+  const remainingTime = sumDurations(
+    tasks.filter(t => t.status !== 'done').map(t => t.duration).filter(Boolean)
+  )
+  const hasTime = tasks.some(t => t.duration)
 
   useEffect(() => { setProject(initialProject); setDirty(false) }, [initialProject])
   useEffect(() => { setTaskCount(totalTasks) }, [totalTasks])
@@ -205,6 +213,37 @@ export default function ProjectDetail({ project: initialProject, open, onClose, 
             <StatusPill status={project.status} type="project" />
           </div>
         </div>
+
+        {/* ── Progress bar + time estimate ── */}
+        {totalTasks > 0 && (
+          <div className="mb-4 space-y-1.5">
+            <div className="flex items-center justify-between text-xs" style={{ color: 'var(--text-secondary)' }}>
+              <span>{doneTasks} of {totalTasks} tasks done</span>
+              <div className="flex items-center gap-3">
+                {hasTime && (
+                  <>
+                    {remainingTime !== '0:00' && (
+                      <span>{remainingTime} remaining</span>
+                    )}
+                    <span style={{ color: 'var(--text-mid)' }}>{totalTime} total</span>
+                  </>
+                )}
+                <span className="font-medium" style={{ color: pct === 100 ? 'var(--habit-done-bg)' : 'var(--text-primary)' }}>
+                  {pct}%
+                </span>
+              </div>
+            </div>
+            <div className="w-full h-2 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--border)' }}>
+              <div
+                className="h-full rounded-full transition-all duration-300"
+                style={{
+                  width: `${pct}%`,
+                  backgroundColor: pct === 100 ? 'var(--habit-done-bg)' : pct >= 50 ? 'var(--accent)' : 'var(--state-warning-text)',
+                }}
+              />
+            </div>
+          </div>
+        )}
 
         {/* ── Clarify banner (inbox only) ── */}
         {project.status === 'inbox' && !clarified && (

@@ -45,12 +45,11 @@ function HabitRow({ habit, checked, onToggle, percentage }) {
 export default function HabitsSection({ note, habitHistory = [], onToggle }) {
   if (!note) return null
 
-  // Compute 7-day percentage for each habit from history
+  // Compute current-week percentage (Sun–Sat) for each habit from history
   const getPercentage = (habitKey) => {
     if (!habitHistory.length) return 0
-    const last7 = habitHistory.slice(-7)
-    const completed = last7.filter(day => day[habitKey]).length
-    return Math.round((completed / last7.length) * 100)
+    const completed = habitHistory.filter(day => day[habitKey]).length
+    return Math.round((completed / 7) * 100)
   }
 
   const displayHabits  = HABITS.filter(h => h.key !== 'habit_code_challenge')

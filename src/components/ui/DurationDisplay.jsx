@@ -34,11 +34,9 @@ export function parseDuration(intervalStr) {
 }
 
 export function formatDuration(intervalStr) {
-  const { hours, minutes, seconds } = parseDuration(intervalStr)
-  const hh = String(hours).padStart(2, '0')
+  const { hours, minutes } = parseDuration(intervalStr)
   const mm = String(minutes).padStart(2, '0')
-  const ss = String(seconds).padStart(2, '0')
-  return `${hh}:${mm}:${ss}`
+  return `${hours}:${mm}`
 }
 
 export function sumDurations(intervalStrings = []) {
@@ -48,9 +46,8 @@ export function sumDurations(intervalStrings = []) {
 
   const hours   = Math.floor(totalSeconds / 3600)
   const minutes = Math.floor((totalSeconds % 3600) / 60)
-  const seconds = totalSeconds % 60
 
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+  return `${hours}:${String(minutes).padStart(2, '0')}`
 }
 
 /** Input helper: converts hh:mm:ss string to postgres interval format */

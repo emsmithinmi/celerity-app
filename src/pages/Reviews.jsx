@@ -1361,10 +1361,22 @@ export default function Reviews() {
   const resetReview = useCallback(async () => {
     if (!reviewRef.current?.id || resetting) return
     setResetting(true)
-    await supabase
-      .from('reviews')
-      .update({ content: {}, status: 'draft', suggestions: [] })
-      .eq('id', reviewRef.current.id)
+
+    const tomorrow = new Date()
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    const tomorrowStr = tomorrow.toLocaleDateString('en-CA')
+
+    await Promise.all([
+      supabase
+        .from('reviews')
+        .update({ content: {}, status: 'draft', suggestions: [] })
+        .eq('id', reviewRef.current.id),
+      supabase
+        .from('daily_notes')
+        .update({ top_of_mind: [], agenda: null, code_challenge: null, quote: null, quote_author: null })
+        .eq('date', tomorrowStr),
+    ])
+
     setRetryCount(c => c + 1)
     setResetting(false)
   }, [resetting])

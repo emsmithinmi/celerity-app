@@ -4,6 +4,23 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-07
+
+### Changed
+- **Habit streaks now track the current week (Sun–Sat)** instead of a rolling 7-day window. The mini progress bars on the Daily page reset each Sunday and show how many days of the current week you've completed a habit out of 7. Mid-week, an uncompleted habit will correctly show a lower percentage rather than inflating based on only the days recorded so far.
+
+---
+
+## 2026-06-07
+
+### Added
+- **Project completion bar** — progress bar on every project with tasks, showing tasks done / total, percentage, total estimated time, and time remaining (only when tasks have durations set). Bar color shifts from yellow → accent → green as you close in on 100%.
+- **Duration input simplified to hh:mm** — removed the seconds field from task duration input; display everywhere now shows `h:mm` format. Existing data unaffected.
+- **Challenge refresh** — "↺ different one" button in the Challenge section header lets you swap out today's challenge for a fresh AI-generated one when you're just not feeling it. Only appears before you submit. Hits the AI, writes the new challenge to today's note, and reloads.
+- **AI inbox rule** — tasks created by the AI interview are now always routed to inbox unless the AI explicitly asked for and confirmed all necessary details during the conversation. Enforced in the prompt; `next_action` is still achievable when earned.
+
+---
+
 ## 2026-06-06 (Session 14 cont. 9)
 
 ### Changed
