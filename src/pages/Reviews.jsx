@@ -1362,10 +1362,6 @@ export default function Reviews() {
     if (!reviewRef.current?.id || resetting) return
     setResetting(true)
 
-    const tomorrow = new Date()
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    const tomorrowStr = tomorrow.toLocaleDateString('en-CA')
-
     await Promise.all([
       supabase
         .from('reviews')
@@ -1374,12 +1370,12 @@ export default function Reviews() {
       supabase
         .from('daily_notes')
         .update({ top_of_mind: [], agenda: null, code_challenge: null, quote: null, quote_author: null })
-        .eq('date', tomorrowStr),
+        .eq('date', targetDate),
     ])
 
     setRetryCount(c => c + 1)
     setResetting(false)
-  }, [resetting])
+  }, [resetting, targetDate])
 
   useEffect(() => {
     setLoading(true)
