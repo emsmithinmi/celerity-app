@@ -1171,6 +1171,8 @@ function AIReviewSection({ review, locked, onSaveState, targetDate, gapStart, ga
         const label = item.tool === 'create_task' ? `✓ Task added: ${item.result.title}`
           : item.tool === 'create_project' ? `✓ Project added: ${item.result.title}`
           : item.tool === 'create_person' ? `✓ Person added: ${item.result.first_name} ${item.result.last_name}`
+          : item.tool === 'update_task' ? `✓ Task updated: ${item.result.title}`
+          : item.tool === 'delete_task' ? `✓ Task deleted`
           : null
         if (label) addBubble('system', label)
       }
