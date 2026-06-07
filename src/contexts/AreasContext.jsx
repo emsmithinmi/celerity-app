@@ -20,8 +20,11 @@ export function AreasProvider({ children }) {
 
   useEffect(() => { load() }, [load])
 
+  // Map by value (slug) for quick color lookups
+  const areaMap = Object.fromEntries(areas.map(a => [a.value, a]))
+
   return (
-    <AreasContext.Provider value={{ areas, loading, reload: load }}>
+    <AreasContext.Provider value={{ areas, areaMap, loading, reload: load }}>
       {children}
     </AreasContext.Provider>
   )

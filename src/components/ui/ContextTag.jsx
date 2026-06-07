@@ -1,8 +1,11 @@
-﻿export default function ContextTag({ tag, onRemove, className = '' }) {
+﻿export default function ContextTag({ tag, onRemove, bgColor, textColor, className = '' }) {
   return (
     <span
       className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${className}`}
-      style={{ backgroundColor: 'var(--context-tag-bg)', color: 'var(--context-tag-text)' }}
+      style={{
+        backgroundColor: bgColor ?? 'var(--context-tag-bg)',
+        color: textColor ?? 'var(--context-tag-text)',
+      }}
     >
       {tag}
       {onRemove && (
@@ -18,12 +21,18 @@
   )
 }
 
-export function ContextTagList({ tags = [], onRemove, className = '' }) {
+export function ContextTagList({ tags = [], onRemove, tagColors = {}, className = '' }) {
   if (!tags.length) return null
   return (
     <div className={`flex flex-wrap gap-1 ${className}`}>
       {tags.map(tag => (
-        <ContextTag key={tag} tag={tag} onRemove={onRemove} />
+        <ContextTag
+          key={tag}
+          tag={tag}
+          onRemove={onRemove}
+          bgColor={tagColors[tag]?.bg}
+          textColor={tagColors[tag]?.text}
+        />
       ))}
     </div>
   )

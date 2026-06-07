@@ -31,7 +31,7 @@ const VARIANTS = {
   },
   danger: {
     bg: 'var(--danger)',
-    text: '#ffffff',
+    text: 'var(--danger-text, #ffffff)',
     hover: 'var(--danger-hover)',
     border: 'transparent',
   },

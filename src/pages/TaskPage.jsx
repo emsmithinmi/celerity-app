@@ -7,6 +7,7 @@ import {
   linkPersonToTask, unlinkPersonFromTask,
 } from '../lib/api/tasks'
 import { getPeople } from '../lib/api/people'
+import { getTagColors } from '../lib/api/tagColors'
 import { checkProjectStalled } from '../lib/api/projects'
 import Button from '../components/ui/Button'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
@@ -64,6 +65,8 @@ export default function TaskPage() {
   const [allTags,       setAllTags]       = useState([])
   const [tagInput,      setTagInput]      = useState('')
 
+  const [tagColors, setTagColors] = useState({})
+
   const [showPeoplePicker, setShowPeoplePicker] = useState(false)
   const [allPeople,        setAllPeople]        = useState([])
   const [peopleSearch,     setPeopleSearch]     = useState('')
@@ -81,6 +84,7 @@ export default function TaskPage() {
 
   useEffect(() => { load() }, [id])
   useEffect(() => { getAllContextTags().then(setAllTags).catch(() => {}) }, [id])
+  useEffect(() => { getTagColors().then(setTagColors).catch(() => {}) }, [])
 
   const saveContext = async (context) => {
     setTask(prev => ({ ...prev, context }))
@@ -556,20 +560,23 @@ export default function TaskPage() {
                 <div>
                   <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>On this task</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {task.context.map(tag => (
-                      <span
-                        key={tag}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
-                        style={{ backgroundColor: 'var(--context-tag-bg)', color: 'var(--context-tag-text)' }}
-                      >
-                        @{tag}
-                        <button
-                          onClick={() => removeTag(tag)}
-                          className="ml-0.5 hover:opacity-70 leading-none"
-                          aria-label={`Remove ${tag}`}
-                        >×</button>
-                      </span>
-                    ))}
+                    {task.context.map(tag => {
+                      const c = tagColors[tag]
+                      return (
+                        <span
+                          key={tag}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
+                          style={{ backgroundColor: c?.bg ?? 'var(--context-tag-bg)', color: c?.text ?? 'var(--context-tag-text)' }}
+                        >
+                          @{tag}
+                          <button
+                            onClick={() => removeTag(tag)}
+                            className="ml-0.5 hover:opacity-70 leading-none"
+                            aria-label={`Remove ${tag}`}
+                          >×</button>
+                        </span>
+                      )
+                    })}
                   </div>
                 </div>
               )}

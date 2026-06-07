@@ -8,6 +8,8 @@ import { useAreas }        from '../contexts/AreasContext'
 import { createEnergyLevel, updateEnergyLevel, deleteEnergyLevel } from '../lib/api/energyLevels'
 import { createPriority,   updatePriority,   deletePriority   } from '../lib/api/priorities'
 import { createArea,       updateArea,       deleteArea       } from '../lib/api/areas'
+import { getAllContextTags } from '../lib/api/tasks'
+import { getTagColors, setTagColor, removeTagColor } from '../lib/api/tagColors'
 import { getAIConfig, saveAIConfig, getProviderPreset, PROVIDERS, PROVIDER_PRESETS } from '../lib/ai/config'
 import { testConnection } from '../lib/ai/client'
 import { useTheme } from '../contexts/ThemeContext'
@@ -523,18 +525,20 @@ function AddPriorityForm({ onAdded, nextSortOrder }) {
   )
 }
 
-// ─── Area rows (simple — no colors) ──────────────────────────────────────────
+// ─── Area rows (with colors) ──────────────────────────────────────────────────
 function AreaRow({ item, onSaved, onDelete }) {
-  const [editing, setEditing] = useState(false)
-  const [saving,  setSaving]  = useState(false)
-  const [label,   setLabel]   = useState(item.label)
-  const [showDel, setShowDel] = useState(false)
+  const [editing,   setEditing]   = useState(false)
+  const [saving,    setSaving]    = useState(false)
+  const [label,     setLabel]     = useState(item.label)
+  const [bgColor,   setBgColor]   = useState(item.bg_color ?? '#374151')
+  const [textColor, setTextColor] = useState(item.text_color ?? '#f9fafb')
+  const [showDel,   setShowDel]   = useState(false)
 
   const save = async () => {
     if (!label.trim()) return
     setSaving(true)
     try {
-      const updated = await updateArea(item.id, { label: label.trim(), value: label.trim() })
+      const updated = await updateArea(item.id, { label: label.trim(), value: label.trim(), bg_color: bgColor, text_color: textColor })
       onSaved(updated); setEditing(false)
     } finally { setSaving(false) }
   }
@@ -545,22 +549,47 @@ function AreaRow({ item, onSaved, onDelete }) {
 
   return (
     <>
-      <div className="flex items-center gap-3 px-4 py-3 rounded-xl border" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
-        <GripVertical size={14} style={{ color: 'var(--text-dim)', flexShrink: 0 }} />
-        {editing ? (
-          <>
-            <input autoFocus value={label} onChange={e => setLabel(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') { setLabel(item.label); setEditing(false) } }} className="flex-1 px-2 py-1 rounded-lg text-sm border outline-none bg-transparent" style={{ borderColor: 'var(--accent)', color: 'var(--text-primary)' }} />
-            <Button size="sm" variant="primary" onClick={save} disabled={saving}>{saving ? '…' : 'Save'}</Button>
-            <Button size="sm" variant="ghost" onClick={() => { setLabel(item.label); setEditing(false) }}>Cancel</Button>
-          </>
-        ) : (
-          <>
-            <span className="flex-1 text-sm" style={{ color: 'var(--text-primary)' }}>{item.label}</span>
-            <div className="flex items-center gap-1 shrink-0">
-              <button onClick={() => setEditing(true)} title="Edit" className="flex items-center justify-center rounded transition-colors" style={{ width: 28, height: 28, color: 'var(--text-secondary)', backgroundColor: 'transparent' }} onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }} onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}><Pencil size={13} /></button>
-              <button onClick={() => setShowDel(true)} title="Delete" className="flex items-center justify-center rounded transition-colors" style={{ width: 28, height: 28, color: 'var(--text-secondary)', backgroundColor: 'transparent' }} onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--delete-hover-bg)'; e.currentTarget.style.color = 'var(--state-error-text)' }} onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}><Trash2 size={13} /></button>
+      <div className="rounded-xl border" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
+        <div className="flex items-center gap-3 px-4 py-3">
+          <GripVertical size={14} style={{ color: 'var(--text-dim)', flexShrink: 0 }} />
+          {editing ? (
+            <>
+              <input autoFocus value={label} onChange={e => setLabel(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') { setLabel(item.label); setEditing(false) } }} className="flex-1 px-2 py-1 rounded-lg text-sm border outline-none bg-transparent" style={{ borderColor: 'var(--accent)', color: 'var(--text-primary)' }} />
+              <Button size="sm" variant="primary" onClick={save} disabled={saving}>{saving ? '…' : 'Save'}</Button>
+              <Button size="sm" variant="ghost" onClick={() => { setLabel(item.label); setBgColor(item.bg_color ?? '#374151'); setTextColor(item.text_color ?? '#f9fafb'); setEditing(false) }}>Cancel</Button>
+            </>
+          ) : (
+            <>
+              <span className="px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: bgColor, color: textColor }}>{label}</span>
+              <span className="flex-1" />
+              <div className="flex items-center gap-1 shrink-0">
+                <button onClick={() => setEditing(true)} title="Edit" className="flex items-center justify-center rounded transition-colors" style={{ width: 28, height: 28, color: 'var(--text-secondary)', backgroundColor: 'transparent' }} onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }} onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}><Pencil size={13} /></button>
+                <button onClick={() => setShowDel(true)} title="Delete" className="flex items-center justify-center rounded transition-colors" style={{ width: 28, height: 28, color: 'var(--text-secondary)', backgroundColor: 'transparent' }} onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--delete-hover-bg)'; e.currentTarget.style.color = 'var(--state-error-text)' }} onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}><Trash2 size={13} /></button>
+              </div>
+            </>
+          )}
+        </div>
+        {editing && (
+          <div className="px-4 pb-3 grid grid-cols-2 gap-4 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Background</label>
+              <div className="flex items-center gap-2">
+                <input type="color" value={bgColor} onChange={e => setBgColor(e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+                <input value={bgColor} onChange={e => setBgColor(e.target.value)} className="flex-1 px-2 py-1 rounded-lg text-xs border outline-none font-mono bg-transparent" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+              </div>
             </div>
-          </>
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Text</label>
+              <div className="flex items-center gap-2">
+                <input type="color" value={textColor} onChange={e => setTextColor(e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+                <input value={textColor} onChange={e => setTextColor(e.target.value)} className="flex-1 px-2 py-1 rounded-lg text-xs border outline-none font-mono bg-transparent" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+              </div>
+            </div>
+            <div className="col-span-2">
+              <p className="text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>Preview</p>
+              <span className="px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: bgColor, color: textColor }}>{label || 'Area'}</span>
+            </div>
+          </div>
         )}
       </div>
       <ConfirmDialog open={showDel} onClose={() => setShowDel(false)} onConfirm={handleDelete} title="Remove Area?" message={`"${item.label}" will be removed from the list. Tasks/projects that already use it keep their stored value.`} confirmLabel="Remove" variant="danger" />
@@ -569,17 +598,19 @@ function AreaRow({ item, onSaved, onDelete }) {
 }
 
 function AddAreaForm({ onAdded, nextSortOrder }) {
-  const [open,   setOpen]   = useState(false)
-  const [label,  setLabel]  = useState('')
-  const [saving, setSaving] = useState(false)
-  const [error,  setError]  = useState(null)
+  const [open,      setOpen]      = useState(false)
+  const [label,     setLabel]     = useState('')
+  const [bgColor,   setBgColor]   = useState('#374151')
+  const [textColor, setTextColor] = useState('#f9fafb')
+  const [saving,    setSaving]    = useState(false)
+  const [error,     setError]     = useState(null)
 
   const submit = async () => {
     if (!label.trim()) { setError('Name is required.'); return }
     setSaving(true); setError(null)
     try {
-      const created = await createArea({ value: label.trim(), label: label.trim(), sort_order: nextSortOrder })
-      onAdded(created); setLabel(''); setOpen(false)
+      const created = await createArea({ value: label.trim(), label: label.trim(), bg_color: bgColor, text_color: textColor, sort_order: nextSortOrder })
+      onAdded(created); setLabel(''); setBgColor('#374151'); setTextColor('#f9fafb'); setOpen(false)
     } catch (err) { setError(err.message ?? 'Failed to create area') } finally { setSaving(false) }
   }
 
@@ -596,10 +627,99 @@ function AddAreaForm({ onAdded, nextSortOrder }) {
         <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Name <span style={{ color: 'var(--danger)' }}>*</span></label>
         <input autoFocus value={label} onChange={e => setLabel(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') { setOpen(false); setLabel('') } }} className="w-full px-3 py-1.5 rounded-lg text-sm border outline-none bg-transparent" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }} placeholder="e.g. Side Projects" />
       </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Background</label>
+          <div className="flex items-center gap-2">
+            <input type="color" value={bgColor} onChange={e => setBgColor(e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+            <input value={bgColor} onChange={e => setBgColor(e.target.value)} className="flex-1 px-2 py-1 rounded-lg text-xs border outline-none font-mono bg-transparent" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+          </div>
+        </div>
+        <div>
+          <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Text</label>
+          <div className="flex items-center gap-2">
+            <input type="color" value={textColor} onChange={e => setTextColor(e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+            <input value={textColor} onChange={e => setTextColor(e.target.value)} className="flex-1 px-2 py-1 rounded-lg text-xs border outline-none font-mono bg-transparent" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+          </div>
+        </div>
+      </div>
+      <div>
+        <p className="text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>Preview</p>
+        <span className="px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: bgColor, color: textColor }}>{label || 'Area'}</span>
+      </div>
       <div className="flex gap-2">
         <Button size="sm" variant="primary" onClick={submit} disabled={saving}>{saving ? 'Adding…' : 'Add'}</Button>
         <Button size="sm" variant="ghost" onClick={() => { setOpen(false); setLabel(''); setError(null) }}>Cancel</Button>
       </div>
+    </div>
+  )
+}
+
+// ─── Tag Colors ───────────────────────────────────────────────────────────────
+function TagColorsSection() {
+  const [tags,      setTags]      = useState([])
+  const [colors,    setColors]    = useState({})
+  const [loading,   setLoading]   = useState(true)
+  const [saving,    setSaving]    = useState(null) // tag currently saving
+
+  useEffect(() => {
+    Promise.all([getAllContextTags(), getTagColors()]).then(([t, c]) => {
+      setTags(t)
+      setColors(c)
+      setLoading(false)
+    })
+  }, [])
+
+  const handleChange = (tag, field, value) => {
+    setColors(prev => ({ ...prev, [tag]: { ...( prev[tag] ?? { bg: '#374151', text: '#f9fafb' }), [field]: value } }))
+  }
+
+  const handleSave = async (tag) => {
+    setSaving(tag)
+    try {
+      const c = colors[tag] ?? { bg: '#374151', text: '#f9fafb' }
+      await setTagColor(tag, c.bg, c.text)
+    } finally { setSaving(null) }
+  }
+
+  const handleReset = async (tag) => {
+    setSaving(tag)
+    try {
+      const updated = await removeTagColor(tag)
+      setColors(updated)
+    } finally { setSaving(null) }
+  }
+
+  if (loading) return <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p>
+  if (tags.length === 0) return <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>No context tags found. Add some to tasks first.</p>
+
+  return (
+    <div className="space-y-2">
+      {tags.map(tag => {
+        const c = colors[tag] ?? { bg: 'var(--context-tag-bg)', text: 'var(--context-tag-text)' }
+        const hasCustom = !!colors[tag]
+        const bg   = hasCustom ? c.bg   : '#374151'
+        const text = hasCustom ? c.text : '#f9fafb'
+        return (
+          <div key={tag} className="rounded-xl border px-4 py-3" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: hasCustom ? c.bg : 'var(--context-tag-bg)', color: hasCustom ? c.text : 'var(--context-tag-text)' }}>@{tag}</span>
+              <div className="flex items-center gap-2">
+                <input type="color" value={bg} onChange={e => handleChange(tag, 'bg', e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0 p-0" title="Background color" />
+                <input value={bg} onChange={e => handleChange(tag, 'bg', e.target.value)} className="w-24 px-2 py-1 rounded-lg text-xs border outline-none font-mono bg-transparent" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+              </div>
+              <div className="flex items-center gap-2">
+                <input type="color" value={text} onChange={e => handleChange(tag, 'text', e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0 p-0" title="Text color" />
+                <input value={text} onChange={e => handleChange(tag, 'text', e.target.value)} className="w-24 px-2 py-1 rounded-lg text-xs border outline-none font-mono bg-transparent" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+              </div>
+              <div className="flex items-center gap-2 ml-auto">
+                <Button size="sm" variant="primary" onClick={() => handleSave(tag)} disabled={saving === tag}>{saving === tag ? '…' : 'Save'}</Button>
+                {hasCustom && <Button size="sm" variant="ghost" onClick={() => handleReset(tag)} disabled={saving === tag}>Reset</Button>}
+              </div>
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -830,7 +950,7 @@ export default function Settings() {
       <section>
         <div className="mb-4">
           <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Areas</h2>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>Area suggestions shown in task and project forms. You can still type a custom value when editing.</p>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>Area suggestions with badge colors. You can still type a custom value when editing a task or project.</p>
         </div>
         {areaLoading ? <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p> : (
           <div className="space-y-2">
@@ -838,6 +958,15 @@ export default function Settings() {
             <AddAreaForm onAdded={ar.onAdded} nextSortOrder={(ar.displayed[ar.displayed.length - 1]?.sort_order ?? 0) + 10} />
           </div>
         )}
+      </section>
+
+      {/* ── Context Tags ── */}
+      <section>
+        <div className="mb-4">
+          <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Context Tags</h2>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>Set custom colors for your @context tags. Tags are created on tasks — add some there first.</p>
+        </div>
+        <TagColorsSection />
       </section>
 
       {/* ── AI ── */}
