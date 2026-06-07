@@ -12,7 +12,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { provider, apiKey, model, messages, temperature = 0.5 } = await req.json()
+    const { provider, apiKey, model, messages, temperature = 0.5, tools } = await req.json()
 
     if (!apiKey || !model || !messages) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
@@ -22,6 +22,8 @@ Deno.serve(async (req: Request) => {
     }
 
     let text: string
+    let responseContent: unknown[] | undefined
+    let stopReason: string | undefined
 
     if (provider === 'anthropic') {
       const systemMsg = messages.find((m: { role: string }) => m.role === 'system')
@@ -34,6 +36,7 @@ Deno.serve(async (req: Request) => {
         messages: userMessages,
       }
       if (systemMsg) body.system = systemMsg.content
+      if (tools && tools.length > 0) body.tools = tools
 
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
@@ -51,7 +54,16 @@ Deno.serve(async (req: Request) => {
       }
 
       const json = await res.json()
-      text = json.content[0].text
+      stopReason = json.stop_reason
+
+      if (tools && tools.length > 0) {
+        // Return full content array so caller can handle tool_use blocks
+        responseContent = json.content
+        const textBlock = json.content.find((b: { type: string }) => b.type === 'text')
+        text = textBlock?.text ?? ''
+      } else {
+        text = json.content[0].text
+      }
 
     } else {
       // OpenAI-compatible providers
@@ -76,7 +88,11 @@ Deno.serve(async (req: Request) => {
       text = json.choices[0].message.content
     }
 
-    return new Response(JSON.stringify({ text }), {
+    const payload: Record<string, unknown> = { text }
+    if (responseContent) payload.content = responseContent
+    if (stopReason) payload.stop_reason = stopReason
+
+    return new Response(JSON.stringify(payload), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     })
 

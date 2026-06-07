@@ -539,6 +539,20 @@ function SuggestionCard({ suggestion, onAccept, onSkip, onEdit }) {
 
 function Bubble({ role, children }) {
   const isAI = role === 'ai'
+  const isSystem = role === 'system'
+
+  if (isSystem) {
+    return (
+      <div className="flex justify-center">
+        <div
+          className="px-3 py-1.5 text-xs rounded-full"
+          style={{ backgroundColor: 'var(--success-bg, #16a34a22)', color: 'var(--success, #4ade80)', border: '1px solid var(--success-border, #4ade8044)' }}
+          dangerouslySetInnerHTML={{ __html: children }}
+        />
+      </div>
+    )
+  }
+
   return (
     <div className={`flex ${isAI ? 'justify-start' : 'justify-end'}`}>
       <div
@@ -1149,9 +1163,17 @@ function AIReviewSection({ review, locked, onSaveState, targetDate, gapStart, ga
       recentMemories: ctx.recentMemories,
     } : {}
     try {
-      const { message, ready } = await generateConversationalResponse(newConversation, remainingTopics, dateContext)
+      const { message, ready, created = [] } = await generateConversationalResponse(newConversation, remainingTopics, dateContext)
       if (!mountedRef.current) return
       setTyping(false)
+      // Show any items the AI created as system notices in the chat
+      for (const item of created) {
+        const label = item.tool === 'create_task' ? `✓ Task added: ${item.result.title}`
+          : item.tool === 'create_project' ? `✓ Project added: ${item.result.title}`
+          : item.tool === 'create_person' ? `✓ Person added: ${item.result.first_name} ${item.result.last_name}`
+          : null
+        if (label) addBubble('system', label)
+      }
       addBubble('ai', message)
       if (ready) {
         // AI is done — generate the plan immediately, no extra user message needed

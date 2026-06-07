@@ -1,5 +1,6 @@
 ﻿import { supabase } from '../../supabase'
-import { callAI } from '../client'
+import { callAI, callAIWithTools } from '../client'
+import { INTERVIEW_TOOLS, INTERVIEW_EXECUTORS } from '../tools'
 import { ensureNoteForDate, updateTopOfMind, updateAgenda, updateChallenge, updateQuote, updateDailyBrief } from '../../api/daily'
 import { generateDailyBrief } from './dailyBrief'
 import { updateSuggestions, updateReviewSummary } from '../../api/reviews'
@@ -215,10 +216,10 @@ export async function generateConversationalResponse(conversation, remainingTopi
     ...conversation.map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.content })),
   ]
 
-  const raw = await callAI(messages, { temperature: 0.75 })
-  const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
+  const { text, created } = await callAIWithTools(messages, INTERVIEW_TOOLS, INTERVIEW_EXECUTORS, { temperature: 0.75 })
+  const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
   const parsed = JSON.parse(cleaned)
-  return { message: String(parsed.message), ready: parsed.ready === true }
+  return { message: String(parsed.message), ready: parsed.ready === true, created: created ?? [] }
 }
 
 // ─── Generate Opening Questions ───────────────────────────────────────────────
