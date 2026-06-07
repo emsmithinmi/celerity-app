@@ -7,6 +7,7 @@ All notable changes to Focus Flow are recorded here.
 ## 2026-06-07
 
 ### Added
+- **People ↔ Tasks linking UI** — Tasks now have a People section with an "+ Add Person" button that opens a searchable picker (already-linked people shown as greyed out, × to unlink). People pages now always show a Tasks section with a "+ Link Task" button and the same picker pattern. Both pickers include "+ Add New" at the bottom to navigate to the create flow.
 - **AI interview tools expanded** — added `update_task` (link to project, change status/due date) and `delete_task`. The AI can now convert a task into a project by combining `create_project` + `delete_task` in a single turn. New project lands in inbox as normal.
 - **AI tool use in the interview** — the AI can now actually create tasks, projects, and people mid-conversation when you ask it to. No more meta-tasks about doing things. Uses Anthropic native tool use via the `ai-proxy` edge function. Created items appear as green confirmation pills in the chat.
 

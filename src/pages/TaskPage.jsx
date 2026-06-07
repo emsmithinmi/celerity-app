@@ -4,7 +4,9 @@ import {
   getTask, updateTask, completeTaskWithOptions, archiveTask, permanentDeleteTask,
   moveToNextAction, moveToQueued, moveToWaiting,
   clearWaiting, highlightTask, clarifyTask, getAllContextTags,
+  linkPersonToTask, unlinkPersonFromTask,
 } from '../lib/api/tasks'
+import { getPeople } from '../lib/api/people'
 import { checkProjectStalled } from '../lib/api/projects'
 import Button from '../components/ui/Button'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
@@ -61,6 +63,11 @@ export default function TaskPage() {
   const [showDiscard,    setShowDiscard]    = useState(false)
   const [allTags,       setAllTags]       = useState([])
   const [tagInput,      setTagInput]      = useState('')
+
+  const [showPeoplePicker, setShowPeoplePicker] = useState(false)
+  const [allPeople,        setAllPeople]        = useState([])
+  const [peopleSearch,     setPeopleSearch]     = useState('')
+  const [peopleLoading,    setPeopleLoading]    = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -204,6 +211,33 @@ export default function TaskPage() {
     setEditing(false)
     setDraft(null)
   }
+
+  const openPeoplePicker = async () => {
+    setShowPeoplePicker(true)
+    setPeopleSearch('')
+    setPeopleLoading(true)
+    const all = await getPeople()
+    setAllPeople(all)
+    setPeopleLoading(false)
+  }
+
+  const handleLinkPerson = async (personId) => {
+    await linkPersonToTask(id, personId)
+    const updated = await getTask(id)
+    setTask(updated)
+  }
+
+  const handleUnlinkPerson = async (personId) => {
+    await unlinkPersonFromTask(id, personId)
+    const updated = await getTask(id)
+    setTask(updated)
+  }
+
+  const linkedPersonIds = new Set(task?.task_people?.map(tp => tp.person_id) ?? [])
+  const filteredPeople = allPeople.filter(p => {
+    const name = `${p.first_name} ${p.last_name} ${p.preferred_name ?? ''}`.toLowerCase()
+    return name.includes(peopleSearch.toLowerCase())
+  })
 
   const d = editing ? draft : task
 
@@ -418,18 +452,36 @@ export default function TaskPage() {
 
 
               {/* Linked people */}
-              {task.task_people?.length > 0 && (
-                <div>
-                  <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Linked People</p>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>People</p>
+                  <button
+                    onClick={openPeoplePicker}
+                    className="text-xs px-2 py-0.5 rounded-lg border hover:opacity-80 transition-opacity"
+                    style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}
+                  >+ Add Person</button>
+                </div>
+                {task.task_people?.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {task.task_people.map(tp => tp.people && (
-                      <span key={tp.person_id} className="px-2 py-1 rounded-lg text-xs border" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
+                      <span
+                        key={tp.person_id}
+                        className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs border"
+                        style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+                      >
                         👤 {tp.people.preferred_name ?? tp.people.first_name} {tp.people.last_name}
+                        <button
+                          onClick={() => handleUnlinkPerson(tp.person_id)}
+                          className="ml-1 hover:opacity-60"
+                          style={{ color: 'var(--text-secondary)' }}
+                        >×</button>
                       </span>
                     ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <p className="text-xs" style={{ color: 'var(--text-dim)' }}>No people linked yet</p>
+                )}
+              </div>
             </div>
           </section>
 
@@ -639,6 +691,59 @@ export default function TaskPage() {
       <WaitingModal   open={showWaiting}   onClose={() => setShowWaiting(false)}   onConfirm={handleWaiting} />
       <HighlightModal open={showHighlight} onClose={() => setShowHighlight(false)} onConfirm={handleHighlight} />
       <RouteModal     open={showRoute}     onClose={() => setShowRoute(false)}     onAssign={handleAssignProject} />
+
+      {/* People picker modal */}
+      {showPeoplePicker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="w-full max-w-sm rounded-2xl shadow-xl overflow-hidden" style={{ backgroundColor: 'var(--pane-bg)', border: '1px solid var(--border)' }}>
+            <div className="flex items-center justify-between px-4 pt-4 pb-2">
+              <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Add Person</h3>
+              <button onClick={() => setShowPeoplePicker(false)} className="hover:opacity-60" style={{ color: 'var(--text-secondary)' }}>✕</button>
+            </div>
+            <div className="px-4 pb-2">
+              <input
+                autoFocus
+                value={peopleSearch}
+                onChange={e => setPeopleSearch(e.target.value)}
+                placeholder="Search people…"
+                className={inputCls}
+                style={inputStyle}
+              />
+            </div>
+            <div className="overflow-y-auto max-h-64">
+              {peopleLoading ? (
+                <p className="text-xs text-center py-4" style={{ color: 'var(--text-secondary)' }}>Loading…</p>
+              ) : filteredPeople.length === 0 ? (
+                <p className="text-xs text-center py-4" style={{ color: 'var(--text-secondary)' }}>No people found</p>
+              ) : (
+                filteredPeople.map(p => {
+                  const linked = linkedPersonIds.has(p.id)
+                  const displayName = `${p.preferred_name ?? p.first_name} ${p.last_name}`
+                  return (
+                    <button
+                      key={p.id}
+                      disabled={linked}
+                      onClick={async () => { await handleLinkPerson(p.id); setShowPeoplePicker(false) }}
+                      className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-left hover:opacity-80 border-t"
+                      style={{ borderColor: 'var(--border)', color: linked ? 'var(--text-dim)' : 'var(--text-primary)', backgroundColor: 'transparent' }}
+                    >
+                      <span>👤 {displayName}</span>
+                      {linked && <span className="text-xs" style={{ color: 'var(--text-dim)' }}>linked</span>}
+                    </button>
+                  )
+                })
+              )}
+              <button
+                onClick={() => { setShowPeoplePicker(false); window.location.href = '/people' }}
+                className="w-full px-4 py-2.5 text-sm text-left border-t hover:opacity-80"
+                style={{ borderColor: 'var(--border)', color: 'var(--accent)', backgroundColor: 'transparent' }}
+              >
+                + Add New Person
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

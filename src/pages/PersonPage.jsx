@@ -5,6 +5,7 @@ import {
   getPerson, updatePerson, activatePerson, deletePerson,
   getPersonTasks, getPersonProjects, uploadPersonAvatar,
 } from '../lib/api/people'
+import { getTasks, linkPersonToTask, unlinkPersonFromTask } from '../lib/api/tasks'
 import AvatarCircle from '../components/ui/AvatarCircle'
 import Button from '../components/ui/Button'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
@@ -66,6 +67,11 @@ export default function PersonPage() {
   const [showDelete,      setShowDelete]      = useState(false)
   const [deleting,        setDeleting]        = useState(false)
   const [avatarUploading, setAvatarUploading] = useState(false)
+
+  const [showTaskPicker, setShowTaskPicker] = useState(false)
+  const [allTasks,       setAllTasks]       = useState([])
+  const [taskSearch,     setTaskSearch]     = useState('')
+  const [taskPickerLoading, setTaskPickerLoading] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -190,6 +196,32 @@ export default function PersonPage() {
   // Format home address for read view
   const homeAddressLine = [person.address_street, person.address_city, person.address_state, person.address_zip].filter(Boolean).join(', ')
   const workAddressLine = [person.address_work_street, person.address_work_city, person.address_work_state, person.address_work_zip].filter(Boolean).join(', ')
+
+  const openTaskPicker = async () => {
+    setShowTaskPicker(true)
+    setTaskSearch('')
+    setTaskPickerLoading(true)
+    const all = await getTasks()
+    setAllTasks(all)
+    setTaskPickerLoading(false)
+  }
+
+  const handleLinkTask = async (taskId) => {
+    await linkPersonToTask(taskId, id)
+    const updated = await getPersonTasks(id)
+    setTasks(updated)
+  }
+
+  const handleUnlinkTask = async (taskId) => {
+    await unlinkPersonFromTask(taskId, id)
+    const updated = await getPersonTasks(id)
+    setTasks(updated)
+  }
+
+  const linkedTaskIds = new Set(tasks.map(t => t.id))
+  const filteredTasks = allTasks.filter(t => {
+    return t.title.toLowerCase().includes(taskSearch.toLowerCase())
+  })
 
   return (
     <div className="h-full flex flex-col">
@@ -513,28 +545,44 @@ export default function PersonPage() {
         )}
 
         {/* ── Tasks section ── */}
-        {tasks.length > 0 && (
-          <section>
-            <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
-              Tasks <span className="text-sm font-normal" style={{ color: 'var(--text-secondary)' }}>({tasks.length})</span>
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
+              Tasks {tasks.length > 0 && <span className="text-sm font-normal" style={{ color: 'var(--text-secondary)' }}>({tasks.length})</span>}
             </h2>
+            <button
+              onClick={openTaskPicker}
+              className="text-xs px-2 py-0.5 rounded-lg border hover:opacity-80 transition-opacity"
+              style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}
+            >+ Link Task</button>
+          </div>
+          {tasks.length > 0 ? (
             <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
               {tasks.map(task => task && (
                 <div
                   key={task.id}
-                  className="flex items-center gap-3 px-4 py-3 border-b last:border-b-0 cursor-pointer hover:opacity-80"
+                  className="flex items-center gap-3 px-4 py-3 border-b last:border-b-0"
                   style={{ borderColor: 'var(--border)' }}
-                  onClick={() => navigate(`/tasks/${task.id}`)}
                 >
-                  <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--border)', color: 'var(--text-primary)' }}>
-                    {task.status}
+                  <span
+                    className="text-xs px-2 py-0.5 rounded-full cursor-pointer hover:opacity-80 flex-1 flex items-center gap-3"
+                    onClick={() => navigate(`/tasks/${task.id}`)}
+                  >
+                    <span className="px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--border)', color: 'var(--text-primary)' }}>{task.status}</span>
+                    <span className="text-sm truncate" style={{ color: 'var(--text-primary)' }}>{task.title}</span>
                   </span>
-                  <span className="text-sm flex-1 truncate" style={{ color: 'var(--text-primary)' }}>{task.title}</span>
+                  <button
+                    onClick={() => handleUnlinkTask(task.id)}
+                    className="text-xs hover:opacity-60 flex-shrink-0"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >×</button>
                 </div>
               ))}
             </div>
-          </section>
-        )}
+          ) : (
+            <p className="text-sm" style={{ color: 'var(--text-dim)' }}>No tasks linked yet</p>
+          )}
+        </section>
 
         {/* ── Projects section ── */}
         {projects.length > 0 && (
@@ -603,6 +651,60 @@ export default function PersonPage() {
         variant="danger"
         loading={deleting}
       />
+
+      {/* Task picker modal */}
+      {showTaskPicker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="w-full max-w-sm rounded-2xl shadow-xl overflow-hidden" style={{ backgroundColor: 'var(--pane-bg)', border: '1px solid var(--border)' }}>
+            <div className="flex items-center justify-between px-4 pt-4 pb-2">
+              <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Link Task</h3>
+              <button onClick={() => setShowTaskPicker(false)} className="hover:opacity-60" style={{ color: 'var(--text-secondary)' }}>✕</button>
+            </div>
+            <div className="px-4 pb-2">
+              <input
+                autoFocus
+                value={taskSearch}
+                onChange={e => setTaskSearch(e.target.value)}
+                placeholder="Search tasks…"
+                className={inputCls}
+                style={inputStyle}
+              />
+            </div>
+            <div className="overflow-y-auto max-h-64">
+              {taskPickerLoading ? (
+                <p className="text-xs text-center py-4" style={{ color: 'var(--text-secondary)' }}>Loading…</p>
+              ) : filteredTasks.length === 0 ? (
+                <p className="text-xs text-center py-4" style={{ color: 'var(--text-secondary)' }}>No tasks found</p>
+              ) : (
+                filteredTasks.map(t => {
+                  const linked = linkedTaskIds.has(t.id)
+                  return (
+                    <button
+                      key={t.id}
+                      disabled={linked}
+                      onClick={async () => { await handleLinkTask(t.id); setShowTaskPicker(false) }}
+                      className="w-full flex items-center justify-between gap-3 px-4 py-2.5 text-sm text-left hover:opacity-80 border-t"
+                      style={{ borderColor: 'var(--border)', color: linked ? 'var(--text-dim)' : 'var(--text-primary)', backgroundColor: 'transparent' }}
+                    >
+                      <span className="truncate">{t.title}</span>
+                      <span className="text-xs flex-shrink-0 px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--border)', color: linked ? 'var(--text-dim)' : 'var(--text-secondary)' }}>
+                        {linked ? 'linked' : t.status}
+                      </span>
+                    </button>
+                  )
+                })
+              )}
+              <button
+                onClick={() => { setShowTaskPicker(false); window.location.href = '/tasks' }}
+                className="w-full px-4 py-2.5 text-sm text-left border-t hover:opacity-80"
+                style={{ borderColor: 'var(--border)', color: 'var(--accent)', backgroundColor: 'transparent' }}
+              >
+                + Add New Task
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
