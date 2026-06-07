@@ -496,9 +496,6 @@ export default function TaskDetail({ task: initialTask, open, onClose, onRefresh
               <Button variant="success"   size="sm" onClick={handleComplete}>
                 {TASK_ACTIONS.complete}
               </Button>
-              <Button variant="danger"    size="sm" onClick={() => setShowDidIt(true)}>
-                {TASK_ACTIONS.did_it}
-              </Button>
               <Button variant="secondary" size="sm" onClick={() => setShowWaiting(true)}>
                 {TASK_ACTIONS.waiting}
               </Button>

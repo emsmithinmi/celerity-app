@@ -6,6 +6,17 @@ All notable changes to Focus Flow are recorded here.
 
 ## 2026-06-07
 
+### Fixed
+- **"Did It" button removed from Next Action status** — when a task is in Next Action, "All Done" is the right CTA; "Did It" (permanent delete) no longer appears alongside it, eliminating the accidental-delete risk.
+- **AI inbox rule tightened** — the plan generator now has explicit, numbered criteria for when `next_action` is earned. Default is always inbox; all three conditions (task confirmed, next physical action confirmed, project/standalone confirmed) must be met to use `next_action`.
+
+### Changed
+- **Interview AI personality overhaul** — both the opening questions prompt and the conversational turn handler rewritten for genuine emotional presence. The AI now actually celebrates wins, meets hard moments with real warmth, and brings the full flower-power-genius energy rather than just sprinkling in hippie phrases.
+
+---
+
+## 2026-06-07
+
 ### Changed
 - **Habit streaks now track the current week (Sun–Sat)** instead of a rolling 7-day window. The mini progress bars on the Daily page reset each Sunday and show how many days of the current week you've completed a habit out of 7. Mid-week, an uncompleted habit will correctly show a lower percentage rather than inflating based on only the days recorded so far.
 
