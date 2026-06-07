@@ -59,7 +59,7 @@ export default function TaskComments({ taskId }) {
                 <button
                   onClick={() => handleDelete(c.id)}
                   disabled={deletingId === c.id}
-                  title="Delete comment"
+                  title="Delete note"
                   className="flex items-center justify-center rounded transition-colors disabled:opacity-40"
                   style={{ color: 'var(--text-dim)' }}
                   onMouseEnter={e => { e.currentTarget.style.color = 'var(--danger)' }}
@@ -73,7 +73,7 @@ export default function TaskComments({ taskId }) {
           ))}
         </div>
       ) : (
-        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>No comments yet.</p>
+        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>No notes yet.</p>
       )}
 
       <form onSubmit={handleAdd} className="space-y-2">
@@ -81,7 +81,7 @@ export default function TaskComments({ taskId }) {
           value={body}
           onChange={e => setBody(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleAdd(e) }}
-          placeholder="Add a comment… (Ctrl+Enter)"
+          placeholder="Add a note… (Ctrl+Enter)"
           rows={2}
           className="w-full px-3 py-2 rounded-lg text-sm border outline-none resize-none"
           style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
@@ -90,7 +90,7 @@ export default function TaskComments({ taskId }) {
         />
         <div className="flex justify-end">
           <Button type="submit" size="sm" variant="secondary" disabled={!body.trim() || saving}>
-            {saving ? 'Adding…' : 'Add Comment'}
+            {saving ? 'Adding…' : 'Add Note'}
           </Button>
         </div>
       </form>

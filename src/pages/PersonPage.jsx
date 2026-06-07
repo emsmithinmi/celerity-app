@@ -646,7 +646,7 @@ export default function PersonPage() {
         onClose={() => { if (!deleting) setShowDelete(false) }}
         onConfirm={handleDelete}
         title="Remove this contact?"
-        message="This permanently deletes the contact and all their comments. Their linked tasks and projects are not deleted."
+        message="This permanently deletes the contact and all their notes. Their linked tasks and projects are not deleted."
         confirmLabel="Remove"
         variant="danger"
         loading={deleting}
