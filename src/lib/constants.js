@@ -69,7 +69,7 @@ export const PROJECT_ACTIONS = {
 // ─── Habits ──────────────────────────────────────────────────────────────────
 export const HABITS = [
   { key: 'habit_morning_meds',    label: 'Morning Meds',    icon: '💊' },
-  { key: 'habit_evening_meds',    label: 'Evening Meds',    icon: '🌙' },
+  { key: 'habit_evening_meds',    label: "Last Night's Meds", icon: '🌙' },
   { key: 'habit_journal',         label: 'Journal',         icon: '✍️'  },
   { key: 'habit_meditation',      label: 'Meditation',      icon: '🧘' },
   { key: 'habit_breathwork',      label: 'Breathwork',      icon: '🌬️' },

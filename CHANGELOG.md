@@ -7,6 +7,24 @@ All notable changes to Focus Flow are recorded here.
 ## 2026-06-07
 
 ### Added
+- **Area icon picker** — Areas now have an emoji icon field alongside their bg/text colors in Settings. Icon shows in the badge wherever areas are displayed.
+- **Priority reorder** — ↑/↓ buttons on every priority row in Settings swap sort_order with the adjacent item. First/last items have the respective button disabled.
+- **People avatar color + icon** — Each person can have a custom avatar background color and emoji icon, set in the Identity section of their page. Shows in PersonRow list and the avatar on the page. DB: `people.icon text`, `people.color text`.
+- **Duplicate task** — ⧉ Duplicate button in What's Next (active tasks) and alongside the delete action (completed tasks). Copies title, description, priority, energy level, area, context tags, project, and subtasks; resets to inbox with "(copy)" appended to the title. Navigates to the new task immediately.
+- **Bulk edit tasks** — ☑ Select button in the Tasks header activates selection mode. Click rows to select/deselect (checkmark replaces status dot, row highlights). Bulk action bar at the bottom: "Move to…" status dropdown + Move button, Archive, and Delete. Confirm dialog on bulk delete.
+
+### Changed
+- **Sidebar order** — Projects now appears above Tasks in the sidebar nav.
+- **Contact Types** — Replaced role-based types (colleague, client, mentor, vendor) with category-based: Work, Family, Social, Services, Other. Relationship field is still the free-text place for specifics like "Wife" or "Colleague".
+- **Habit label** — "Evening Meds" renamed to "Last Night's Meds".
+- **Refresh buttons** — All refresh actions now show the ↺ icon only (no text). DailyBrief refresh button and Stuck Helper "Refresh suggestions" both converted to icon-only buttons matching AgendaSection and TasksSection style.
+- **People tab default** — On load, automatically opens the first non-empty tab in order: Inbox → Stale → Active, instead of always opening Inbox.
+
+---
+
+## 2026-06-07
+
+### Added
 - **Calendar sync for scheduled tasks** — scheduling a task now automatically creates an event on the Focus Flow Google Calendar. Rescheduling updates the existing event. Moving a scheduled task to any other status (Next Action, Queued, Waiting, Someday, Done, Delete) removes it from the calendar. All-day events when no time is set; timed events use the scheduled time + task duration as the end time (defaults to 1 hour). Silent no-op when no Google integration is connected. New `tasks.gcal_event_id` column stores the Google event ID for update/delete lifecycle.
 
 ### Changed

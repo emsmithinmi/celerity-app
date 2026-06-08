@@ -17,7 +17,7 @@ export default function PersonRow({ person, onClick }) {
       className="flex items-center gap-3 px-4 py-3 border-b last:border-b-0 cursor-pointer transition-opacity hover:opacity-90"
       style={{ borderColor: 'var(--border)' }}
     >
-      <AvatarCircle src={person.avatar_url} name={displayName} size="sm" />
+      <AvatarCircle src={person.avatar_url} name={displayName} size="sm" bgColor={person.color ?? undefined} emoji={person.icon ?? undefined} />
 
       {/* Name + subtitle */}
       <div className="flex-1 min-w-0">

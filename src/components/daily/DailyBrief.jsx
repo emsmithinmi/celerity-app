@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { RefreshCw } from 'lucide-react'
 import Button from '../ui/Button'
 import { PencilBtn } from '../ui'
 
@@ -54,11 +55,11 @@ export default function DailyBrief({ brief, topOfMind = [], noteId, onRefresh, o
           <button
             onClick={handleRefresh}
             disabled={loading}
-            className="text-xs px-2 py-1 rounded-md border transition-opacity hover:opacity-80 disabled:opacity-40"
-            style={{ color: 'var(--accent)', borderColor: 'var(--accent)', backgroundColor: 'transparent' }}
+            className="flex items-center justify-center rounded-md transition-opacity hover:opacity-80 disabled:opacity-40"
+            style={{ width: 26, height: 26, color: 'var(--accent)', backgroundColor: 'transparent' }}
             title="Refresh brief with AI"
           >
-            {loading ? '⏳ Thinking…' : '✨ Refresh'}
+            <RefreshCw size={13} style={{ animation: loading ? 'spin 0.7s linear infinite' : 'none' }} />
           </button>
         </div>
       </div>

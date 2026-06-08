@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePeople } from '../hooks/usePeople'
 import PersonRow from '../components/people/PersonRow'
@@ -27,10 +27,22 @@ function StatChip({ label, count }) {
 export default function People() {
   const navigate = useNavigate()
   const [activeTab,   setActiveTab]   = useState('inbox')
+  const [tabSet,      setTabSet]      = useState(false)   // true once auto-default is applied
   const [showCapture, setShowCapture] = useState(false)
   const [search,      setSearch]      = useState('')
 
   const { people, loading, refresh, createPerson } = usePeople({})
+
+  // Auto-select the first non-empty tab: inbox → stale → active
+  useEffect(() => {
+    if (loading || tabSet) return
+    setTabSet(true)
+    const hasInbox = people.some(p => p.status === 'inbox')
+    if (hasInbox) { setActiveTab('inbox'); return }
+    const hasStale = people.some(p => p.status === 'stale' || p.is_stale)
+    if (hasStale) { setActiveTab('stale'); return }
+    setActiveTab('active')
+  }, [loading, people, tabSet])
 
   const displayed = (() => {
     let base = activeTab === 'all' ? people : people.filter(p => p.status === activeTab)

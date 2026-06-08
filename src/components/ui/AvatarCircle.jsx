@@ -15,7 +15,9 @@ function initials(name) {
   return name.split(' ').filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase() || '?'
 }
 
-export default function AvatarCircle({ src, name = '', size = 'md', canUpload = false, uploading = false, onFileSelect }) {
+// bgColor: custom background hex (overrides CSS var)
+// emoji: custom emoji icon shown instead of initials when no photo
+export default function AvatarCircle({ src, name = '', size = 'md', canUpload = false, uploading = false, onFileSelect, bgColor, emoji }) {
   const fileRef = useRef(null)
   const [hovered, setHovered] = useState(false)
   const { px, fontSize, iconSize } = SIZES[size] ?? SIZES.md
@@ -30,12 +32,14 @@ export default function AvatarCircle({ src, name = '', size = 'md', canUpload = 
         width: px,
         height: px,
         minWidth: px,
-        backgroundColor: 'var(--border)',
+        backgroundColor: bgColor ?? 'var(--border)',
         cursor: canUpload && !uploading ? 'pointer' : 'default',
       }}
     >
       {src ? (
         <img src={src} alt={name} className="w-full h-full object-cover" />
+      ) : emoji ? (
+        <span style={{ fontSize, lineHeight: 1 }}>{emoji}</span>
       ) : (
         <span style={{ fontSize, color: 'var(--accent)', fontWeight: 600, lineHeight: 1 }}>
           {initials(name)}

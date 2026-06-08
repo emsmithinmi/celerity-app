@@ -175,6 +175,24 @@ export async function permanentDeleteTask(id) {
   if (error) throw error
 }
 
+export async function duplicateTask(id) {
+  // Fetch the original, strip identity/state fields, insert as new inbox task
+  const original = await getTask(id)
+  const { title, description, priority, duration, energy_level, area, context, project_id, subtasks } = original
+  return createTask({
+    title:       `${title} (copy)`,
+    status:      'inbox',
+    description: description ?? undefined,
+    priority:    priority    ?? undefined,
+    duration:    duration    ?? undefined,
+    energy_level: energy_level ?? undefined,
+    area:        area        ?? undefined,
+    context:     context     ?? undefined,
+    project_id:  project_id  ?? undefined,
+    subtasks:    subtasks    ?? undefined,
+  })
+}
+
 export async function cleanupExpiredDoneTasks() {
   // Delete done tasks whose 30-day window has passed. Fire-and-forget safe.
   const cutoff = new Date()

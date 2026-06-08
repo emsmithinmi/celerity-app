@@ -4,6 +4,7 @@ import { useTasks } from '../hooks/useTasks'
 import TaskRow from '../components/tasks/TaskRow'
 import Button from '../components/ui/Button'
 import { CaptureTaskModal } from '../components/daily/QuickCaptureModals'
+import { updateTask, archiveTask, permanentDeleteTask } from '../lib/api/tasks'
 
 const TABS = [
   { key: 'inbox',       label: 'Inbox'        },
@@ -32,9 +33,13 @@ function StatChip({ label, count }) {
 
 export default function Tasks() {
   const navigate = useNavigate()
-  const [activeTab,   setActiveTab]   = useState('inbox')
-  const [showCapture, setShowCapture] = useState(false)
-  const [search,      setSearch]      = useState('')
+  const [activeTab,    setActiveTab]    = useState('inbox')
+  const [showCapture,  setShowCapture]  = useState(false)
+  const [search,       setSearch]       = useState('')
+  const [selectMode,   setSelectMode]   = useState(false)
+  const [selectedIds,  setSelectedIds]  = useState(new Set())
+  const [bulkStatus,   setBulkStatus]   = useState('')
+  const [bulkWorking,  setBulkWorking]  = useState(false)
 
   const { tasks, loading, refresh, createTask } = useTasks({})
 
@@ -70,6 +75,44 @@ export default function Tasks() {
     setActiveTab('inbox')
   }
 
+  const toggleSelect = (id) => setSelectedIds(prev => {
+    const next = new Set(prev)
+    next.has(id) ? next.delete(id) : next.add(id)
+    return next
+  })
+
+  const exitSelectMode = () => { setSelectMode(false); setSelectedIds(new Set()); setBulkStatus('') }
+
+  const handleBulkMove = async () => {
+    if (!bulkStatus || selectedIds.size === 0) return
+    setBulkWorking(true)
+    try {
+      await Promise.all([...selectedIds].map(id => updateTask(id, { status: bulkStatus })))
+      await refresh()
+      exitSelectMode()
+    } finally { setBulkWorking(false) }
+  }
+
+  const handleBulkArchive = async () => {
+    if (selectedIds.size === 0) return
+    setBulkWorking(true)
+    try {
+      await Promise.all([...selectedIds].map(id => archiveTask(id)))
+      await refresh()
+      exitSelectMode()
+    } finally { setBulkWorking(false) }
+  }
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0 || !window.confirm(`Permanently delete ${selectedIds.size} task(s)? This cannot be undone.`)) return
+    setBulkWorking(true)
+    try {
+      await Promise.all([...selectedIds].map(id => permanentDeleteTask(id)))
+      await refresh()
+      exitSelectMode()
+    } finally { setBulkWorking(false) }
+  }
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
@@ -78,7 +121,12 @@ export default function Tasks() {
         style={{ borderColor: 'var(--border)' }}
       >
         <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>Tasks</h1>
-        <Button size="sm" variant="primary" onClick={() => setShowCapture(true)}>+ New Task</Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant={selectMode ? 'secondary' : 'ghost'} onClick={() => selectMode ? exitSelectMode() : setSelectMode(true)}>
+            {selectMode ? `✕ Cancel (${selectedIds.size} selected)` : '☑ Select'}
+          </Button>
+          <Button size="sm" variant="primary" onClick={() => setShowCapture(true)}>+ New Task</Button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto">
@@ -160,12 +208,49 @@ export default function Tasks() {
               <TaskRow
                 key={task.id}
                 task={task}
-                onClick={() => navigate(`/tasks/${task.id}`)}
+                onClick={() => !selectMode && navigate(`/tasks/${task.id}`)}
+                selectable={selectMode}
+                selected={selectedIds.has(task.id)}
+                onToggle={() => toggleSelect(task.id)}
               />
             ))}
           </div>
         )}
       </div>
+
+      {/* Bulk action bar */}
+      {selectMode && (
+        <div
+          className="shrink-0 flex items-center gap-3 px-6 py-3 border-t flex-wrap"
+          style={{ borderColor: 'var(--border)', backgroundColor: 'var(--pane-bg)' }}
+        >
+          <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+            {selectedIds.size} selected
+          </span>
+          <div className="flex items-center gap-2 flex-1">
+            <select
+              value={bulkStatus}
+              onChange={e => setBulkStatus(e.target.value)}
+              className="px-2 py-1.5 rounded-lg text-xs border outline-none bg-transparent"
+              style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+            >
+              <option value="">Move to…</option>
+              {TABS.filter(t => t.key !== 'all' && t.key !== 'done').map(t => (
+                <option key={t.key} value={t.key}>{t.label}</option>
+              ))}
+            </select>
+            <Button size="sm" variant="primary" onClick={handleBulkMove} disabled={!bulkStatus || selectedIds.size === 0 || bulkWorking}>
+              {bulkWorking ? '…' : 'Move'}
+            </Button>
+          </div>
+          <Button size="sm" variant="secondary" onClick={handleBulkArchive} disabled={selectedIds.size === 0 || bulkWorking}>
+            Archive
+          </Button>
+          <Button size="sm" variant="danger" onClick={handleBulkDelete} disabled={selectedIds.size === 0 || bulkWorking}>
+            Delete
+          </Button>
+        </div>
+      )}
 
       <CaptureTaskModal
         open={showCapture}

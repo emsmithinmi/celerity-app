@@ -4,7 +4,7 @@ import {
   getTask, updateTask, completeTaskWithOptions, archiveTask, permanentDeleteTask,
   moveToNextAction, moveToQueued, moveToWaiting,
   clearWaiting, highlightTask, clarifyTask, getAllContextTags,
-  linkPersonToTask, unlinkPersonFromTask,
+  linkPersonToTask, unlinkPersonFromTask, duplicateTask,
 } from '../lib/api/tasks'
 import { getPeople } from '../lib/api/people'
 import { getTagColors } from '../lib/api/tagColors'
@@ -169,6 +169,11 @@ export default function TaskPage() {
   }
 
   const handleArchive        = async () => { const u = await archiveTask(task.id); setTask(prev => ({ ...prev, ...u })) }
+  const handleDuplicate = async () => {
+    const copy = await duplicateTask(task.id)
+    navigate(`/tasks/${copy.id}`)
+  }
+
   const handlePermanentDelete = async () => {
     deleteTaskCalendarEvent(task.gcal_event_id).catch(() => {})
     await permanentDeleteTask(task.id)
@@ -708,13 +713,19 @@ export default function TaskPage() {
                       📁 Archive
                     </Button>
                   )}
+                  <Button variant="secondary" size="sm" onClick={handleDuplicate}>
+                    ⧉ Duplicate
+                  </Button>
                   <Button variant="danger" size="sm" onClick={() => setShowDiscard(true)}>
                     🗑 Permanently Delete
                   </Button>
                 </>
               )}
               {!isCompleted && (
-                <span className="ml-auto"><TrashBtn onClick={() => setShowDiscard(true)} /></span>
+                <span className="ml-auto flex items-center gap-2">
+                  <Button variant="ghost" size="sm" onClick={handleDuplicate}>⧉ Duplicate</Button>
+                  <TrashBtn onClick={() => setShowDiscard(true)} />
+                </span>
               )}
             </div>
           </section>

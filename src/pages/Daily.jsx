@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
 import { useDaily } from '../hooks/useDaily'
 import { useTasks } from '../hooks/useTasks'
 import { useProjects } from '../hooks/useProjects'
@@ -355,10 +355,11 @@ export default function Daily() {
                 )}
                 <button
                   onClick={() => { setStuckResult(null); handleStuck() }}
-                  className="text-xs underline"
-                  style={{ color: 'var(--text-dim)' }}
+                  className="flex items-center justify-center rounded-md transition-opacity hover:opacity-80"
+                  style={{ width: 26, height: 26, color: 'var(--text-dim)', backgroundColor: 'transparent' }}
+                  title="Refresh suggestions"
                 >
-                  Refresh suggestions
+                  <RefreshCw size={13} />
                 </button>
               </>
             ) : null}

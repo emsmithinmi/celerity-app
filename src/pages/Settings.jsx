@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect } from 'react'
-import { Pencil, Trash2, Plus, GripVertical } from 'lucide-react'
+import { Pencil, Trash2, Plus, GripVertical, ChevronUp, ChevronDown } from 'lucide-react'
 import Button from '../components/ui/Button'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import { useEnergyLevels } from '../contexts/EnergyLevelsContext'
@@ -383,7 +383,7 @@ function AddEnergyForm({ onAdded, nextSortOrder }) {
 }
 
 // ─── Priority rows ────────────────────────────────────────────────────────────
-function PriorityRow({ item, onSaved, onDelete }) {
+function PriorityRow({ item, onSaved, onDelete, onMoveUp, onMoveDown }) {
   const [editing, setEditing] = useState(false)
   const [saving,  setSaving]  = useState(false)
   const [draft,   setDraft]   = useState(null)
@@ -452,6 +452,8 @@ function PriorityRow({ item, onSaved, onDelete }) {
         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold tracking-wide uppercase" style={{ backgroundColor: item.bg_color, color: item.text_color }}>{item.label}</span>
         <p className="flex-1 text-xs truncate" style={{ color: 'var(--text-dim)' }}>{item.value}</p>
         <div className="flex items-center gap-1 shrink-0">
+          <button onClick={onMoveUp} title="Move up" disabled={!onMoveUp} className="flex items-center justify-center rounded transition-colors disabled:opacity-20" style={{ width: 24, height: 24, color: 'var(--text-secondary)', backgroundColor: 'transparent' }} onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--border)' }} onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent' }}><ChevronUp size={13} /></button>
+          <button onClick={onMoveDown} title="Move down" disabled={!onMoveDown} className="flex items-center justify-center rounded transition-colors disabled:opacity-20" style={{ width: 24, height: 24, color: 'var(--text-secondary)', backgroundColor: 'transparent' }} onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--border)' }} onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent' }}><ChevronDown size={13} /></button>
           <button onClick={() => { setDraft({ ...item }); setEditing(true) }} title="Edit" className="flex items-center justify-center rounded transition-colors" style={{ width: 28, height: 28, color: 'var(--text-secondary)', backgroundColor: 'transparent' }} onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }} onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}><Pencil size={13} /></button>
           <button onClick={() => setShowDel(true)} title="Delete" className="flex items-center justify-center rounded transition-colors" style={{ width: 28, height: 28, color: 'var(--text-secondary)', backgroundColor: 'transparent' }} onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--delete-hover-bg)'; e.currentTarget.style.color = 'var(--state-error-text)' }} onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}><Trash2 size={13} /></button>
         </div>
@@ -530,6 +532,7 @@ function AreaRow({ item, onSaved, onDelete }) {
   const [editing,   setEditing]   = useState(false)
   const [saving,    setSaving]    = useState(false)
   const [label,     setLabel]     = useState(item.label)
+  const [icon,      setIcon]      = useState(item.icon ?? '')
   const [bgColor,   setBgColor]   = useState(item.bg_color ?? '#374151')
   const [textColor, setTextColor] = useState(item.text_color ?? '#f9fafb')
   const [showDel,   setShowDel]   = useState(false)
@@ -538,7 +541,7 @@ function AreaRow({ item, onSaved, onDelete }) {
     if (!label.trim()) return
     setSaving(true)
     try {
-      const updated = await updateArea(item.id, { label: label.trim(), value: label.trim(), bg_color: bgColor, text_color: textColor })
+      const updated = await updateArea(item.id, { label: label.trim(), value: label.trim(), icon: icon || null, bg_color: bgColor, text_color: textColor })
       onSaved(updated); setEditing(false)
     } finally { setSaving(false) }
   }
@@ -556,11 +559,11 @@ function AreaRow({ item, onSaved, onDelete }) {
             <>
               <input autoFocus value={label} onChange={e => setLabel(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') { setLabel(item.label); setEditing(false) } }} className="flex-1 px-2 py-1 rounded-lg text-sm border outline-none bg-transparent" style={{ borderColor: 'var(--accent)', color: 'var(--text-primary)' }} />
               <Button size="sm" variant="primary" onClick={save} disabled={saving}>{saving ? '…' : 'Save'}</Button>
-              <Button size="sm" variant="ghost" onClick={() => { setLabel(item.label); setBgColor(item.bg_color ?? '#374151'); setTextColor(item.text_color ?? '#f9fafb'); setEditing(false) }}>Cancel</Button>
+              <Button size="sm" variant="ghost" onClick={() => { setLabel(item.label); setIcon(item.icon ?? ''); setBgColor(item.bg_color ?? '#374151'); setTextColor(item.text_color ?? '#f9fafb'); setEditing(false) }}>Cancel</Button>
             </>
           ) : (
             <>
-              <span className="px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: bgColor, color: textColor }}>{label}</span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: bgColor, color: textColor }}>{icon && <span>{icon}</span>}{label}</span>
               <span className="flex-1" />
               <div className="flex items-center gap-1 shrink-0">
                 <button onClick={() => setEditing(true)} title="Edit" className="flex items-center justify-center rounded transition-colors" style={{ width: 28, height: 28, color: 'var(--text-secondary)', backgroundColor: 'transparent' }} onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }} onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}><Pencil size={13} /></button>
@@ -570,7 +573,11 @@ function AreaRow({ item, onSaved, onDelete }) {
           )}
         </div>
         {editing && (
-          <div className="px-4 pb-3 grid grid-cols-2 gap-4 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
+          <div className="px-4 pb-3 grid grid-cols-3 gap-4 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Icon (emoji)</label>
+              <input value={icon} onChange={e => setIcon(e.target.value)} className="w-full px-2 py-1 rounded-lg text-sm border outline-none bg-transparent text-center" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }} placeholder="🏠" />
+            </div>
             <div>
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Background</label>
               <div className="flex items-center gap-2">
@@ -585,9 +592,9 @@ function AreaRow({ item, onSaved, onDelete }) {
                 <input value={textColor} onChange={e => setTextColor(e.target.value)} className="flex-1 px-2 py-1 rounded-lg text-xs border outline-none font-mono bg-transparent" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
               </div>
             </div>
-            <div className="col-span-2">
+            <div className="col-span-3">
               <p className="text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>Preview</p>
-              <span className="px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: bgColor, color: textColor }}>{label || 'Area'}</span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: bgColor, color: textColor }}>{icon && <span>{icon}</span>}{label || 'Area'}</span>
             </div>
           </div>
         )}
@@ -600,6 +607,7 @@ function AreaRow({ item, onSaved, onDelete }) {
 function AddAreaForm({ onAdded, nextSortOrder }) {
   const [open,      setOpen]      = useState(false)
   const [label,     setLabel]     = useState('')
+  const [icon,      setIcon]      = useState('')
   const [bgColor,   setBgColor]   = useState('#374151')
   const [textColor, setTextColor] = useState('#f9fafb')
   const [saving,    setSaving]    = useState(false)
@@ -609,8 +617,8 @@ function AddAreaForm({ onAdded, nextSortOrder }) {
     if (!label.trim()) { setError('Name is required.'); return }
     setSaving(true); setError(null)
     try {
-      const created = await createArea({ value: label.trim(), label: label.trim(), bg_color: bgColor, text_color: textColor, sort_order: nextSortOrder })
-      onAdded(created); setLabel(''); setBgColor('#374151'); setTextColor('#f9fafb'); setOpen(false)
+      const created = await createArea({ value: label.trim(), label: label.trim(), icon: icon || null, bg_color: bgColor, text_color: textColor, sort_order: nextSortOrder })
+      onAdded(created); setLabel(''); setIcon(''); setBgColor('#374151'); setTextColor('#f9fafb'); setOpen(false)
     } catch (err) { setError(err.message ?? 'Failed to create area') } finally { setSaving(false) }
   }
 
@@ -627,7 +635,11 @@ function AddAreaForm({ onAdded, nextSortOrder }) {
         <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Name <span style={{ color: 'var(--danger)' }}>*</span></label>
         <input autoFocus value={label} onChange={e => setLabel(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') { setOpen(false); setLabel('') } }} className="w-full px-3 py-1.5 rounded-lg text-sm border outline-none bg-transparent" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }} placeholder="e.g. Side Projects" />
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-4">
+        <div>
+          <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Icon (emoji)</label>
+          <input value={icon} onChange={e => setIcon(e.target.value)} className="w-full px-2 py-1 rounded-lg text-sm border outline-none bg-transparent text-center" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }} placeholder="🏠" />
+        </div>
         <div>
           <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Background</label>
           <div className="flex items-center gap-2">
@@ -645,11 +657,11 @@ function AddAreaForm({ onAdded, nextSortOrder }) {
       </div>
       <div>
         <p className="text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>Preview</p>
-        <span className="px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: bgColor, color: textColor }}>{label || 'Area'}</span>
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: bgColor, color: textColor }}>{icon && <span>{icon}</span>}{label || 'Area'}</span>
       </div>
       <div className="flex gap-2">
         <Button size="sm" variant="primary" onClick={submit} disabled={saving}>{saving ? 'Adding…' : 'Add'}</Button>
-        <Button size="sm" variant="ghost" onClick={() => { setOpen(false); setLabel(''); setError(null) }}>Cancel</Button>
+        <Button size="sm" variant="ghost" onClick={() => { setOpen(false); setLabel(''); setIcon(''); setError(null) }}>Cancel</Button>
       </div>
     </div>
   )
@@ -886,6 +898,24 @@ export default function Settings() {
   const pri = useLocalList(priorities, reloadPri)
   const ar  = useLocalList(areas,      reloadArea)
 
+  // Priority reorder — swap sort_order values between two adjacent items
+  const handlePriMoveUp = async (index) => {
+    if (index === 0) return
+    const list = [...pri.displayed]
+    const a = list[index - 1], b = list[index]
+    const aOrder = a.sort_order, bOrder = b.sort_order
+    const [updA, updB] = await Promise.all([
+      updatePriority(a.id, { sort_order: bOrder }),
+      updatePriority(b.id, { sort_order: aOrder }),
+    ])
+    pri.onSaved(updA)
+    pri.onSaved(updB)
+  }
+  const handlePriMoveDown = async (index) => {
+    if (index >= pri.displayed.length - 1) return
+    await handlePriMoveUp(index + 1)
+  }
+
   return (
     <div className="px-10 py-8 max-w-2xl space-y-12">
       <div>
@@ -940,7 +970,16 @@ export default function Settings() {
         </div>
         {priLoading ? <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p> : (
           <div className="space-y-2">
-            {pri.displayed.map(item => <PriorityRow key={item.id} item={item} onSaved={pri.onSaved} onDelete={pri.onDeleted} />)}
+            {pri.displayed.map((item, idx) => (
+              <PriorityRow
+                key={item.id}
+                item={item}
+                onSaved={pri.onSaved}
+                onDelete={pri.onDeleted}
+                onMoveUp={idx > 0 ? () => handlePriMoveUp(idx) : null}
+                onMoveDown={idx < pri.displayed.length - 1 ? () => handlePriMoveDown(idx) : null}
+              />
+            ))}
             <AddPriorityForm onAdded={pri.onAdded} nextSortOrder={(pri.displayed[pri.displayed.length - 1]?.sort_order ?? 0) + 10} />
           </div>
         )}

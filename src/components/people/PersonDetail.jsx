@@ -9,7 +9,7 @@ import PersonComments from './PersonComments'
 import TaskDetail    from '../tasks/TaskDetail'
 import ProjectDetail from '../projects/ProjectDetail'
 
-const CONTACT_TYPES = ['Colleague', 'Friend', 'Family', 'Client', 'Vendor', 'Mentor', 'Other']
+const CONTACT_TYPES = ['Work', 'Family', 'Social', 'Services', 'Other']
 
 function FormField({ label, children }) {
   return (

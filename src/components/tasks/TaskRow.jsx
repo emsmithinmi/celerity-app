@@ -1,6 +1,6 @@
 ﻿import { StatusPill, PriorityBadge, EnergyBadge, DurationDisplay, ContextTag } from '../ui'
 
-export default function TaskRow({ task, onClick }) {
+export default function TaskRow({ task, onClick, selectable = false, selected = false, onToggle }) {
   const isDone          = task.status === 'done'
   const isWaiting       = task.status === 'waiting'
   const today           = new Date().toLocaleDateString('en-CA')
@@ -9,12 +9,21 @@ export default function TaskRow({ task, onClick }) {
 
   return (
     <div
-      onClick={onClick}
+      onClick={selectable ? onToggle : onClick}
       className="flex items-center gap-3 px-4 py-3 border-b last:border-b-0 cursor-pointer transition-colors hover:opacity-90"
-      style={{ borderColor: 'var(--border)' }}
+      style={{ borderColor: 'var(--border)', backgroundColor: selected ? 'var(--state-info-bg)' : 'transparent' }}
     >
-      {/* Status dot */}
-      <StatusPill status={task.status} type="task" />
+      {/* Checkbox (select mode) or status dot */}
+      {selectable ? (
+        <div
+          className="flex items-center justify-center rounded border shrink-0"
+          style={{ width: 16, height: 16, borderColor: selected ? 'var(--accent)' : 'var(--border)', backgroundColor: selected ? 'var(--accent)' : 'transparent' }}
+        >
+          {selected && <span style={{ color: 'var(--pane-bg)', fontSize: 10, lineHeight: 1, fontWeight: 700 }}>✓</span>}
+        </div>
+      ) : (
+        <StatusPill status={task.status} type="task" />
+      )}
 
       {/* Title + project */}
       <div className="flex-1 min-w-0">

@@ -16,7 +16,7 @@ import { PEOPLE_STATUSES } from '../lib/constants'
 const inputCls  = 'w-full px-3 py-2 rounded-lg text-sm border outline-none bg-transparent'
 const inputStyle = { borderColor: 'var(--border)', color: 'var(--text-primary)' }
 
-const CONTACT_TYPES   = ['colleague', 'friend', 'family', 'client', 'vendor', 'mentor', 'other']
+const CONTACT_TYPES   = ['Work', 'Family', 'Social', 'Services', 'Other']
 const SOCIAL_PLATFORMS = ['Twitter/X', 'LinkedIn', 'Instagram', 'Facebook', 'GitHub', 'YouTube', 'TikTok', 'Bluesky', 'Mastodon', 'Other']
 
 // ─── Small helpers ────────────────────────────────────────────────────────────
@@ -144,6 +144,8 @@ export default function PersonPage() {
         address_work_zip:     draft.address_work_zip     || null,
         social_media:         draft.social_media         ?? [],
         notes:                draft.notes                || null,
+        icon:                 draft.icon                 || null,
+        color:                draft.color                || null,
       })
       setPerson(prev => ({ ...prev, ...updated }))
       setEditing(false)
@@ -275,7 +277,7 @@ export default function PersonPage() {
             <p className="text-xs mb-2" style={{ color: 'var(--danger)' }}>{saveError}</p>
           )}
 
-          {/* Avatar */}
+          {/* Avatar + color/icon */}
           <div className="flex items-center gap-3 mb-4">
             <AvatarCircle
               src={person.avatar_url}
@@ -284,6 +286,8 @@ export default function PersonPage() {
               canUpload
               uploading={avatarUploading}
               onFileSelect={handleAvatarUpload}
+              bgColor={person.color ?? undefined}
+              emoji={person.icon ?? undefined}
             />
             <div>
               <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{displayName(person)}</p>
@@ -325,6 +329,41 @@ export default function PersonPage() {
               )}
             </div>
 
+            {/* Avatar icon + color (edit mode only) */}
+            {editing && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Avatar Icon (emoji)</label>
+                  <input
+                    type="text"
+                    value={d.icon ?? ''}
+                    onChange={e => change('icon', e.target.value)}
+                    className={inputCls}
+                    style={inputStyle}
+                    placeholder="😊 (shows when no photo)"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Avatar Color</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={d.color ?? '#374151'}
+                      onChange={e => change('color', e.target.value)}
+                      className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent p-0.5"
+                    />
+                    <input
+                      value={d.color ?? ''}
+                      onChange={e => change('color', e.target.value)}
+                      className="flex-1 px-2 py-1.5 rounded-lg text-xs border outline-none font-mono bg-transparent"
+                      style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+                      placeholder="#374151"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Relationship / Contact Type / Occupation */}
             <div className="grid grid-cols-3 gap-3">
               {editing ? (
@@ -337,7 +376,7 @@ export default function PersonPage() {
                     <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Contact Type</label>
                     <select value={d.contact_type ?? ''} onChange={e => change('contact_type', e.target.value)} className={inputCls} style={inputStyle}>
                       <option value="">Select…</option>
-                      {CONTACT_TYPES.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
+                      {CONTACT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                     </select>
                   </div>
                   <div>

@@ -7,8 +7,8 @@ import { uploadUserAvatar } from '../../lib/api/user'
 
 const NAV_ITEMS = [
   { to: '/daily',    label: 'Daily',    icon: '📅' },
-  { to: '/tasks',    label: 'Tasks',    icon: '⚡' },
   { to: '/projects', label: 'Projects', icon: '🗂' },
+  { to: '/tasks',    label: 'Tasks',    icon: '⚡' },
   { to: '/people',   label: 'People',   icon: '👥' },
   { to: '/habits',   label: 'Habits',   icon: '🎯' },
   { to: '/reviews',  label: 'Reviews',  icon: '🔍' },
