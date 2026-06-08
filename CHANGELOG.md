@@ -7,6 +7,13 @@ All notable changes to Focus Flow are recorded here.
 ## 2026-06-07
 
 ### Added
+- **Schedule Task** — new 📅 Schedule button in What's Next for all non-done statuses. Pops a modal to pick date (required) + time (optional). For inbox tasks, the modal also collects the full clarification fields (priority, energy level, area, duration, description) so the task moves straight to Scheduled without a separate clarify step. Scheduled tasks get a 📅 Reschedule button too. DB column `tasks.scheduled_time` (text, HH:MM) stores the time component separately from `due_date`.
+
+---
+
+## 2026-06-07
+
+### Added
 - **Area colors** — Areas now have bg/text color pickers in Settings, same pattern as Energy Levels and Priorities. Live preview badge while editing. DB migration adds `bg_color` and `text_color` columns with sensible defaults.
 - **Context tag colors** — New "Context Tags" section in Settings lets you set custom bg/text colors per tag. Colors stored in `user_settings.tag_colors` JSONB. Tags display their custom colors on the task page. Reset button to go back to theme default.
 

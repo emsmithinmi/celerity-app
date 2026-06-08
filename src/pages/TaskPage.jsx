@@ -15,6 +15,7 @@ import { StatusPill, PriorityBadge, EnergyBadge, PencilBtn, TrashBtn } from '../
 import DurationInput from '../components/tasks/DurationInput'
 import { formatDuration } from '../components/ui/DurationDisplay'
 import WaitingModal from '../components/tasks/WaitingModal'
+import ScheduleModal from '../components/tasks/ScheduleModal'
 import HighlightModal from '../components/tasks/HighlightModal'
 import TaskCompletionModal from '../components/tasks/TaskCompletionModal'
 import RouteModal from '../components/tasks/RouteModal'
@@ -58,6 +59,7 @@ export default function TaskPage() {
   const [saveError, setSaveError] = useState(null)
 
   const [showWaiting,    setShowWaiting]    = useState(false)
+  const [showSchedule,   setShowSchedule]   = useState(false)
   const [showHighlight,  setShowHighlight]  = useState(false)
   const [showCompletion, setShowCompletion] = useState(false)
   const [showRoute,      setShowRoute]      = useState(false)
@@ -175,6 +177,11 @@ export default function TaskPage() {
   const handleClearWaiting = async () => {
     await clearWaiting(task.id)
     setTask(prev => ({ ...prev, status: 'next_action' }))
+  }
+
+  const handleSchedule = async (fields) => {
+    const updated = await updateTask(task.id, { status: 'scheduled', ...fields })
+    setTask(prev => ({ ...prev, ...updated }))
   }
 
   const handleNextAction = async () => {
@@ -611,7 +618,8 @@ export default function TaskPage() {
             <div className="flex flex-wrap gap-2 items-center">
               {task.status === 'inbox' && (
                 <>
-                  <Button variant="danger" size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.did_it}</Button>
+                  <Button variant="danger"    size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.did_it}</Button>
+                  <Button variant="secondary" size="sm" onClick={() => setShowSchedule(true)}>📅 Schedule</Button>
                   {clarified && (
                     <>
                       {hasProject
@@ -630,20 +638,23 @@ export default function TaskPage() {
                   <Button variant="success"   size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.complete}</Button>
                   <Button variant="danger"    size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.did_it}</Button>
                   <Button variant="secondary" size="sm" onClick={() => setShowWaiting(true)}>{TASK_ACTIONS.waiting}</Button>
+                  <Button variant="secondary" size="sm" onClick={() => setShowSchedule(true)}>📅 Schedule</Button>
                   {hasProject  && <Button variant="ghost" size="sm" onClick={handleQueue}>{TASK_ACTIONS.queue}</Button>}
                   {!hasProject && <Button variant="ghost" size="sm" onClick={() => setShowRoute(true)}>Assign to Project →</Button>}
                 </>
               )}
               {task.status === 'queued' && (
                 <>
-                  <Button variant="success" size="sm" onClick={handleNextAction}>{TASK_ACTIONS.next_action}</Button>
-                  <Button variant="danger"  size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.did_it}</Button>
+                  <Button variant="success"   size="sm" onClick={handleNextAction}>{TASK_ACTIONS.next_action}</Button>
+                  <Button variant="danger"    size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.did_it}</Button>
+                  <Button variant="secondary" size="sm" onClick={() => setShowSchedule(true)}>📅 Schedule</Button>
                 </>
               )}
               {task.status === 'waiting' && (
                 <>
-                  <Button variant="success" size="sm" onClick={handleClearWaiting}>Clear Blocker</Button>
-                  <Button variant="danger"  size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.did_it}</Button>
+                  <Button variant="success"   size="sm" onClick={handleClearWaiting}>Clear Blocker</Button>
+                  <Button variant="danger"    size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.did_it}</Button>
+                  <Button variant="secondary" size="sm" onClick={() => setShowSchedule(true)}>📅 Schedule</Button>
                 </>
               )}
               {task.status === 'scheduled' && (
@@ -651,12 +662,14 @@ export default function TaskPage() {
                   <Button variant="success"   size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.complete}</Button>
                   <Button variant="danger"    size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.did_it}</Button>
                   <Button variant="secondary" size="sm" onClick={handleNextAction}>{TASK_ACTIONS.next_action}</Button>
+                  <Button variant="secondary" size="sm" onClick={() => setShowSchedule(true)}>📅 Reschedule</Button>
                 </>
               )}
               {task.status === 'someday' && (
                 <>
-                  <Button variant="success" size="sm" onClick={handleNextAction}>{TASK_ACTIONS.next_action}</Button>
-                  <Button variant="danger"  size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.did_it}</Button>
+                  <Button variant="success"   size="sm" onClick={handleNextAction}>{TASK_ACTIONS.next_action}</Button>
+                  <Button variant="danger"    size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.did_it}</Button>
+                  <Button variant="secondary" size="sm" onClick={() => setShowSchedule(true)}>📅 Schedule</Button>
                 </>
               )}
               {isCompleted && (
@@ -699,6 +712,13 @@ export default function TaskPage() {
         variant="danger"
       />
       <WaitingModal   open={showWaiting}   onClose={() => setShowWaiting(false)}   onConfirm={handleWaiting} />
+      <ScheduleModal
+        open={showSchedule}
+        onClose={() => setShowSchedule(false)}
+        onConfirm={handleSchedule}
+        fromInbox={task.status === 'inbox'}
+        task={task}
+      />
       <HighlightModal open={showHighlight} onClose={() => setShowHighlight(false)} onConfirm={handleHighlight} />
       <RouteModal     open={showRoute}     onClose={() => setShowRoute(false)}     onAssign={handleAssignProject} />
 
