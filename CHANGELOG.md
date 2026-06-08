@@ -7,6 +7,16 @@ All notable changes to Focus Flow are recorded here.
 ## 2026-06-07
 
 ### Added
+- **Calendar sync for scheduled tasks** — scheduling a task now automatically creates an event on the Focus Flow Google Calendar. Rescheduling updates the existing event. Moving a scheduled task to any other status (Next Action, Queued, Waiting, Someday, Done, Delete) removes it from the calendar. All-day events when no time is set; timed events use the scheduled time + task duration as the end time (defaults to 1 hour). Silent no-op when no Google integration is connected. New `tasks.gcal_event_id` column stores the Google event ID for update/delete lifecycle.
+
+### Changed
+- **`google-actions` edge function** — `create_calendar_event` now returns the new event ID in `{ ok: true, event_id }` so the client can store it for future updates.
+
+---
+
+## 2026-06-07
+
+### Added
 - **Schedule Task** — new 📅 Schedule button in What's Next for all non-done statuses. Pops a modal to pick date (required) + time (optional). For inbox tasks, the modal also collects the full clarification fields (priority, energy level, area, duration, description) so the task moves straight to Scheduled without a separate clarify step. Scheduled tasks get a 📅 Reschedule button too. DB column `tasks.scheduled_time` (text, HH:MM) stores the time component separately from `due_date`.
 
 ---

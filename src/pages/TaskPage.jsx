@@ -8,6 +8,7 @@ import {
 } from '../lib/api/tasks'
 import { getPeople } from '../lib/api/people'
 import { getTagColors } from '../lib/api/tagColors'
+import { scheduleTaskOnCalendar, deleteTaskCalendarEvent } from '../lib/api/googleActions'
 import { checkProjectStalled } from '../lib/api/projects'
 import Button from '../components/ui/Button'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
@@ -163,15 +164,26 @@ export default function TaskPage() {
     if (task.project_id) await checkProjectStalled(task.project_id)
     setTask(prev => ({ ...prev, ...updated }))
     setShowCompletion(false)
+    // Remove from calendar when task is completed
+    deleteTaskCalendarEvent(task.gcal_event_id).catch(() => {})
   }
 
   const handleArchive        = async () => { const u = await archiveTask(task.id); setTask(prev => ({ ...prev, ...u })) }
-  const handlePermanentDelete = async () => { await permanentDeleteTask(task.id); navigate('/tasks') }
-  const handleDiscard        = async () => { await permanentDeleteTask(task.id); navigate('/tasks') }
+  const handlePermanentDelete = async () => {
+    deleteTaskCalendarEvent(task.gcal_event_id).catch(() => {})
+    await permanentDeleteTask(task.id)
+    navigate('/tasks')
+  }
+  const handleDiscard = async () => {
+    deleteTaskCalendarEvent(task.gcal_event_id).catch(() => {})
+    await permanentDeleteTask(task.id)
+    navigate('/tasks')
+  }
 
   const handleWaiting   = async (reason) => {
     await moveToWaiting(task.id, reason)
     setTask(prev => ({ ...prev, status: 'waiting' }))
+    if (task.status === 'scheduled') deleteTaskCalendarEvent(task.gcal_event_id).catch(() => {})
   }
 
   const handleClearWaiting = async () => {
@@ -182,21 +194,33 @@ export default function TaskPage() {
   const handleSchedule = async (fields) => {
     const updated = await updateTask(task.id, { status: 'scheduled', ...fields })
     setTask(prev => ({ ...prev, ...updated }))
+
+    // Sync to Focus Flow Google Calendar (best-effort — never blocks the UI)
+    const taskForCal = { ...task, ...updated, ...fields }
+    scheduleTaskOnCalendar(taskForCal).then(async (eventId) => {
+      if (eventId && eventId !== task.gcal_event_id) {
+        await updateTask(task.id, { gcal_event_id: eventId }).catch(() => {})
+        setTask(prev => ({ ...prev, gcal_event_id: eventId }))
+      }
+    }).catch(() => {})
   }
 
   const handleNextAction = async () => {
     await moveToNextAction(task.id)
     setTask(prev => ({ ...prev, status: 'next_action' }))
+    if (task.status === 'scheduled') deleteTaskCalendarEvent(task.gcal_event_id).catch(() => {})
   }
 
   const handleQueue = async () => {
     await moveToQueued(task.id)
     setTask(prev => ({ ...prev, status: 'queued' }))
+    if (task.status === 'scheduled') deleteTaskCalendarEvent(task.gcal_event_id).catch(() => {})
   }
 
   const handleSomeday = async () => {
     const updated = await updateTask(task.id, { status: 'someday' })
     setTask(prev => ({ ...prev, ...updated }))
+    if (task.status === 'scheduled') deleteTaskCalendarEvent(task.gcal_event_id).catch(() => {})
   }
 
   const handleAssignProject = async (projectId) => {

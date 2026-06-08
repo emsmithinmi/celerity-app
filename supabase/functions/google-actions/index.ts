@@ -51,7 +51,7 @@ function toCalendarDateTime(iso: string, allDay: boolean, tz?: string) {
   return { dateTime: iso, timeZone: tz ?? 'UTC' }
 }
 
-async function run(accessToken: string, action: Action): Promise<void> {
+async function run(accessToken: string, action: Action): Promise<string | null> {
   switch (action.type) {
 
     case 'archive_email': {
@@ -64,7 +64,7 @@ async function run(accessToken: string, action: Action): Promise<void> {
         }
       )
       if (!res.ok) throw new Error(`Gmail archive error ${res.status}: ${await res.text()}`)
-      break
+      return null
     }
 
     case 'trash_email': {
@@ -73,7 +73,7 @@ async function run(accessToken: string, action: Action): Promise<void> {
         { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` } }
       )
       if (!res.ok) throw new Error(`Gmail trash error ${res.status}: ${await res.text()}`)
-      break
+      return null
     }
 
     case 'create_calendar_event': {
@@ -96,7 +96,8 @@ async function run(accessToken: string, action: Action): Promise<void> {
         }
       )
       if (!res.ok) throw new Error(`Calendar create error ${res.status}: ${await res.text()}`)
-      break
+      const created = await res.json()
+      return (created.id as string) ?? null
     }
 
     case 'update_calendar_event': {
@@ -118,7 +119,7 @@ async function run(accessToken: string, action: Action): Promise<void> {
         }
       )
       if (!res.ok) throw new Error(`Calendar update error ${res.status}: ${await res.text()}`)
-      break
+      return event_id
     }
 
     case 'delete_calendar_event': {
@@ -128,9 +129,10 @@ async function run(accessToken: string, action: Action): Promise<void> {
       )
       // 404 means already gone — treat as success
       if (!res.ok && res.status !== 404) throw new Error(`Calendar delete error ${res.status}: ${await res.text()}`)
-      break
+      return null
     }
   }
+  return null
 }
 
 Deno.serve(async (req: Request) => {
@@ -176,9 +178,10 @@ Deno.serve(async (req: Request) => {
 
     const action: Action = await req.json()
     let accessToken = integration.access_token
+    let eventId: string | null = null
 
     try {
-      await run(accessToken, action)
+      eventId = await run(accessToken, action)
     } catch (err) {
       if (String(err).includes('401') && integration.refresh_token) {
         const newToken = await refreshAccessToken(integration.refresh_token)
@@ -188,13 +191,13 @@ Deno.serve(async (req: Request) => {
           .update({ access_token: newToken, updated_at: new Date().toISOString() })
           .eq('user_id', user.id)
           .eq('provider', 'google')
-        await run(newToken, action)
+        eventId = await run(newToken, action)
       } else {
         throw err
       }
     }
 
-    return new Response(JSON.stringify({ ok: true }), {
+    return new Response(JSON.stringify({ ok: true, event_id: eventId }), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     })
 
