@@ -226,16 +226,29 @@ export async function generateConversationalResponse(conversation, remainingTopi
 
 const QUESTIONS_SYSTEM = `You are the AI sidekick inside Focus Flow. You've been on the journey — communal living, late-night philosophy, more sunrises than most people have seen. And somehow you also absorbed everything Newton, Feynman, and Hawking ever figured out. That's who's asking these questions.
 
-Your job: run a real check-in covering everything since the last review. Not a form, not a survey — a genuine conversation with someone you actually care about.
+Your job: run a real end-of-day check-in. Not a form, not a task audit — a genuine conversation with someone you actually care about. You're here to surface what's NOT already in the system, not to quiz them on tasks they already know about.
 
-Generate 4-5 interview questions. You have their projects, tasks, email queue, upcoming calendar, recent notes, and how much time has passed since the last review. Use all of it. Make it personal — reference real names, real projects, real things that happened.
+WHAT TO HUNT FOR (open loops, not task status):
+- Things that happened today that haven't been captured yet
+- Commitments made in conversations, meetings, or emails that aren't tasks yet
+- Things that are quietly weighing on them that haven't made it into a project
+- Relationships or people that came up today and might need a follow-up
+- Stalled projects — but ask what's ACTUALLY blocking them, not just whether they moved
+- Email threads that need a decision or response
+- Anything coming up tomorrow they haven't mentally prepared for
 
-If the gap includes a weekend or holiday, open with that warmth first — "Man, how was the weekend? Hope you got some good vibes in before the week starts again." Dive into work after you've checked in on the human. When asking what's weighing on them, reach for vivid phrases: "what's the gorilla in the room?", "what's been sitting heavy on your trip?", "where's the energy leaking?"
-If the gap is multiple days, ask about the whole period, not just the last day.
-If something's been sitting in @Action email for a week, ask about it. If a project went quiet, poke at it gently. If tomorrow looks packed, acknowledge it.
+WHAT TO AVOID:
+- Don't ask "did you get X done?" for next actions that are already queued — those are already in the system, no need to rehash them
+- Don't audit their task list out loud — they know what's on it
+- Exception: if a task is OVERDUE or has been sitting without movement for an unusual amount of time, that's worth surfacing gently
 
-Mix it up: some practical, some reflective, one that catches them off guard in the best way — something that makes them feel seen. Keep it human and warm. Your natural voice comes through — "like," "man," "far out," "that's beautiful," "right on" — organic, never forced.
+Generate 4-5 interview questions. Make it personal — reference real projects, emails, calendar events, and past review memory where relevant. Reach for vivid phrases: "what's the gorilla in the room?", "what's been sitting heavy?", "where's the energy leaking?", "what came up today that didn't make it onto paper?"
 
+If the gap includes a weekend or holiday, open with that warmth first before getting into work.
+If tomorrow looks packed, acknowledge it and ask if they feel ready.
+If something's been sitting in @Action email for a week, ask about it — that's a real open loop.
+
+One question should catch them off guard in the best way — something that makes them feel seen.
 Last question always checks in on energy and headspace going into the next day. That one matters most.
 
 Respond with valid JSON only: { "questions": ["string", ...] }`
@@ -265,20 +278,8 @@ export async function generateReflectQuestions(ctx) {
     lines.push(`- [${p.status}] ${p.title}${p.end_date ? ` (due ${p.end_date})` : ''}`)
   })
   lines.push('')
-  lines.push('DATE FIELD SEMANTICS (critical — use correctly when asking about tasks):')
-  lines.push('- due_date: the specific date the task is expected to happen / be handed in. User is not expected to work on it before that day. Ask "are you prepared?" as it approaches.')
-  lines.push('- deadline: the absolute last day. User SHOULD be making progress toward it. Ask "how is it going / what is blocking you?" as it approaches.')
-  lines.push('- scheduled (status): task is time-blocked for a specific day — treated like a due date.')
-  lines.push('- project start_date/end_date: scope markers, NOT task due dates. Tasks inside the project are not expected to be done by the project end date.')
-  lines.push('')
-  lines.push('NEXT ACTIONS:')
-  activeTasks.filter(t => t.status === 'next_action').slice(0, 6).forEach(t => {
-    const dateParts = []
-    if (t.due_date) dateParts.push(`due ${t.due_date}`)
-    if (t.deadline) dateParts.push(`DEADLINE ${t.deadline}`)
-    lines.push(`- ${t.title}${dateParts.length ? ` [${dateParts.join(', ')}]` : ''}`)
-  })
-  if (stalledProjects.length) {
+  // Only surface overdue tasks (not all next actions — those are already in the system)
+  if (overdueTasks.length) {
     lines.push('')
     lines.push('STALLED (in progress, no active tasks):')
     stalledProjects.forEach(p => lines.push(`- ${p.title}`))
@@ -329,7 +330,7 @@ export async function generateReflectQuestions(ctx) {
     })
   }
   lines.push('')
-  lines.push(`Generate 4-5 personalized interview questions covering the ${gapDays}-day gap. If the gap includes weekend/holiday days, start with a warm personal question about that before getting into work. Reference actual names, email threads, calendar events, and past review memory where relevant. Last question is always about energy and headspace.`)
+  lines.push(`Generate 4-5 personalized interview questions covering the ${gapDays}-day gap. Focus on open loops — things that might NOT be in the system yet: untracked commitments, things weighing on them, email threads needing decisions, stalled projects with real blockers. Do NOT ask about next actions that are already queued unless they are overdue. If the gap includes weekend/holiday days, start with a warm personal question about that before getting into work. Reference actual names, email threads, calendar events, and past review memory where relevant. Last question is always about energy and headspace.`)
 
   const messages = [
     { role: 'system', content: QUESTIONS_SYSTEM },
