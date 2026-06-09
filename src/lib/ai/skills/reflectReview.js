@@ -282,10 +282,15 @@ export async function generateReflectQuestions(ctx) {
     lines.push(`- [${p.status}] ${p.title}${p.end_date ? ` (due ${p.end_date})` : ''}`)
   })
   lines.push('')
-  // Only surface overdue tasks (not all next actions — those are already in the system)
-  if (overdueTasks.length) {
+  // Show all active tasks so the AI knows what's already captured and can skip them
+  if (activeTasks.length > 0) {
     lines.push('')
-    lines.push('STALLED (in progress, no active tasks):')
+    lines.push('ALREADY IN SYSTEM — DO NOT ASK ABOUT THESE (next_action / scheduled / waiting / queued):')
+    activeTasks.slice(0, 20).forEach(t => lines.push(`- [${t.status}${t.due_date ? `, due ${t.due_date}` : ''}] ${t.title}`))
+  }
+  if (stalledProjects.length) {
+    lines.push('')
+    lines.push('STALLED PROJECTS (in progress, no active tasks):')
     stalledProjects.forEach(p => lines.push(`- ${p.title}`))
   }
   if (overdueTasks.length) {
@@ -334,7 +339,7 @@ export async function generateReflectQuestions(ctx) {
     })
   }
   lines.push('')
-  lines.push(`Generate 4-5 personalized interview questions covering the ${gapDays}-day gap. Focus on open loops — things that might NOT be in the system yet: untracked commitments, things weighing on them, email threads needing decisions, stalled projects with real blockers. Do NOT ask about next actions that are already queued unless they are overdue. If the gap includes weekend/holiday days, start with a warm personal question about that before getting into work. Reference actual names, email threads, calendar events, and past review memory where relevant. Last question is always about energy and headspace.`)
+  lines.push(`Generate 4-5 personalized interview questions covering the ${gapDays}-day gap. Focus on open loops — things that might NOT be in the system yet: untracked commitments, things weighing on them, email threads needing decisions, stalled projects with real blockers. Do NOT ask about any task that already has status next_action, queued, scheduled, or waiting — those are captured and handled. If an email thread already has a corresponding scheduled or next_action task, skip it. Only surface genuine open loops not yet in the system. If the gap includes weekend/holiday days, start with a warm personal question about that before getting into work. Reference actual names, email threads, calendar events, and past review memory where relevant. Last question is always about energy and headspace.`)
 
   const messages = [
     { role: 'system', content: QUESTIONS_SYSTEM },
