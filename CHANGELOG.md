@@ -4,6 +4,13 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-08 (dev session seeder)
+
+### Added
+- **Dev auto-login** — `VITE_DEV_SESSION` in `.env.local` seeds a Supabase session into localStorage before the client initializes, so the preview bypasses the OAuth screen and lands directly in the app. Only active in dev mode; no production impact.
+
+---
+
 ## 2026-06-08 (review date fix)
 
 ### Fixed
