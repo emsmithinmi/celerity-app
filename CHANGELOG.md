@@ -4,6 +4,13 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-09
+
+### Fixed
+- **AI Review interview no longer calls project end dates "deadlines"** — Added explicit rule to the interview system prompt: project end_date is a timeframe ("runs through"), not a hard deadline. Tasks have due dates; projects have timeframes.
+
+---
+
 ## 2026-06-08 (dev session seeder)
 
 ### Added
