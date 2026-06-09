@@ -20,7 +20,7 @@ export const INTERVIEW_TOOLS = [
   },
   {
     name: 'create_project',
-    description: 'Create a new project in Focus Flow when the user explicitly asks for one to be added.',
+    description: 'Create a new project in Focus Flow when the user mentions they want to start, create, or work on something that is clearly a multi-step outcome — even if they say "I\'m thinking about" or "I\'m considering" starting a project. Err on the side of creating it — they can always scrap it later.',
     input_schema: {
       type: 'object',
       properties: {
