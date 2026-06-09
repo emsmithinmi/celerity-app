@@ -311,8 +311,11 @@ export async function generateReflectQuestions(ctx) {
   }
   if (calendarEvents.length > 0) {
     lines.push('')
-    lines.push('UPCOMING CALENDAR:')
-    calendarEvents.forEach(e => lines.push(`- [${e.date ?? ''}] ${e.summary}`))
+    lines.push('UPCOMING CALENDAR (these are FUTURE events — do NOT ask about them as if they already happened):')
+    calendarEvents.forEach(e => {
+      const time = e.all_day ? '[all day]' : (e.start_time ? `[${new Date(e.start_time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/New_York' })}]` : '')
+      lines.push(`- [${e.date ?? ''}] ${time} ${e.summary}`)
+    })
   }
   if (recentMemories.length > 0) {
     lines.push('')
