@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { usePeople } from '../hooks/usePeople'
 import PersonRow from '../components/people/PersonRow'
 import Button from '../components/ui/Button'
+import { EmptyState } from '../components/ui'
 import { CapturePersonModal } from '../components/daily/QuickCaptureModals'
 
 const TABS = [
@@ -139,22 +140,14 @@ export default function People() {
 
         {/* People list */}
         {loading ? (
-          <div className="flex items-center justify-center h-32">
-            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p>
-          </div>
+          <EmptyState message="Loading…" />
         ) : displayed.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-32 gap-2">
-            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              {search
-                ? 'No people match your search.'
-                : `No ${activeTab === 'all' ? '' : activeTab} people.`}
-            </p>
-            {activeTab === 'inbox' && !search && (
-              <Button size="sm" variant="secondary" onClick={() => setShowCapture(true)}>
-                Add someone
-              </Button>
-            )}
-          </div>
+          <EmptyState
+            message={search ? 'No people match your search.' : `No ${activeTab === 'all' ? '' : activeTab} people.`}
+            action={activeTab === 'inbox' && !search
+              ? <Button size="sm" variant="secondary" onClick={() => setShowCapture(true)}>Add someone</Button>
+              : undefined}
+          />
         ) : (
           <div style={{ backgroundColor: 'var(--pane-bg)' }}>
             {displayed.map(person => (

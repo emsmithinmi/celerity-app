@@ -18,6 +18,8 @@ import {
   QuickNoteModal,
 } from '../components/daily/QuickCaptureModals'
 import Button from '../components/ui/Button'
+import ActionBtn from '../components/ui/ActionBtn'
+import { EmptyState } from '../components/ui'
 import TaskCompletionModal from '../components/tasks/TaskCompletionModal'
 import { executeAction } from '../lib/ai/actions'
 
@@ -89,34 +91,6 @@ function SectionHeader({ step, title, subtitle, done }) {
       </div>
       <div className="text-sm ml-7" style={S.muted}>{subtitle}</div>
     </div>
-  )
-}
-
-// ─── Clarify action button (compact) ─────────────────────────────────────────
-
-const ACTION_STYLES = {
-  success:   { bg: 'var(--state-success-bg)',  border: 'var(--accent-green)',  text: 'var(--accent-green)'  },
-  primary:   { bg: 'var(--card-task-bg)',       border: 'var(--accent)',        text: 'var(--accent)'        },
-  warning:   { bg: 'var(--card-reminder-bg)',   border: 'var(--accent-yellow)', text: 'var(--accent-yellow)' },
-  secondary: { bg: 'var(--border)',             border: 'var(--text-dim)',      text: 'var(--text-secondary)'},
-  ghost:     { bg: 'transparent',              border: 'var(--border)',        text: 'var(--text-secondary)'},
-  danger:    { bg: 'var(--state-error-bg)',     border: 'var(--accent-red)',    text: 'var(--accent-red)'    },
-}
-
-function ActionBtn({ variant = 'ghost', onClick, disabled, title, children }) {
-  const s = ACTION_STYLES[variant] ?? ACTION_STYLES.ghost
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      title={title}
-      className="px-2 py-1 rounded text-xs font-medium border transition-colors"
-      style={{ backgroundColor: s.bg, borderColor: s.border, color: s.text, opacity: disabled ? 0.4 : 1, cursor: disabled ? 'default' : 'pointer' }}
-      onMouseEnter={e => { if (!disabled) { e.currentTarget.style.backgroundColor = s.border; e.currentTarget.style.color = 'var(--app-bg)' } }}
-      onMouseLeave={e => { if (!disabled) { e.currentTarget.style.backgroundColor = s.bg;     e.currentTarget.style.color = s.text } }}
-    >
-      {children}
-    </button>
   )
 }
 
@@ -795,10 +769,7 @@ function ClarifySection({ onDone, done, captureVersion }) {
       {loading ? (
         <p className="text-sm py-4" style={S.muted}>Loading…</p>
       ) : allEmpty ? (
-        <div className="rounded-xl border p-6 text-center mb-4" style={{ borderColor: 'var(--border)' }}>
-          <p className="text-2xl mb-2">🎉</p>
-          <p className="text-sm font-medium" style={S.green}>All clear — nothing to clarify.</p>
-        </div>
+        <EmptyState variant="card" icon="🎉" message="All clear — nothing to clarify." />
       ) : (
         <div className="space-y-3 mb-4">
           {(activeTab === 'all' || activeTab === 'tasks') && inboxTasks.length > 0 && (
@@ -948,10 +919,7 @@ function ReflectSection({ onDone, done }) {
       {loading ? (
         <p className="text-sm py-4" style={S.muted}>Loading…</p>
       ) : activeItems.length === 0 ? (
-        <div className="rounded-xl border p-6 text-center mb-4" style={{ borderColor: 'var(--border)' }}>
-          <p className="text-2xl mb-2">✨</p>
-          <p className="text-sm" style={S.muted}>Nothing in {activeMeta?.label}.</p>
-        </div>
+        <EmptyState variant="card" icon="✨" message={`Nothing in ${activeMeta?.label}.`} />
       ) : (
         <div className="rounded-xl border mb-4 overflow-hidden" style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)' }}>
           {activeItems.map((item, i) => {

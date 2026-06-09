@@ -16,6 +16,12 @@ import { getAIConfig, saveAIConfig, getProviderPreset, PROVIDERS, PROVIDER_PRESE
 import { testConnection } from '../lib/ai/client'
 import { useTheme } from '../contexts/ThemeContext'
 
+// ─── Shared form input styles ─────────────────────────────────────────────────
+// FIELD_STYLE: for bg-transparent inputs (forms inside cards)
+// INPUT_STYLE: for inputs that need an explicit background (AI settings)
+const FIELD_STYLE = { borderColor: 'var(--border)', color: 'var(--text-primary)' }
+const INPUT_STYLE = { backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)', color: 'var(--text-primary)' }
+
 // ─── Inline editable row ──────────────────────────────────────────────────────
 function EnergyRow({ level, onSaved, onDelete }) {
   const [editing, setEditing]   = useState(false)
@@ -65,7 +71,7 @@ function EnergyRow({ level, onSaved, onDelete }) {
               value={draft.value}
               disabled
               className="w-full px-3 py-1.5 rounded-lg text-sm border outline-none bg-transparent opacity-50"
-              style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+              style={FIELD_STYLE}
             />
           </div>
           <div>
@@ -74,7 +80,7 @@ function EnergyRow({ level, onSaved, onDelete }) {
               value={draft.label}
               onChange={e => ch('label', e.target.value)}
               className="w-full px-3 py-1.5 rounded-lg text-sm border outline-none bg-transparent"
-              style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+              style={FIELD_STYLE}
             />
           </div>
         </div>
@@ -84,7 +90,7 @@ function EnergyRow({ level, onSaved, onDelete }) {
             value={draft.description ?? ''}
             onChange={e => ch('description', e.target.value)}
             className="w-full px-3 py-1.5 rounded-lg text-sm border outline-none bg-transparent"
-            style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+            style={FIELD_STYLE}
             placeholder="Short description of when to use this level"
           />
         </div>
@@ -95,7 +101,7 @@ function EnergyRow({ level, onSaved, onDelete }) {
               value={draft.icon ?? ''}
               onChange={e => ch('icon', e.target.value)}
               className="w-full px-3 py-1.5 rounded-lg text-sm border outline-none bg-transparent text-center"
-              style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+              style={FIELD_STYLE}
               placeholder="💪"
             />
           </div>
@@ -112,7 +118,7 @@ function EnergyRow({ level, onSaved, onDelete }) {
                 value={draft.bg_color ?? ''}
                 onChange={e => ch('bg_color', e.target.value)}
                 className="flex-1 px-2 py-1.5 rounded-lg text-xs border outline-none bg-transparent"
-                style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+                style={FIELD_STYLE}
                 placeholder="var(--border)"
               />
             </div>
@@ -130,7 +136,7 @@ function EnergyRow({ level, onSaved, onDelete }) {
                 value={draft.text_color ?? ''}
                 onChange={e => ch('text_color', e.target.value)}
                 className="flex-1 px-2 py-1.5 rounded-lg text-xs border outline-none bg-transparent"
-                style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+                style={FIELD_STYLE}
                 placeholder="var(--text-primary)"
               />
             </div>
@@ -267,7 +273,7 @@ function AddEnergyForm({ onAdded, nextSortOrder }) {
             value={draft.value}
             onChange={e => ch('value', e.target.value.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''))}
             className="w-full px-3 py-1.5 rounded-lg text-sm border outline-none bg-transparent"
-            style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+            style={FIELD_STYLE}
             placeholder="deep_focus"
           />
           <p className="text-xs mt-0.5" style={{ color: 'var(--text-dim)' }}>Lowercase, underscores only</p>
@@ -280,7 +286,7 @@ function AddEnergyForm({ onAdded, nextSortOrder }) {
             value={draft.label}
             onChange={e => ch('label', e.target.value)}
             className="w-full px-3 py-1.5 rounded-lg text-sm border outline-none bg-transparent"
-            style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+            style={FIELD_STYLE}
             placeholder="Deep Focus"
           />
         </div>
@@ -291,7 +297,7 @@ function AddEnergyForm({ onAdded, nextSortOrder }) {
           value={draft.description}
           onChange={e => ch('description', e.target.value)}
           className="w-full px-3 py-1.5 rounded-lg text-sm border outline-none bg-transparent"
-          style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+          style={FIELD_STYLE}
           placeholder="Mentally demanding computer work"
         />
       </div>
@@ -302,7 +308,7 @@ function AddEnergyForm({ onAdded, nextSortOrder }) {
             value={draft.icon}
             onChange={e => ch('icon', e.target.value)}
             className="w-full px-3 py-1.5 rounded-lg text-sm border outline-none bg-transparent text-center"
-            style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+            style={FIELD_STYLE}
             placeholder="🧠"
           />
         </div>
@@ -319,7 +325,7 @@ function AddEnergyForm({ onAdded, nextSortOrder }) {
               value={draft.bg_color}
               onChange={e => ch('bg_color', e.target.value)}
               className="flex-1 px-2 py-1.5 rounded-lg text-xs border outline-none bg-transparent"
-              style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+              style={FIELD_STYLE}
             />
           </div>
         </div>
@@ -336,7 +342,7 @@ function AddEnergyForm({ onAdded, nextSortOrder }) {
               value={draft.text_color}
               onChange={e => ch('text_color', e.target.value)}
               className="flex-1 px-2 py-1.5 rounded-lg text-xs border outline-none bg-transparent"
-              style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+              style={FIELD_STYLE}
             />
           </div>
         </div>
@@ -394,11 +400,11 @@ function PriorityRow({ item, onSaved, onDelete, onMoveUp, onMoveDown }) {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Slug (locked)</label>
-            <input value={draft.value} disabled className="w-full px-3 py-1.5 rounded-lg text-sm border outline-none bg-transparent opacity-50" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+            <input value={draft.value} disabled className="w-full px-3 py-1.5 rounded-lg text-sm border outline-none bg-transparent opacity-50" style={FIELD_STYLE} />
           </div>
           <div>
             <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Label</label>
-            <input value={draft.label} onChange={e => ch('label', e.target.value)} className="w-full px-3 py-1.5 rounded-lg text-sm border outline-none bg-transparent" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+            <input value={draft.label} onChange={e => ch('label', e.target.value)} className="w-full px-3 py-1.5 rounded-lg text-sm border outline-none bg-transparent" style={FIELD_STYLE} />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -406,14 +412,14 @@ function PriorityRow({ item, onSaved, onDelete, onMoveUp, onMoveDown }) {
             <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Badge background</label>
             <div className="flex gap-2 items-center">
               <input type="color" value={draft.bg_color ?? 'var(--border)'} onChange={e => ch('bg_color', e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent p-0.5" />
-              <input value={draft.bg_color ?? ''} onChange={e => ch('bg_color', e.target.value)} className="flex-1 px-2 py-1.5 rounded-lg text-xs border outline-none bg-transparent" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+              <input value={draft.bg_color ?? ''} onChange={e => ch('bg_color', e.target.value)} className="flex-1 px-2 py-1.5 rounded-lg text-xs border outline-none bg-transparent" style={FIELD_STYLE} />
             </div>
           </div>
           <div>
             <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Text color</label>
             <div className="flex gap-2 items-center">
               <input type="color" value={draft.text_color ?? 'var(--text-primary)'} onChange={e => ch('text_color', e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent p-0.5" />
-              <input value={draft.text_color ?? ''} onChange={e => ch('text_color', e.target.value)} className="flex-1 px-2 py-1.5 rounded-lg text-xs border outline-none bg-transparent" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+              <input value={draft.text_color ?? ''} onChange={e => ch('text_color', e.target.value)} className="flex-1 px-2 py-1.5 rounded-lg text-xs border outline-none bg-transparent" style={FIELD_STYLE} />
             </div>
           </div>
         </div>
@@ -475,12 +481,12 @@ function AddPriorityForm({ onAdded, nextSortOrder }) {
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Slug <span style={{ color: 'var(--danger)' }}>*</span></label>
-          <input value={draft.value} onChange={e => ch('value', e.target.value.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''))} className="w-full px-3 py-1.5 rounded-lg text-sm border outline-none bg-transparent" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }} placeholder="high_priority" />
+          <input value={draft.value} onChange={e => ch('value', e.target.value.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, ''))} className="w-full px-3 py-1.5 rounded-lg text-sm border outline-none bg-transparent" style={FIELD_STYLE} placeholder="high_priority" />
           <p className="text-xs mt-0.5" style={{ color: 'var(--text-dim)' }}>Lowercase, underscores only</p>
         </div>
         <div>
           <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Label <span style={{ color: 'var(--danger)' }}>*</span></label>
-          <input value={draft.label} onChange={e => ch('label', e.target.value)} className="w-full px-3 py-1.5 rounded-lg text-sm border outline-none bg-transparent" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }} placeholder="High Priority" />
+          <input value={draft.label} onChange={e => ch('label', e.target.value)} className="w-full px-3 py-1.5 rounded-lg text-sm border outline-none bg-transparent" style={FIELD_STYLE} placeholder="High Priority" />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3">
@@ -488,14 +494,14 @@ function AddPriorityForm({ onAdded, nextSortOrder }) {
           <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Badge background</label>
           <div className="flex gap-2 items-center">
             <input type="color" value={draft.bg_color} onChange={e => ch('bg_color', e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent p-0.5" />
-            <input value={draft.bg_color} onChange={e => ch('bg_color', e.target.value)} className="flex-1 px-2 py-1.5 rounded-lg text-xs border outline-none bg-transparent" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+            <input value={draft.bg_color} onChange={e => ch('bg_color', e.target.value)} className="flex-1 px-2 py-1.5 rounded-lg text-xs border outline-none bg-transparent" style={FIELD_STYLE} />
           </div>
         </div>
         <div>
           <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Text color</label>
           <div className="flex gap-2 items-center">
             <input type="color" value={draft.text_color} onChange={e => ch('text_color', e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 bg-transparent p-0.5" />
-            <input value={draft.text_color} onChange={e => ch('text_color', e.target.value)} className="flex-1 px-2 py-1.5 rounded-lg text-xs border outline-none bg-transparent" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+            <input value={draft.text_color} onChange={e => ch('text_color', e.target.value)} className="flex-1 px-2 py-1.5 rounded-lg text-xs border outline-none bg-transparent" style={FIELD_STYLE} />
           </div>
         </div>
       </div>
@@ -560,20 +566,20 @@ function AreaRow({ item, onSaved, onDelete }) {
           <div className="px-4 pb-3 grid grid-cols-3 gap-4 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
             <div>
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Icon (emoji)</label>
-              <input value={icon} onChange={e => setIcon(e.target.value)} className="w-full px-2 py-1 rounded-lg text-sm border outline-none bg-transparent text-center" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }} placeholder="🏠" />
+              <input value={icon} onChange={e => setIcon(e.target.value)} className="w-full px-2 py-1 rounded-lg text-sm border outline-none bg-transparent text-center" style={FIELD_STYLE} placeholder="🏠" />
             </div>
             <div>
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Background</label>
               <div className="flex items-center gap-2">
                 <input type="color" value={bgColor} onChange={e => setBgColor(e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
-                <input value={bgColor} onChange={e => setBgColor(e.target.value)} className="flex-1 px-2 py-1 rounded-lg text-xs border outline-none font-mono bg-transparent" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+                <input value={bgColor} onChange={e => setBgColor(e.target.value)} className="flex-1 px-2 py-1 rounded-lg text-xs border outline-none font-mono bg-transparent" style={FIELD_STYLE} />
               </div>
             </div>
             <div>
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Text</label>
               <div className="flex items-center gap-2">
                 <input type="color" value={textColor} onChange={e => setTextColor(e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
-                <input value={textColor} onChange={e => setTextColor(e.target.value)} className="flex-1 px-2 py-1 rounded-lg text-xs border outline-none font-mono bg-transparent" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+                <input value={textColor} onChange={e => setTextColor(e.target.value)} className="flex-1 px-2 py-1 rounded-lg text-xs border outline-none font-mono bg-transparent" style={FIELD_STYLE} />
               </div>
             </div>
             <div className="col-span-3">
@@ -617,25 +623,25 @@ function AddAreaForm({ onAdded, nextSortOrder }) {
       {error && <p className="text-xs px-2 py-1 rounded" style={{ backgroundColor: 'var(--state-error-bg)', color: 'var(--state-error-text)' }}>{error}</p>}
       <div>
         <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Name <span style={{ color: 'var(--danger)' }}>*</span></label>
-        <input autoFocus value={label} onChange={e => setLabel(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') { setOpen(false); setLabel('') } }} className="w-full px-3 py-1.5 rounded-lg text-sm border outline-none bg-transparent" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }} placeholder="e.g. Side Projects" />
+        <input autoFocus value={label} onChange={e => setLabel(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') { setOpen(false); setLabel('') } }} className="w-full px-3 py-1.5 rounded-lg text-sm border outline-none bg-transparent" style={FIELD_STYLE} placeholder="e.g. Side Projects" />
       </div>
       <div className="grid grid-cols-3 gap-4">
         <div>
           <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Icon (emoji)</label>
-          <input value={icon} onChange={e => setIcon(e.target.value)} className="w-full px-2 py-1 rounded-lg text-sm border outline-none bg-transparent text-center" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }} placeholder="🏠" />
+          <input value={icon} onChange={e => setIcon(e.target.value)} className="w-full px-2 py-1 rounded-lg text-sm border outline-none bg-transparent text-center" style={FIELD_STYLE} placeholder="🏠" />
         </div>
         <div>
           <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Background</label>
           <div className="flex items-center gap-2">
             <input type="color" value={bgColor} onChange={e => setBgColor(e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
-            <input value={bgColor} onChange={e => setBgColor(e.target.value)} className="flex-1 px-2 py-1 rounded-lg text-xs border outline-none font-mono bg-transparent" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+            <input value={bgColor} onChange={e => setBgColor(e.target.value)} className="flex-1 px-2 py-1 rounded-lg text-xs border outline-none font-mono bg-transparent" style={FIELD_STYLE} />
           </div>
         </div>
         <div>
           <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Text</label>
           <div className="flex items-center gap-2">
             <input type="color" value={textColor} onChange={e => setTextColor(e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
-            <input value={textColor} onChange={e => setTextColor(e.target.value)} className="flex-1 px-2 py-1 rounded-lg text-xs border outline-none font-mono bg-transparent" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+            <input value={textColor} onChange={e => setTextColor(e.target.value)} className="flex-1 px-2 py-1 rounded-lg text-xs border outline-none font-mono bg-transparent" style={FIELD_STYLE} />
           </div>
         </div>
       </div>
@@ -702,11 +708,11 @@ function TagColorsSection() {
               <span className="px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: hasCustom ? c.bg : 'var(--context-tag-bg)', color: hasCustom ? c.text : 'var(--context-tag-text)' }}>@{tag}</span>
               <div className="flex items-center gap-2">
                 <input type="color" value={bg} onChange={e => handleChange(tag, 'bg', e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0 p-0" title="Background color" />
-                <input value={bg} onChange={e => handleChange(tag, 'bg', e.target.value)} className="w-24 px-2 py-1 rounded-lg text-xs border outline-none font-mono bg-transparent" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+                <input value={bg} onChange={e => handleChange(tag, 'bg', e.target.value)} className="w-24 px-2 py-1 rounded-lg text-xs border outline-none font-mono bg-transparent" style={FIELD_STYLE} />
               </div>
               <div className="flex items-center gap-2">
                 <input type="color" value={text} onChange={e => handleChange(tag, 'text', e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0 p-0" title="Text color" />
-                <input value={text} onChange={e => handleChange(tag, 'text', e.target.value)} className="w-24 px-2 py-1 rounded-lg text-xs border outline-none font-mono bg-transparent" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }} />
+                <input value={text} onChange={e => handleChange(tag, 'text', e.target.value)} className="w-24 px-2 py-1 rounded-lg text-xs border outline-none font-mono bg-transparent" style={FIELD_STYLE} />
               </div>
               <div className="flex items-center gap-2 ml-auto">
                 <Button size="sm" variant="primary" onClick={() => handleSave(tag)} disabled={saving === tag}>{saving === tag ? '…' : 'Save'}</Button>
@@ -731,12 +737,6 @@ function useLocalList(contextList, reloadFn) {
 }
 
 // ─── AI Settings ─────────────────────────────────────────────────────────────
-
-const INPUT_STYLE = {
-  backgroundColor: 'var(--app-bg)',
-  borderColor: 'var(--border)',
-  color: 'var(--text-primary)',
-}
 
 function AISettings() {
   const [provider, setProvider] = useState('')
