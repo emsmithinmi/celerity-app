@@ -72,7 +72,7 @@ function analyzGap(gapStart, gapEnd) {
   return { gapDays, weekendDays, holidayDays }
 }
 
-export async function buildReflectContext({ gapStart, gapEnd } = {}) {
+export async function buildReflectContext({ gapStart, gapEnd, targetDate } = {}) {
   const today = new Date().toLocaleDateString('en-CA')
 
   // gapStart: day after last completed review (or 7 days ago if no history)
@@ -82,10 +82,12 @@ export async function buildReflectContext({ gapStart, gapEnd } = {}) {
 
   const { gapDays, weekendDays, holidayDays } = analyzGap(resolvedGapStart, resolvedGapEnd)
 
-  // Plan for today (the day after gapEnd)
-  const planDay = new Date(resolvedGapEnd + 'T12:00:00')
-  planDay.setDate(planDay.getDate() + 1)
-  const tomorrowStr = planDay.toLocaleDateString('en-CA')
+  // Plan for the user-selected targetDate, or fall back to day after gapEnd
+  const tomorrowStr = targetDate ?? (() => {
+    const planDay = new Date(resolvedGapEnd + 'T12:00:00')
+    planDay.setDate(planDay.getDate() + 1)
+    return planDay.toLocaleDateString('en-CA')
+  })()
   const weekEnd = new Date(tomorrowStr + 'T12:00:00')
   weekEnd.setDate(weekEnd.getDate() + 6)
   const weekEndStr = weekEnd.toLocaleDateString('en-CA')

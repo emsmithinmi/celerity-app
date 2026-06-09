@@ -11,6 +11,15 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-08 (review planning date alignment)
+
+### Fixed
+- **AI Review context now respects the "Planning for" date picker** — `buildReflectContext` accepts `targetDate` and uses it as the planning date, so the AI prompt's "PLANNING FOR" label matches where the plan actually gets written. Previously the badge could say "Planning Mon, Jun 8" while the picker said Jun 9.
+- **Removed "Projects In Progress" reference card** from the AI Review section — redundant with the Reflect step.
+- **Renamed "Plan goes to" → "Planning for"** in the review header.
+
+---
+
 ## 2026-06-08 (review date fix)
 
 ### Fixed

@@ -1018,7 +1018,7 @@ function AIReviewSection({ review, locked, onSaveState, targetDate, gapStart, ga
 
     async function init() {
       const [ctxData, projRes] = await Promise.all([
-        buildReflectContext({ gapStart, gapEnd }),
+        buildReflectContext({ gapStart, gapEnd, targetDate }),
         supabase.from('projects').select('id, title, status').eq('status', 'in_progress').is('archived_at', null).limit(6),
       ])
       if (cancelled || !mountedRef.current) return
