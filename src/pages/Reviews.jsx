@@ -1054,7 +1054,7 @@ function AIReviewSection({ review, locked, onSaveState, targetDate, gapStart, ga
               ? `<strong>${fmtDate(ctxData.gapStart)} through ${fmtDate(ctxData.today)}</strong>`
               : `<strong>${fmtDate(ctxData.today)}</strong>`
             const gapNote = ctxData.gapDays > 1 ? ` That's ${ctxData.gapDays} days to cover.` : ''
-            addBubble('ai', `Welcome back. Reviewing ${gapLabel}.${gapNote} I've been through your tasks, projects, and the last month of notes — planning ahead to ${fmtDate(ctxData.tomorrowStr)}. Let's get into it.`)
+            addBubble('ai', `Welcome back. I've been through your tasks, projects, and the last month of notes — planning ahead to ${fmtDate(ctxData.tomorrowStr)}. Let's get into it.`)
             setTimeout(() => { if (mountedRef.current) addBubble('ai', qs[0]) }, 900)
             setInputActive(true)
             setTimeout(() => inputRef.current?.focus(), 50)
@@ -1186,11 +1186,7 @@ function AIReviewSection({ review, locked, onSaveState, targetDate, gapStart, ga
           <>
             {ctx && (
               <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium mr-2" style={{ backgroundColor: 'var(--border)', color: 'var(--accent)' }}>
-                📅 {ctx.gapDays > 1
-                  ? `Reviewing ${new Date(ctx.gapStart + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} – ${new Date(ctx.today + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`
-                  : `Reviewing ${new Date(ctx.today + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`
-                }
-                {' → '}Planning {new Date(ctx.tomorrowStr + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                📅 Planning {new Date(ctx.tomorrowStr + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
               </span>
             )}
             {aiConfigured
