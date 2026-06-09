@@ -277,11 +277,15 @@ export async function generateReflectQuestions(ctx) {
     lines.push(`- [${p.status}] ${p.title}${p.end_date ? ` (runs through ${p.end_date})` : ''}`)
   })
   lines.push('')
-  // Show all active tasks so the AI knows what's already captured and can skip them
-  if (activeTasks.length > 0) {
+  // Show all active tasks AND upcoming calendar blocks so the AI knows what's already handled
+  const alreadyHandled = [
+    ...activeTasks.slice(0, 20).map(t => `[task:${t.status}${t.due_date ? `, due ${t.due_date}` : ''}] ${t.title}`),
+    ...calendarEvents.map(e => `[calendar:${e.date ?? ''}] ${e.summary}`),
+  ]
+  if (alreadyHandled.length > 0) {
     lines.push('')
-    lines.push('ALREADY IN SYSTEM — DO NOT ASK ABOUT THESE (next_action / scheduled / waiting / queued):')
-    activeTasks.slice(0, 20).forEach(t => lines.push(`- [${t.status}${t.due_date ? `, due ${t.due_date}` : ''}] ${t.title}`))
+    lines.push('ALREADY HANDLED — DO NOT ASK ABOUT THESE (tasks in system + calendar blocks already scheduled):')
+    alreadyHandled.forEach(l => lines.push(`- ${l}`))
   }
   if (stalledProjects.length) {
     lines.push('')
