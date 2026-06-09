@@ -1201,19 +1201,6 @@ function AIReviewSection({ review, locked, onSaveState, targetDate, gapStart, ga
         done={completed}
       />
 
-      {/* Reference cards */}
-      {inProgress.length > 0 && (
-        <RefCard title="📁 Projects In Progress" count={inProgress.length}>
-          <div className="space-y-1">
-            {inProgress.map(p => (
-              <Link key={p.id} to={`/projects/${p.id}`} className="block text-sm py-1.5 border-b hover:underline" style={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}>
-                {p.title}
-              </Link>
-            ))}
-          </div>
-        </RefCard>
-      )}
-
       {/* Chat */}
       <div
         ref={chatRef}
@@ -1440,7 +1427,7 @@ export default function Reviews() {
             {resetting ? 'Resetting…' : 'Reset'}
           </button>
           <div className="flex items-center gap-1.5">
-            <span className="text-xs" style={S.muted}>Plan goes to:</span>
+            <span className="text-xs" style={S.muted}>Planning for:</span>
             <input
               type="date"
               value={targetDate}
