@@ -226,7 +226,7 @@ function buildPrompt(ctx) {
     lines.push('None.')
   } else {
     for (const p of projects) {
-      const due = p.end_date ? ` [due ${p.end_date}]` : ''
+      const due = p.end_date ? ` [runs through ${p.end_date}]` : ''
       lines.push(`- [${p.status}] ${p.title}${due}${p.area ? ` (${p.area})` : ''}`)
       if (p.description) lines.push(`  ${p.description.slice(0, 100)}`)
     }

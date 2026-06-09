@@ -274,7 +274,7 @@ export async function generateReflectQuestions(ctx) {
   }
   lines.push('ACTIVE PROJECTS:')
   projects.slice(0, 8).forEach(p => {
-    lines.push(`- [${p.status}] ${p.title}${p.end_date ? ` (due ${p.end_date})` : ''}`)
+    lines.push(`- [${p.status}] ${p.title}${p.end_date ? ` (runs through ${p.end_date})` : ''}`)
   })
   lines.push('')
   // Show all active tasks so the AI knows what's already captured and can skip them
@@ -374,7 +374,7 @@ export async function generateReflectPlan(ctx, conversation, scratchpadNote) {
   lines.push(`TODAY: ${today}  |  PLANNING FOR: ${tomorrowStr}  |  LOOKAHEAD THROUGH: ${weekEndStr}`)
   lines.push('')
   lines.push('ACTIVE PROJECTS (id | status | title):')
-  projects.slice(0, 8).forEach(p => lines.push(`- [id:${p.id}] [${p.status}] ${p.title}${p.end_date ? ` (due ${p.end_date})` : ''}`))
+  projects.slice(0, 8).forEach(p => lines.push(`- [id:${p.id}] [${p.status}] ${p.title}${p.end_date ? ` (runs through ${p.end_date})` : ''}`))
   lines.push('')
   lines.push('TASKS (id | status | title):')
   activeTasks.slice(0, 12).forEach(t => lines.push(`- [id:${t.id}] [${t.status}] ${t.title}${t.due_date ? ` (due ${t.due_date})` : ''}`))
