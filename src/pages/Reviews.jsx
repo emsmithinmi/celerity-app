@@ -1305,10 +1305,15 @@ export default function Reviews() {
     d.setDate(d.getDate() - 1)
     return d.toLocaleDateString('en-CA')
   })()
-  const targetDate = today  // always write plan to today's daily note
+  const tomorrow = (() => {
+    const d = new Date(today + 'T12:00:00')
+    d.setDate(d.getDate() + 1)
+    return d.toLocaleDateString('en-CA')
+  })()
 
   const [gapStart, setGapStart] = useState(null)   // day after last completed review
   const gapEnd = yesterday                          // most recent day to cover
+  const [targetDate, setTargetDate] = useState(tomorrow)  // user picks where plan goes
 
   const [review,           setReview]           = useState(null)
   const [loading,          setLoading]          = useState(true)
@@ -1363,9 +1368,10 @@ export default function Reviews() {
         .eq('date', targetDate),
     ])
 
+    setTargetDate(tomorrow)
     setRetryCount(c => c + 1)
     setResetting(false)
-  }, [resetting, targetDate])
+  }, [resetting, targetDate, tomorrow])
 
   useEffect(() => {
     setLoading(true)
@@ -1424,7 +1430,7 @@ export default function Reviews() {
           <button
             onClick={resetReview}
             disabled={resetting || loading}
-            title="Reset review for testing"
+            title="Reset review — clears the plan written to the target date"
             className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-colors"
             style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', backgroundColor: 'transparent', opacity: resetting ? 0.5 : 1 }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent-red)'; e.currentTarget.style.color = 'var(--accent-red)' }}
@@ -1433,6 +1439,17 @@ export default function Reviews() {
             <RotateCcw size={12} />
             {resetting ? 'Resetting…' : 'Reset'}
           </button>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs" style={S.muted}>Plan goes to:</span>
+            <input
+              type="date"
+              value={targetDate}
+              min={today}
+              onChange={e => e.target.value && setTargetDate(e.target.value)}
+              className="text-xs px-2 py-1 rounded-lg border outline-none"
+              style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+            />
+          </div>
           <p className="text-sm" style={S.muted}>
             {new Date(today + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
           </p>

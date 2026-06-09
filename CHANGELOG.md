@@ -4,6 +4,13 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-08 (review date fix)
+
+### Fixed
+- **Reviews — "Plan goes to" date picker** — Added explicit date selector in the review header so the user controls which daily note the AI plan writes to. Defaults to tomorrow; switch to today for morning reviews. Eliminates the review-date vs plan-destination confusion. Reset also resets the picker back to tomorrow.
+
+---
+
 ## 2026-06-08 (session close)
 
 ### Changed
