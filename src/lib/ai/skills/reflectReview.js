@@ -182,16 +182,11 @@ Respond with JSON only: { "message": "string", "ready": boolean }`
 export async function generateConversationalResponse(conversation, remainingTopics, dateContext = {}) {
   const { reviewDate, planDate, gapStart, gapDays, weekendDays = [], holidayDays = [], recentMemories = [] } = dateContext
   const dateLines = []
-  if (reviewDate) {
+  if (planDate) {
     dateLines.push(`DATE CONTEXT:`)
-    if (gapDays > 1) {
-      dateLines.push(`- Gap period: ${gapStart} through ${reviewDate} (${gapDays} days since last review)`)
-    } else {
-      dateLines.push(`- Reviewing day: ${reviewDate}`)
-    }
-    dateLines.push(`- Planning for: ${planDate ?? 'tomorrow'}`)
-    if (weekendDays.length > 0) dateLines.push(`- Weekend days in gap: ${weekendDays.join(', ')}`)
-    if (holidayDays.length > 0) dateLines.push(`- Holidays in gap: ${holidayDays.join(', ')}`)
+    dateLines.push(`- Planning for: ${planDate}`)
+    if (weekendDays.length > 0) dateLines.push(`- Recent weekend days: ${weekendDays.join(', ')}`)
+    if (holidayDays.length > 0) dateLines.push(`- Recent holidays: ${holidayDays.join(', ')}`)
     dateLines.push(`- If the user asks what date/period you're reviewing, answer using this context.`)
   }
   if (recentMemories.length > 0) {
@@ -250,7 +245,6 @@ Generate 4-5 interview questions. Make it personal — reference real projects, 
 
 If the gap includes a weekend or holiday, open with that warmth first before getting into work.
 If tomorrow looks packed, acknowledge it and ask if they feel ready.
-If something's been sitting in @Action email for a week, ask about it — that's a real open loop.
 
 One question should catch them off guard in the best way — something that makes them feel seen.
 Last question always checks in on energy and headspace going into the next day. That one matters most.
@@ -261,7 +255,7 @@ export async function generateReflectQuestions(ctx) {
   const { today, tomorrowStr, weekEndStr, gapStart, gapEnd, gapDays, weekendDays, holidayDays, gapNotes = [], gapCalendarEvents = [], recentMemories = [], projects, activeTasks, stalledProjects, overdueTasks, habits, recentNotes, calendarEvents = [], gmail = {}, upcomingBirthdays = [] } = ctx
   const lines = []
 
-  lines.push(`REVIEWING: ${gapStart}${gapStart !== gapEnd ? ` through ${gapEnd}` : ''} (${gapDays} day${gapDays !== 1 ? 's' : ''} since last review)  |  PLANNING FOR: ${tomorrowStr}  |  LOOKAHEAD THROUGH: ${weekEndStr}`)
+  lines.push(`PLANNING FOR: ${tomorrowStr}  |  LOOKAHEAD THROUGH: ${weekEndStr}`)
   if (weekendDays.length > 0) lines.push(`WEEKEND DAYS IN GAP: ${weekendDays.join(', ')}`)
   if (holidayDays.length > 0) lines.push(`HOLIDAYS IN GAP: ${holidayDays.join(', ')}`)
   lines.push('')
