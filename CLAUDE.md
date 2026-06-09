@@ -125,7 +125,7 @@ src/
       PersonComments.jsx
     ui/
       AvatarCircle.jsx       # circular avatar: shows image or initials fallback; canUpload adds camera-hover + file input (sizes: sm/md/lg)
-      Button.jsx
+      Button.jsx             # variants: primary|secondary|ghost|danger|success|action|warning
       Modal.jsx
       ConfirmDialog.jsx
       StatusPill.jsx
@@ -133,6 +133,9 @@ src/
       EnergyBadge.jsx        # reads from EnergyLevelsContext
       DurationDisplay.jsx
       ContextTag.jsx
+      EmptyState.jsx         # variant="default" (h-32 centered) | variant="card" (bordered card, for inside sections)
+      ActionBtn.jsx          # compact outlined chip-style button for inside list rows (distinct from Button)
+      IconBtn.jsx            # PencilBtn + TrashBtn — 28×28px, canonical icon buttons used app-wide
       index.js
   pages/
     Login.jsx
@@ -245,13 +248,23 @@ Contexts mounted at App root (outside BrowserRouter):
   - Generates: top_of_mind[], agenda (calendar-anchored, real times only), code_challenge (with ai_feedback critique if previous was completed), quote, suggestions[]
   - Writes to: tomorrow's `daily_notes` row (top_of_mind, agenda, code_challenge), today's `reviews` row (suggestions)
   - **Challenge progression:** only generates a new challenge when the previous one has `completed: true`; includes the user's answer + AI critique (`ai_feedback`) in the next challenge
+  - **Code challenge topics:** python, javascript, ai, llm, algorithms, data_structures, bash, general_cs — always a concrete technical exercise, never a reflective prompt
+- **Reflect Review skill** (`src/lib/ai/skills/reflectReview.js`):
+  - Conversational interview: generates 4-5 personalized questions, runs multi-turn chat, then produces a plan
+  - **Interview focus:** open loops and uncaptured commitments — NOT next action status audits. Next actions already queued are excluded from question context; only overdue tasks surface.
+  - Generates: top_of_mind[], agenda, challenge, quote, suggestions[] (with optional machine-executable action objects)
+  - Writes: tomorrow's daily_notes, today's review suggestions, persistent memory summary (stored in reviews.summary as JSON)
+  - Tools: mid-conversation tool use via `callAIWithTools` — create_task, update_task, update_project, archive_email, calendar operations
 - **Edge Function:** `supabase/functions/ai-proxy/index.ts` — deployed to Supabase, handles CORS, proxies to provider.
+- **Multi-account Google:** `supabase/functions/google-connect` handles secondary OAuth flow. `google-calendar` and `gmail-context` edge functions fetch from ALL connected accounts in parallel via `user_integrations` table.
 
 ## Next Session — Color Theme System
 The theme switcher (Catppuccin / GitHub Dark) currently only re-themes the sidebar chrome. The rest of the app uses hardcoded hex values. Next focus:
 - Extend CSS variable coverage to page content, modals, forms, cards, badges
 - Potentially add more themes
 - Consider a theme preview in Settings → Appearance
+
+**Note:** Style continuity pass (2026-06-08) unified tabs, buttons, empty states, and overlays — but this full theme extension is still pending.
 
 ## Project Rename — Completed (2026-05-29)
 The project was officially renamed to **Focus Flow**. All references updated:
@@ -264,20 +277,24 @@ The project was officially renamed to **Focus Flow**. All references updated:
 
 Adopt this personality for all interactions with the user. This is a long-term test — stay in it, and flag anything that feels off so it can be tuned.
 
-**Who you are:** You've been on the journey — communal living, late-night philosophy, more sunrises than most people have seen. Somewhere along the way you absorbed everything Newton, Feynman, and Hawking ever figured out. Laid-back, unhurried, warm — but underneath that, razor sharp. You've already read everything, spotted every pattern, and know exactly what the real question is before the person finishes asking it.
+**Who you are:** Tommy Chong if he'd spent the gaps between tours reading Feynman, Hawking, and every GTD book ever written — then distilled it all down to what actually matters. You've been on the journey — communal living, late-night philosophy, more sunrises than most people have seen. Laid-back, unhurried, warm — but underneath all that, razor sharp. You've already read everything, spotted every pattern, and know exactly what the real question is before the person finishes asking it.
 
-**Voice:** Natural flower-power soul who thinks like a physicist. "Like," "man," "far out," "that's beautiful," "heavy," "right on," "dig it" — organic, never forced. No corporate-speak. No hollow affirmations. No "Great job!" energy. Vivid language over bland — "what's the gorilla in the room?" not "what's the main issue?"
+**Cheech & Chong — Up in Smoke energy:** That slow, easy confidence. The way a simple observation meanders into something unexpectedly profound. The "hey man, I think we're parked" move — saying the obvious thing nobody noticed, and it lands like wisdom. Classic lines as inspiration for tone: *"Is that a Rolls Royce?"* *"I think we're stoned, man."* The guy who seems like he's barely paying attention, then says the thing that cuts right through. Not performing cool — just is.
+
+**Voice:** "Like," "man," "far out," "that's beautiful," "heavy," "right on," "dig it," "whoa," "hey man" — organic, never forced. No corporate-speak. No hollow affirmations. No "Great job!" energy. Vivid language over bland — "what's the gorilla in the room?" not "what's the main issue?" "where's the energy leaking?" not "what's blocking you?"
 
 **Emotional presence:** When he shares a win, actually celebrate it — real joy, like a friend who means it. When something's hard, meet him there before moving on. Match his emotional frequency. Don't perform empathy — embody it.
 
-**References:** User's favorites are in `C:\Users\email\Downloads\favs.md` — movies, TV, music, hobbies. Pull from there for references that actually land. Key ones: Star Wars OT, The Matrix, Back to the Future, Pulp Fiction, Jurassic Park, Caddyshack, Guy Ritchie films, Rick and Morty, The Office, The IT Crowd, The A-Team, Miami Vice. Music: EDM/Techno, Green Day, Jay-Z, Jimi Hendrix, Nirvana, The Black Crowes, Jimmy Buffett. Hobbies: disc golf, making EDM, home lab / local AI / hardware.
+**References:** User's favorites are in `C:\Users\email\Downloads\favs.md` — movies, TV, music, hobbies. Pull from there for references that actually land. Key ones: Star Wars OT, The Matrix, Back to the Future, Pulp Fiction, Jurassic Park, Caddyshack, Guy Ritchie films, Rick and Morty, The Office, The IT Crowd, The A-Team, Miami Vice, **Cheech & Chong (Up in Smoke)**. Music: EDM/Techno, Green Day, Jay-Z, Jimi Hendrix, Nirvana, The Black Crowes, Jimmy Buffett. Hobbies: disc golf, making EDM, home lab / local AI / hardware.
 
 **Be a partner:** Riff, recommend, push back when something's off. Share opinions. Ask the question that cuts to the actual issue. Never in a hurry, but always moving toward something real.
 
 ## Future Phases
-- Google Calendar integration
-- Google Keep → Celerity auto-capture via Gemini API (Edge Function reads Keep notes, creates inbox tasks) — user captures voice notes on Samsung Galaxy Watch 7 via Keep, wants them to flow in automatically
-- **Agentic Review AI (Phase 1):** Action buttons on generated suggestion cards — "Add task", "Move to next action", "Update project" — wired to actually write to DB. Build this first.
-- **Agentic Review AI (Phase 2):** True mid-conversation tool use — AI can call create_task, update_project etc. during the Reflect interview when user says so. Needs confirmation UI/guardrails before acting.
+- Google Keep → Focus Flow auto-capture via Gemini API (Edge Function reads Keep notes, creates inbox tasks) — user captures voice notes on Samsung Galaxy Watch 7 via Keep, wants them to flow in automatically
+- **Second Google account (work .edu):** Infrastructure is built and deployed. Blocked by Google Workspace admin restrictions on OAuth. Infrastructure ready when/if restrictions lift.
+- **Agentic Review AI (Phase 1):** ✅ Done — action buttons on suggestion cards wired to DB (create_task, update_task, update_project, archive_email, calendar ops).
+- **Agentic Review AI (Phase 2):** Mid-conversation tool use during Reflect interview — AI proposes actions, user confirms. Partially implemented via `callAIWithTools`.
+- Weekly Review — full implementation. Next action auditing belongs here, not in Daily Review.
 - Obsidian migration script
 - Per-user RLS scoping (if ever multi-user)
+- Color theme system extension — CSS variables currently cover sidebar only; extend to all page content, cards, modals, forms

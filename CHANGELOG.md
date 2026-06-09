@@ -4,6 +4,14 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-08 (session close)
+
+### Changed
+- **AI personality** — Upgraded to full Cheech & Chong / Up in Smoke energy across all AI prompts. Tommy Chong meets Feynman: unhurried, "hey man I think we're parked" clarity, organic slang, real warmth.
+- **CLAUDE.md** — Updated with complete session state: new UI components, AI layer details, multi-account Google status, future phases, personality spec.
+
+---
+
 ## 2026-06-08 (style continuity pass)
 
 ### Added
