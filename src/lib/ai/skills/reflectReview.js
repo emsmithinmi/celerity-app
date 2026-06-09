@@ -319,18 +319,6 @@ export async function generateReflectQuestions(ctx) {
     lines.push('UPCOMING CALENDAR:')
     calendarEvents.forEach(e => lines.push(`- [${e.date ?? ''}] ${e.summary}`))
   }
-  const { actionThreads = [], waitingThreads = [] } = gmail
-  if (actionThreads.length > 0) {
-    lines.push('')
-    lines.push('EMAIL @ACTION:')
-    actionThreads.forEach(t => lines.push(`- "${t.subject}" (${t.age_days}d in queue)`))
-  }
-  if (waitingThreads.length > 0) {
-    lines.push('')
-    lines.push('EMAIL @WAITING:')
-    waitingThreads.forEach(t => lines.push(`- "${t.subject}" (${t.age_days}d waiting)`))
-  }
-
   if (recentMemories.length > 0) {
     lines.push('')
     lines.push('PAST REVIEW MEMORY (use this to notice patterns, follow up on unresolved things, or acknowledge progress):')
@@ -339,7 +327,7 @@ export async function generateReflectQuestions(ctx) {
     })
   }
   lines.push('')
-  lines.push(`Generate 4-5 personalized interview questions covering the ${gapDays}-day gap. Focus on open loops — things that might NOT be in the system yet: untracked commitments, things weighing on them, email threads needing decisions, stalled projects with real blockers. Do NOT ask about any task that already has status next_action, queued, scheduled, or waiting — those are captured and handled. If an email thread already has a corresponding scheduled or next_action task, skip it. Only surface genuine open loops not yet in the system. If the gap includes weekend/holiday days, start with a warm personal question about that before getting into work. Reference actual names, email threads, calendar events, and past review memory where relevant. Last question is always about energy and headspace.`)
+  lines.push(`Generate 4-5 personalized interview questions covering the gap period. Focus ONLY on open loops — things that might NOT be in the system yet: untracked commitments, things weighing on them, stalled projects with real blockers, things mentioned in past review memory that haven't been resolved. Do NOT ask about anything in the ALREADY IN SYSTEM list above — those are handled, full stop. Do NOT reference email threads — email context is handled separately in the plan phase. If the gap includes weekend/holiday days, start with a warm personal question about that before getting into work. Reference actual project names and past review memory where relevant. Last question is always about energy and headspace.`)
 
   const messages = [
     { role: 'system', content: QUESTIONS_SYSTEM },
