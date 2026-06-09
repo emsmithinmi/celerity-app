@@ -309,10 +309,10 @@ function buildPrompt(ctx) {
     lines.push(`Topic: ${c.topic} | Difficulty: ${c.difficulty}`)
     lines.push(`Prompt: ${c.prompt}`)
     if (c.user_response) lines.push(`Their answer: ${c.user_response.slice(0, 400)}`)
-    lines.push('Generate a NEW challenge that critiques their answer and builds on the same concept or progresses to the next idea.')
+    lines.push('Generate a NEW technical coding or AI/LLM challenge. Critique their answer in ai_feedback, then build the new prompt on the same concept or advance to the next idea. The prompt must be a concrete technical exercise — code to write, a concept to explain precisely, a snippet to debug, or an AI/LLM mechanics question. Never a reflective or journaling prompt.')
     lines.push('')
   } else {
-    lines.push('NO completed challenge exists yet. Generate a fresh beginner-friendly challenge.')
+    lines.push('NO completed challenge exists yet. Generate a fresh beginner-friendly challenge. Pick from: Python basics, JavaScript, AI/LLM concepts (tokenization, embeddings, prompt engineering, RAG, fine-tuning), algorithms, data structures, or shell scripting. The prompt must be a concrete technical exercise — never a reflective or journaling prompt.')
     lines.push('')
   }
 
@@ -324,9 +324,9 @@ function buildPrompt(ctx) {
     { "time": "9:00 AM", "title": "string", "notes": "string or null" }
   ],
   "challenge": {
-    "topic": "python|ai|llm|general",
+    "topic": "python|javascript|ai|llm|algorithms|data_structures|bash|general_cs",
     "difficulty": "beginner|intermediate|advanced",
-    "prompt": "string",
+    "prompt": "string — a concrete technical challenge: write code, explain a concept, debug a snippet, design a system, or answer an AI/LLM question. NEVER a reflective or journaling prompt. Always something you'd find on a coding challenge site or in a technical interview.",
     "hint": "string",
     "ai_feedback": "string or null — critique of their last answer if one exists, otherwise null"
   },
