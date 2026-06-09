@@ -1,6 +1,8 @@
 // Google Calendar edge function
-// Fetches events from the user's Focus Flow calendar using stored OAuth tokens.
-// Automatically refreshes the access token if expired.
+// Fetches events from all connected Google accounts.
+// - Personal account: pulls from the Focus Flow calendar
+// - Additional accounts (work, etc.): pulls from their primary calendar
+// Automatically refreshes access tokens when expired.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -10,8 +12,8 @@ const corsHeaders = {
 }
 
 const FOCUS_FLOW_CALENDAR_ID = '858f646b41576c785a734cbe4e63df27da29487b4b59ce8f1ed435e9cd7f3d7a@group.calendar.google.com'
-const GOOGLE_CLIENT_ID     = Deno.env.get('GOOGLE_CLIENT_ID')!
-const GOOGLE_CLIENT_SECRET = Deno.env.get('GOOGLE_CLIENT_SECRET')!
+const GOOGLE_CLIENT_ID       = Deno.env.get('GOOGLE_CLIENT_ID')!
+const GOOGLE_CLIENT_SECRET   = Deno.env.get('GOOGLE_CLIENT_SECRET')!
 
 async function refreshAccessToken(refreshToken: string): Promise<string | null> {
   const res = await fetch('https://oauth2.googleapis.com/token', {
@@ -29,12 +31,30 @@ async function refreshAccessToken(refreshToken: string): Promise<string | null> 
   return json.access_token ?? null
 }
 
-async function fetchCalendarEvents(accessToken: string, dateStr: string, endDateStr?: string, timeMinOverride?: string, timeMaxOverride?: string) {
-  // Use caller-supplied UTC boundaries when available (avoids UTC-midnight vs local-midnight mismatch)
+interface CalendarEvent {
+  event_id:   string | null
+  summary:    unknown
+  all_day:    boolean
+  start_time: string | null
+  end_time:   string | null
+  date:       string
+  notes:      string | null
+  calendar_name?: string  // which account the event came from
+}
+
+async function fetchCalendarEvents(
+  accessToken: string,
+  calendarId: string,
+  dateStr: string,
+  endDateStr?: string,
+  timeMinOverride?: string,
+  timeMaxOverride?: string,
+  calendarName?: string,
+): Promise<CalendarEvent[]> {
   const timeMin = timeMinOverride ?? `${dateStr}T00:00:00Z`
   const timeMax = timeMaxOverride ?? `${endDateStr ?? dateStr}T23:59:59Z`
 
-  const url = new URL(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(FOCUS_FLOW_CALENDAR_ID)}/events`)
+  const url = new URL(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`)
   url.searchParams.set('timeMin', timeMin)
   url.searchParams.set('timeMax', timeMax)
   url.searchParams.set('singleEvents', 'true')
@@ -56,15 +76,56 @@ async function fetchCalendarEvents(accessToken: string, dateStr: string, endDate
     const end   = item.end   as Record<string, string> | undefined
     const allDay = Boolean(start?.date && !start?.dateTime)
     return {
-      event_id:   item.id as string ?? null,
-      summary:    item.summary ?? '(No title)',
-      all_day:    allDay,
-      start_time: start?.dateTime ?? start?.date ?? null,
-      end_time:   end?.dateTime   ?? end?.date   ?? null,
-      date:       start?.date ?? start?.dateTime?.split('T')[0] ?? dateStr,
-      notes:      (item.description as string | undefined) ?? null,
+      event_id:      item.id as string ?? null,
+      summary:       item.summary ?? '(No title)',
+      all_day:       allDay,
+      start_time:    start?.dateTime ?? start?.date ?? null,
+      end_time:      end?.dateTime   ?? end?.date   ?? null,
+      date:          start?.date ?? start?.dateTime?.split('T')[0] ?? dateStr,
+      notes:         (item.description as string | undefined) ?? null,
+      calendar_name: calendarName,
     }
   })
+}
+
+async function fetchEventsForIntegration(
+  serviceClient: ReturnType<typeof createClient>,
+  integration: { access_token: string; refresh_token: string | null; email: string; label: string; user_id: string },
+  dateStr: string,
+  endDateStr?: string,
+  timeMinOverride?: string,
+  timeMaxOverride?: string,
+): Promise<CalendarEvent[]> {
+  // Personal account → Focus Flow calendar. All others → primary calendar.
+  const calendarId   = integration.label === 'personal' ? FOCUS_FLOW_CALENDAR_ID : 'primary'
+  const calendarName = integration.label === 'personal' ? 'Focus Flow' : integration.email
+
+  let accessToken = integration.access_token
+
+  try {
+    return await fetchCalendarEvents(accessToken, calendarId, dateStr, endDateStr, timeMinOverride, timeMaxOverride, calendarName)
+  } catch (err) {
+    // Token expired — refresh and retry
+    if (String(err).includes('401') && integration.refresh_token) {
+      const newToken = await refreshAccessToken(integration.refresh_token)
+      if (!newToken) {
+        console.warn(`Token refresh failed for ${integration.email}`)
+        return []
+      }
+
+      await serviceClient
+        .from('user_integrations')
+        .update({ access_token: newToken, updated_at: new Date().toISOString() })
+        .eq('user_id', integration.user_id)
+        .eq('provider', 'google')
+        .eq('email', integration.email)
+
+      return await fetchCalendarEvents(newToken, calendarId, dateStr, endDateStr, timeMinOverride, timeMaxOverride, calendarName)
+    }
+
+    console.warn(`Calendar fetch failed for ${integration.email}:`, err)
+    return []
+  }
 }
 
 Deno.serve(async (req: Request) => {
@@ -73,7 +134,6 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // Authenticate the user via their Supabase JWT
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       return new Response(JSON.stringify({ error: 'Missing authorization header' }), {
@@ -96,7 +156,6 @@ Deno.serve(async (req: Request) => {
       })
     }
 
-    // Get the date range to fetch (defaults to tomorrow only)
     const { date, endDate, timeMin: timeMinOverride, timeMax: timeMaxOverride } = await req.json().catch(() => ({}))
     const targetDate = date ?? (() => {
       const tomorrow = new Date()
@@ -104,48 +163,46 @@ Deno.serve(async (req: Request) => {
       return tomorrow.toISOString().split('T')[0]
     })()
 
-    // Look up stored Google tokens
     const serviceClient = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    const { data: integration } = await serviceClient
+    // Fetch ALL connected Google integrations for this user
+    const { data: integrations } = await serviceClient
       .from('user_integrations')
-      .select('access_token, refresh_token')
+      .select('access_token, refresh_token, email, label')
       .eq('user_id', user.id)
       .eq('provider', 'google')
-      .maybeSingle()
 
-    if (!integration) {
+    if (!integrations || integrations.length === 0) {
       return new Response(JSON.stringify({ events: [], error: 'no_integration' }), {
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
       })
     }
 
-    let accessToken = integration.access_token
+    // Fetch from all accounts in parallel
+    const allEventArrays = await Promise.all(
+      integrations.map(integration =>
+        fetchEventsForIntegration(
+          serviceClient,
+          { ...integration, user_id: user.id },
+          targetDate,
+          endDate,
+          timeMinOverride,
+          timeMaxOverride,
+        )
+      )
+    )
 
-    // Try fetching — if 401, refresh the token and retry
-    let events
-    try {
-      events = await fetchCalendarEvents(accessToken, targetDate, endDate, timeMinOverride, timeMaxOverride)
-    } catch (err) {
-      if (String(err).includes('401') && integration.refresh_token) {
-        const newToken = await refreshAccessToken(integration.refresh_token)
-        if (!newToken) throw new Error('Token refresh failed')
-
-        // Save the new access token
-        await serviceClient
-          .from('user_integrations')
-          .update({ access_token: newToken, updated_at: new Date().toISOString() })
-          .eq('user_id', user.id)
-          .eq('provider', 'google')
-
-        events = await fetchCalendarEvents(newToken, targetDate, endDate, timeMinOverride, timeMaxOverride)
-      } else {
-        throw err
-      }
-    }
+    // Merge and sort by start time
+    const events = allEventArrays
+      .flat()
+      .sort((a, b) => {
+        const aTime = a.start_time ?? a.date
+        const bTime = b.start_time ?? b.date
+        return aTime.localeCompare(bTime)
+      })
 
     return new Response(JSON.stringify({ events }), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },

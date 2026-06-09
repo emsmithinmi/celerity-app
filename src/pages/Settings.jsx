@@ -1,6 +1,7 @@
-﻿import { useState, useEffect } from 'react'
+﻿import { useState, useEffect, useCallback } from 'react'
 import { Pencil, Trash2, Plus, GripVertical, ChevronUp, ChevronDown } from 'lucide-react'
 import Button from '../components/ui/Button'
+import { getConnectedGoogleAccounts, getGoogleConnectUrl, disconnectGoogleAccount } from '../lib/api/googleConnect'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import { useEnergyLevels } from '../contexts/EnergyLevelsContext'
 import { usePriorities }   from '../contexts/PrioritiesContext'
@@ -888,6 +889,98 @@ function AISettings() {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
+// ─── Google Accounts ──────────────────────────────────────────────────────────
+function GoogleAccountsSection() {
+  const [accounts, setAccounts] = useState([])
+  const [loading,  setLoading]  = useState(true)
+  const [connecting, setConnecting] = useState(false)
+  const [error, setError] = useState(null)
+
+  const load = useCallback(async () => {
+    try {
+      setAccounts(await getConnectedGoogleAccounts())
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { load() }, [load])
+
+  const handleAdd = async () => {
+    setConnecting(true)
+    setError(null)
+    try {
+      const redirectUri = `${window.location.origin}/auth/google-callback`
+      sessionStorage.setItem('google_connect_label', 'work')
+      const url = await getGoogleConnectUrl(redirectUri)
+      window.location.href = url
+    } catch (e) {
+      setError(e.message)
+      setConnecting(false)
+    }
+  }
+
+  const handleRemove = async (account) => {
+    // Don't allow removing the last / primary account (label = personal)
+    if (account.label === 'personal') return
+    try {
+      await disconnectGoogleAccount(account.id)
+      setAccounts(prev => prev.filter(a => a.id !== account.id))
+    } catch (e) {
+      setError(e.message)
+    }
+  }
+
+  if (loading) return <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p>
+
+  return (
+    <div className="space-y-3">
+      {accounts.map(account => (
+        <div
+          key={account.id}
+          className="flex items-center justify-between rounded-xl border px-4 py-3"
+          style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
+        >
+          <div>
+            <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{account.email}</p>
+            <p className="text-xs mt-0.5 capitalize" style={{ color: 'var(--text-secondary)' }}>
+              {account.label} · Connected {new Date(account.updated_at).toLocaleDateString()}
+            </p>
+          </div>
+          {account.label !== 'personal' && (
+            <button
+              onClick={() => handleRemove(account)}
+              className="text-xs px-2 py-1 rounded"
+              style={{ color: 'var(--state-danger-text)', backgroundColor: 'var(--state-danger-bg)' }}
+            >
+              Disconnect
+            </button>
+          )}
+          {account.label === 'personal' && (
+            <span className="text-xs px-2 py-1 rounded" style={{ color: 'var(--text-secondary)', backgroundColor: 'var(--app-bg)' }}>
+              Primary
+            </span>
+          )}
+        </div>
+      ))}
+
+      {error && (
+        <p className="text-sm" style={{ color: 'var(--state-danger-text)' }}>{error}</p>
+      )}
+
+      <Button onClick={handleAdd} disabled={connecting} variant="secondary" size="sm">
+        {connecting ? 'Redirecting to Google…' : '+ Add Google Account'}
+      </Button>
+
+      <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+        Additional accounts pull Gmail labels (@Action, @Waiting) and primary calendar events into your Daily Review and Agenda.
+      </p>
+    </div>
+  )
+}
+
 export default function Settings() {
   const { levels,     loading: elLoading,   reload: reloadEL }   = useEnergyLevels()
   const { priorities, loading: priLoading,  reload: reloadPri }  = usePriorities()
@@ -1006,6 +1099,17 @@ export default function Settings() {
           <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>Set custom colors for your @context tags. Tags are created on tasks — add some there first.</p>
         </div>
         <TagColorsSection />
+      </section>
+
+      {/* ── Google Accounts ── */}
+      <section>
+        <div className="mb-4">
+          <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Google Accounts</h2>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+            Connected Google accounts for Calendar and Gmail. Your sign-in account is always connected.
+          </p>
+        </div>
+        <GoogleAccountsSection />
       </section>
 
       {/* ── AI ── */}

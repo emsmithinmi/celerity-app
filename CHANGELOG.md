@@ -4,6 +4,18 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-08
+
+### Added
+- **Multi-account Google integration** — Connect a second Google account (e.g. .edu work email) alongside the primary sign-in account. Settings → Google Accounts shows all connected accounts with an "Add Google Account" button that runs a full OAuth flow without touching the main session.
+- **google-connect edge function** — New Supabase edge function handles the secondary OAuth flow: generates the Google auth URL, exchanges the code for tokens, fetches the account email, and upserts into `user_integrations`.
+- **`/auth/google-callback` route** — New callback page handles the Google redirect, sends the code to the edge function, and redirects back to Settings on success.
+
+### Changed
+- **`user_integrations` schema** — Added `email` (text) and `label` (text, default `'personal'`) columns. Unique constraint changed from `(user_id, provider)` to `(user_id, provider, email)` to support multiple accounts per provider.
+- **`google-calendar` edge function** — Now fetches all connected Google accounts in parallel. Personal account pulls from the Focus Flow calendar; additional accounts pull from their primary calendar. Events are merged and sorted by start time.
+- **`gmail-context` edge function** — Now fetches @Action/@Waiting threads and recent unread from all connected accounts in parallel. Results are merged, deduplicated by thread ID, and sorted.
+
 ## 2026-06-07
 
 ### Added

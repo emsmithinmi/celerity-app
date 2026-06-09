@@ -132,6 +132,43 @@ async function fetchGmailContext(accessToken: string) {
   return { actionThreads, waitingThreads, recentUnread }
 }
 
+async function fetchGmailContextForIntegration(
+  serviceClient: ReturnType<typeof createClient>,
+  integration: { access_token: string; refresh_token: string | null; email: string; user_id: string }
+): Promise<ReturnType<typeof fetchGmailContext> | null> {
+  let accessToken = integration.access_token
+  try {
+    return await fetchGmailContext(accessToken)
+  } catch (err) {
+    if (String(err).includes('401') && integration.refresh_token) {
+      const newToken = await refreshAccessToken(integration.refresh_token)
+      if (!newToken) {
+        console.warn(`Token refresh failed for ${integration.email}`)
+        return null
+      }
+      await serviceClient
+        .from('user_integrations')
+        .update({ access_token: newToken, updated_at: new Date().toISOString() })
+        .eq('user_id', integration.user_id)
+        .eq('provider', 'google')
+        .eq('email', integration.email)
+
+      return await fetchGmailContext(newToken)
+    }
+    console.warn(`Gmail fetch failed for ${integration.email}:`, err)
+    return null
+  }
+}
+
+function dedupeThreads(threads: ThreadSummary[]): ThreadSummary[] {
+  const seen = new Set<string>()
+  return threads.filter(t => {
+    if (seen.has(t.id)) return false
+    seen.add(t.id)
+    return true
+  })
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -165,40 +202,43 @@ Deno.serve(async (req: Request) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    const { data: integration } = await serviceClient
+    // Fetch ALL connected Google integrations
+    const { data: integrations } = await serviceClient
       .from('user_integrations')
-      .select('access_token, refresh_token')
+      .select('access_token, refresh_token, email')
       .eq('user_id', user.id)
       .eq('provider', 'google')
-      .maybeSingle()
 
-    if (!integration) {
+    if (!integrations || integrations.length === 0) {
       return new Response(JSON.stringify({ actionThreads: [], waitingThreads: [], recentUnread: [], error: 'no_integration' }), {
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
       })
     }
 
-    let accessToken = integration.access_token
-    let result
+    // Fetch from all accounts in parallel
+    const results = await Promise.all(
+      integrations.map(integration =>
+        fetchGmailContextForIntegration(serviceClient, { ...integration, user_id: user.id })
+      )
+    )
 
-    try {
-      result = await fetchGmailContext(accessToken)
-    } catch (err) {
-      if (String(err).includes('401') && integration.refresh_token) {
-        const newToken = await refreshAccessToken(integration.refresh_token)
-        if (!newToken) throw new Error('Token refresh failed')
+    // Merge results from all accounts, deduplicate by thread id
+    const merged = results.reduce(
+      (acc, r) => {
+        if (!r) return acc
+        return {
+          actionThreads:  [...acc.actionThreads,  ...r.actionThreads],
+          waitingThreads: [...acc.waitingThreads, ...r.waitingThreads],
+          recentUnread:   [...acc.recentUnread,   ...r.recentUnread],
+        }
+      },
+      { actionThreads: [] as ThreadSummary[], waitingThreads: [] as ThreadSummary[], recentUnread: [] as ThreadSummary[] }
+    )
 
-        await serviceClient
-          .from('user_integrations')
-          .update({ access_token: newToken, updated_at: new Date().toISOString() })
-          .eq('user_id', user.id)
-          .eq('provider', 'google')
-
-        accessToken = newToken
-        result = await fetchGmailContext(accessToken)
-      } else {
-        throw err
-      }
+    const result = {
+      actionThreads:  dedupeThreads(merged.actionThreads).sort((a, b) => a.date.localeCompare(b.date)),
+      waitingThreads: dedupeThreads(merged.waitingThreads).sort((a, b) => a.date.localeCompare(b.date)),
+      recentUnread:   dedupeThreads(merged.recentUnread).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 15),
     }
 
     return new Response(JSON.stringify(result), {
