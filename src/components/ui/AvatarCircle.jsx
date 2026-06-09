@@ -50,7 +50,7 @@ export default function AvatarCircle({ src, name = '', size = 'md', canUpload = 
       {canUpload && !uploading && hovered && (
         <div
           className="absolute inset-0 rounded-full flex items-center justify-center"
-          style={{ backgroundColor: 'rgba(0,0,0,0.55)' }}
+          style={{ backgroundColor: 'var(--avatar-overlay)' }}
         >
           <Camera size={iconSize} color="var(--text-primary)" />
         </div>
@@ -60,7 +60,7 @@ export default function AvatarCircle({ src, name = '', size = 'md', canUpload = 
       {uploading && (
         <div
           className="absolute inset-0 rounded-full flex items-center justify-center"
-          style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
+          style={{ backgroundColor: 'var(--avatar-overlay)' }}
         >
           <div
             className="animate-spin rounded-full border-2"

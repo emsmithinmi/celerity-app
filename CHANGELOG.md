@@ -4,6 +4,24 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-08 (style continuity pass)
+
+### Added
+- **`EmptyState` component** — Centralized `src/components/ui/EmptyState.jsx` used for all empty list states. Replaces three different ad-hoc patterns across Tasks, Projects, and TasksSection.
+- **CSS overlay variables** — `--modal-overlay` and `--avatar-overlay` added to both themes so overlay opacity is theme-controlled, not hardcoded rgba.
+- **`warning` Button variant** — Added to `Button.jsx` so Reviews' `ActionBtn` can use the shared variant system.
+
+### Changed
+- **Tab bars unified** — All tab bars (Tasks, Projects, People, Reviews Clarify, Reviews Reflect) now use the same pattern: `var(--border)` active background, `var(--text-primary)` active text, `var(--text-secondary)` / `var(--pane-bg)` count badge. Removed per-tab color system from Reflect section.
+- **Icon buttons standardized** — `IconBtn.jsx` (`PencilBtn` / `TrashBtn`) standardized to 28×28px across the app. Daily nav buttons and Settings rows now all match. `TrashBtn` changed to muted-by-default with danger hover (matches Settings inline style), replacing the always-red solid style.
+- **Settings.jsx** — Replaced 6 inline icon button definitions with `PencilBtn` / `TrashBtn` from `IconBtn`. Page title changed from `text-2xl font-bold` to `text-xl font-semibold` to match all other pages.
+- **TasksSection** — Removed local duplicate `TaskRow` component; now uses the canonical `TaskRow` from `components/tasks/TaskRow`. Imports `EmptyState` for consistent empty state display.
+- **Modal / AvatarCircle** — Replaced hardcoded `rgba(0,0,0,0.6)` and `rgba(0,0,0,0.55)` with CSS variables.
+- **Search inputs** — Added `onFocus`/`onBlur` accent border handlers to Tasks and Projects search boxes (matching behavior already in modals).
+- **Daily challenge prompt** — Added explicit "NEVER a reflective or journaling prompt" guard; expanded topic list to include javascript, algorithms, data_structures, bash, general_cs.
+
+---
+
 ## 2026-06-08
 
 ### Added

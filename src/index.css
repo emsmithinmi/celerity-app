@@ -51,6 +51,10 @@
   --danger-hover:     #c53929;
   --delete-hover-bg:  #3d2c2c;
 
+  /* Overlays */
+  --modal-overlay:    rgba(0,0,0,0.6);
+  --avatar-overlay:   rgba(0,0,0,0.55);
+
   /* State banners */
   --state-warning-bg:   #2d2410;
   --state-warning-text: #FBBC05;
@@ -154,6 +158,10 @@
   --danger:           #f85149;
   --danger-hover:     #da3633;
   --delete-hover-bg:  #2c1515;
+
+  /* Overlays */
+  --modal-overlay:    rgba(0,0,0,0.65);
+  --avatar-overlay:   rgba(0,0,0,0.55);
 
   /* State banners */
   --state-warning-bg:   #1c1408;

@@ -773,18 +773,17 @@ function ClarifySection({ onDone, done, captureVersion }) {
               <button
                 key={t.key}
                 onClick={() => setActiveTab(t.key)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
                 style={{
-                  backgroundColor: activeTab === t.key ? 'var(--accent)' : 'transparent',
-                  borderColor:     activeTab === t.key ? 'var(--accent)' : 'var(--border)',
-                  color:           activeTab === t.key ? 'var(--app-bg)' : 'var(--text-secondary)',
+                  backgroundColor: activeTab === t.key ? 'var(--border)' : 'transparent',
+                  color:           activeTab === t.key ? 'var(--text-primary)' : 'var(--text-secondary)',
                 }}
               >
                 {t.label}
                 {t.count > 0 && (
-                  <span className="px-1.5 py-0.5 rounded text-xs" style={{
-                    backgroundColor: activeTab === t.key ? 'rgba(255,255,255,0.25)' : 'var(--border)',
-                    color:           activeTab === t.key ? 'var(--app-bg)'           : 'var(--accent)',
+                  <span className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold leading-none" style={{
+                    backgroundColor: activeTab === t.key ? 'var(--text-secondary)' : 'var(--border)',
+                    color:           activeTab === t.key ? 'var(--pane-bg)'         : 'var(--text-secondary)',
                   }}>{t.count}</span>
                 )}
               </button>
@@ -927,18 +926,17 @@ function ReflectSection({ onDone, done }) {
             <button
               key={t.key}
               onClick={() => setActiveTab(t.key)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
               style={{
-                backgroundColor: active ? t.color : 'transparent',
-                borderColor:     active ? t.color : 'var(--border)',
-                color:           active ? 'var(--app-bg)' : 'var(--text-secondary)',
+                backgroundColor: active ? 'var(--border)' : 'transparent',
+                color:           active ? 'var(--text-primary)' : 'var(--text-secondary)',
               }}
             >
               {t.icon} {t.label}
               {count > 0 && (
-                <span className="px-1.5 py-0.5 rounded text-xs" style={{
-                  backgroundColor: active ? 'rgba(255,255,255,0.25)' : 'var(--border)',
-                  color:           active ? 'var(--app-bg)'           : t.color,
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold leading-none" style={{
+                  backgroundColor: active ? 'var(--text-secondary)' : 'var(--border)',
+                  color:           active ? 'var(--pane-bg)'         : 'var(--text-secondary)',
                 }}>{count}</span>
               )}
             </button>

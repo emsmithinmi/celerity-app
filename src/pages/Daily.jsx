@@ -84,7 +84,7 @@ function DateHeader({ dateStr, isToday, onPrev, onNext, onToday }) {
         <button
           onClick={onPrev}
           className="flex items-center justify-center rounded-lg transition-colors"
-          style={{ width: 32, height: 32, color: 'var(--text-secondary)', backgroundColor: 'var(--border)' }}
+          style={{ width: 28, height: 28, color: 'var(--text-secondary)', backgroundColor: 'var(--border)' }}
           onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--text-dim)'; e.currentTarget.style.color = 'var(--text-primary)' }}
           onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
           title="Previous day"
@@ -101,7 +101,7 @@ function DateHeader({ dateStr, isToday, onPrev, onNext, onToday }) {
           onClick={onNext}
           disabled={isToday}
           className="flex items-center justify-center rounded-lg transition-colors"
-          style={{ width: 32, height: 32, color: isToday ? 'var(--text-dim)' : 'var(--text-secondary)', backgroundColor: 'var(--border)', cursor: isToday ? 'default' : 'pointer', opacity: isToday ? 0.4 : 1 }}
+          style={{ width: 28, height: 28, color: isToday ? 'var(--text-dim)' : 'var(--text-secondary)', backgroundColor: 'var(--border)', cursor: isToday ? 'default' : 'pointer', opacity: isToday ? 0.4 : 1 }}
           onMouseEnter={e => { if (!isToday) { e.currentTarget.style.backgroundColor = 'var(--text-dim)'; e.currentTarget.style.color = 'var(--text-primary)' } }}
           onMouseLeave={e => { if (!isToday) { e.currentTarget.style.backgroundColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)' } }}
           title={isToday ? 'No future dates' : 'Next day'}

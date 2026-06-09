@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect, useCallback } from 'react'
-import { Pencil, Trash2, Plus, GripVertical, ChevronUp, ChevronDown } from 'lucide-react'
+import { Plus, GripVertical, ChevronUp, ChevronDown } from 'lucide-react'
 import Button from '../components/ui/Button'
+import { PencilBtn, TrashBtn } from '../components/ui/IconBtn'
 import { getConnectedGoogleAccounts, getGoogleConnectUrl, disconnectGoogleAccount } from '../lib/api/googleConnect'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import { useEnergyLevels } from '../contexts/EnergyLevelsContext'
@@ -186,26 +187,8 @@ function EnergyRow({ level, onSaved, onDelete }) {
 
         {/* Actions */}
         <div className="flex items-center gap-1 shrink-0">
-          <button
-            onClick={() => { startEdit(); setEditing(true) }}
-            title="Edit"
-            className="flex items-center justify-center rounded transition-colors"
-            style={{ width: 28, height: 28, color: 'var(--text-secondary)', backgroundColor: 'transparent' }}
-            onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }}
-            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
-          >
-            <Pencil size={13} />
-          </button>
-          <button
-            onClick={() => setShowDel(true)}
-            title="Delete"
-            className="flex items-center justify-center rounded transition-colors"
-            style={{ width: 28, height: 28, color: 'var(--text-secondary)', backgroundColor: 'transparent' }}
-            onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--delete-hover-bg)'; e.currentTarget.style.color = 'var(--state-error-text)' }}
-            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
-          >
-            <Trash2 size={13} />
-          </button>
+          <PencilBtn onClick={() => { startEdit(); setEditing(true) }} />
+          <TrashBtn  onClick={() => setShowDel(true)} />
         </div>
       </div>
 
@@ -455,8 +438,8 @@ function PriorityRow({ item, onSaved, onDelete, onMoveUp, onMoveDown }) {
         <div className="flex items-center gap-1 shrink-0">
           <button onClick={onMoveUp} title="Move up" disabled={!onMoveUp} className="flex items-center justify-center rounded transition-colors disabled:opacity-20" style={{ width: 24, height: 24, color: 'var(--text-secondary)', backgroundColor: 'transparent' }} onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--border)' }} onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent' }}><ChevronUp size={13} /></button>
           <button onClick={onMoveDown} title="Move down" disabled={!onMoveDown} className="flex items-center justify-center rounded transition-colors disabled:opacity-20" style={{ width: 24, height: 24, color: 'var(--text-secondary)', backgroundColor: 'transparent' }} onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--border)' }} onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent' }}><ChevronDown size={13} /></button>
-          <button onClick={() => { setDraft({ ...item }); setEditing(true) }} title="Edit" className="flex items-center justify-center rounded transition-colors" style={{ width: 28, height: 28, color: 'var(--text-secondary)', backgroundColor: 'transparent' }} onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }} onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}><Pencil size={13} /></button>
-          <button onClick={() => setShowDel(true)} title="Delete" className="flex items-center justify-center rounded transition-colors" style={{ width: 28, height: 28, color: 'var(--text-secondary)', backgroundColor: 'transparent' }} onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--delete-hover-bg)'; e.currentTarget.style.color = 'var(--state-error-text)' }} onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}><Trash2 size={13} /></button>
+          <PencilBtn onClick={() => { setDraft({ ...item }); setEditing(true) }} />
+          <TrashBtn  onClick={() => setShowDel(true)} />
         </div>
       </div>
       <ConfirmDialog open={showDel} onClose={() => setShowDel(false)} onConfirm={handleDelete} title="Remove Priority?" message={`"${item.label}" will be removed. Tasks/projects that already use it will keep the stored value but it won't appear in dropdowns.`} confirmLabel="Remove" variant="danger" />
@@ -567,8 +550,8 @@ function AreaRow({ item, onSaved, onDelete }) {
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: bgColor, color: textColor }}>{icon && <span>{icon}</span>}{label}</span>
               <span className="flex-1" />
               <div className="flex items-center gap-1 shrink-0">
-                <button onClick={() => setEditing(true)} title="Edit" className="flex items-center justify-center rounded transition-colors" style={{ width: 28, height: 28, color: 'var(--text-secondary)', backgroundColor: 'transparent' }} onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }} onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}><Pencil size={13} /></button>
-                <button onClick={() => setShowDel(true)} title="Delete" className="flex items-center justify-center rounded transition-colors" style={{ width: 28, height: 28, color: 'var(--text-secondary)', backgroundColor: 'transparent' }} onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--delete-hover-bg)'; e.currentTarget.style.color = 'var(--state-error-text)' }} onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}><Trash2 size={13} /></button>
+                <PencilBtn onClick={() => setEditing(true)} />
+                <TrashBtn  onClick={() => setShowDel(true)} />
               </div>
             </>
           )}
@@ -1012,7 +995,7 @@ export default function Settings() {
   return (
     <div className="px-10 py-8 max-w-2xl space-y-12">
       <div>
-        <h1 className="text-2xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Settings</h1>
+        <h1 className="text-xl font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Settings</h1>
         <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Manage reference data — no code changes needed.</p>
       </div>
 

@@ -46,7 +46,7 @@ export default function Modal({
       ref={overlayRef}
       onClick={handleOverlayClick}
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
+      style={{ backgroundColor: 'var(--modal-overlay)' }}
     >
       <div
         className={`relative w-full ${SIZES[size]} rounded-2xl border shadow-2xl flex flex-col max-h-[90vh]`}

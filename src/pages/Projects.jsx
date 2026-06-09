@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useProjects } from '../hooks/useProjects'
 import ProjectRow from '../components/projects/ProjectRow'
 import Button from '../components/ui/Button'
+import { EmptyState } from '../components/ui'
 import { CaptureProjectModal } from '../components/daily/QuickCaptureModals'
 
 const TABS = [
@@ -108,6 +109,8 @@ export default function Projects() {
             placeholder="Search projects…"
             className="w-full px-4 py-2 rounded-xl text-sm border outline-none bg-transparent"
             style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+            onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+            onBlur={e  => e.target.style.borderColor = 'var(--border)'}
           />
         </div>
 
@@ -147,22 +150,14 @@ export default function Projects() {
 
         {/* Project list */}
         {loading ? (
-          <div className="flex items-center justify-center h-32">
-            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p>
-          </div>
+          <EmptyState message="Loading…" />
         ) : displayed.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-32 gap-2">
-            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              {search
-                ? 'No projects match your search.'
-                : `No ${TABS.find(t => t.key === activeTab)?.label.toLowerCase()} projects.`}
-            </p>
-            {activeTab === 'inbox' && !search && (
-              <Button size="sm" variant="secondary" onClick={() => setShowCapture(true)}>
-                Capture something
-              </Button>
-            )}
-          </div>
+          <EmptyState
+            message={search ? 'No projects match your search.' : `No ${TABS.find(t => t.key === activeTab)?.label.toLowerCase()} projects.`}
+            action={activeTab === 'inbox' && !search
+              ? <Button size="sm" variant="secondary" onClick={() => setShowCapture(true)}>Capture something</Button>
+              : undefined}
+          />
         ) : (
           <div style={{ backgroundColor: 'var(--pane-bg)' }}>
             {displayed.map(project => (

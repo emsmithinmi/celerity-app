@@ -47,6 +47,12 @@ const VARIANTS = {
     hover: 'var(--surface-2)',
     border: 'var(--surface-2)',
   },
+  warning: {
+    bg: 'var(--card-reminder-bg)',
+    text: 'var(--accent-yellow)',
+    hover: 'var(--state-warning-bg)',
+    border: 'var(--accent-yellow)',
+  },
 }
 
 const SIZES = {

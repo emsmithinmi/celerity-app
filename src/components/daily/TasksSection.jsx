@@ -2,7 +2,8 @@ import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { RefreshCw } from 'lucide-react'
 import { useTasks } from '../../hooks/useTasks'
-import { PriorityBadge, EnergyBadge } from '../ui'
+import { EmptyState } from '../ui'
+import TaskRow from '../tasks/TaskRow'
 
 const ACTIVE_STATUSES = ['inbox', 'next_action', 'queued', 'waiting', 'scheduled']
 
@@ -13,53 +14,6 @@ const TABS = [
   { key: 'waiting',     label: 'Waiting'      },
   { key: 'scheduled',   label: 'Scheduled'    },
 ]
-
-function TaskRow({ task }) {
-  const navigate   = useNavigate()
-  const isWaiting  = task.status === 'waiting'
-  const isInbox    = task.status === 'inbox'
-
-  return (
-    <div
-      onClick={() => navigate(`/tasks/${task.id}`)}
-      className="flex items-center gap-3 px-4 py-3 border-b last:border-b-0 hover:opacity-90 transition-opacity cursor-pointer"
-      style={{ borderColor: 'var(--border)' }}
-    >
-      <div className="flex-1 min-w-0">
-        <p
-          className="text-sm truncate"
-          style={{ color: isWaiting ? 'var(--text-secondary)' : 'var(--text-primary)' }}
-        >
-          {task.title}
-        </p>
-        {task.projects?.title && (
-          <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-            📁 {task.projects.title}
-          </p>
-        )}
-      </div>
-
-      <div className="flex items-center gap-2 shrink-0">
-        {task.due_date && (
-          <span
-            className="text-xs"
-            style={{
-              color: task.due_date <= new Date().toLocaleDateString('en-CA')
-                ? 'var(--danger)'
-                : 'var(--text-secondary)',
-            }}
-          >
-            {new Date(task.due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-          </span>
-        )}
-        {task.energy_level && <EnergyBadge energyLevel={task.energy_level} />}
-        <PriorityBadge priority={task.priority} />
-        {isWaiting && <span title="Waiting">⏳</span>}
-        {isInbox   && <span title="Inbox">📥</span>}
-      </div>
-    </div>
-  )
-}
 
 export default function TasksSection({ onRefreshStats }) {
   const [activeTab, setActiveTab] = useState('inbox')
@@ -123,13 +77,11 @@ export default function TasksSection({ onRefreshStats }) {
         style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
       >
         {loading ? (
-          <p className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p>
+          <EmptyState message="Loading…" />
         ) : tasks.length > 0 ? (
-          tasks.map(t => <TaskRow key={t.id} task={t} />)
+          tasks.map(t => <TaskRow key={t.id} task={t} onClick={() => navigate(`/tasks/${t.id}`)} />)
         ) : (
-          <p className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
-            No {TABS.find(t => t.key === activeTab)?.label.toLowerCase()} tasks.
-          </p>
+          <EmptyState message={`No ${TABS.find(t => t.key === activeTab)?.label.toLowerCase()} tasks.`} />
         )}
       </div>
     </div>
