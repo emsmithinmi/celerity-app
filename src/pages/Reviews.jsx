@@ -955,7 +955,7 @@ function ReflectSection({ onDone, done }) {
 
 // ─── SECTION 4: AI REVIEW ─────────────────────────────────────────────────────
 
-function AIReviewSection({ review, locked, onSaveState, targetDate, gapStart, gapEnd }) {
+function AIReviewSection({ review, locked, onSaveState, targetDate, gapStart, gapEnd, onComplete }) {
   const { configured: aiConfigured, loading: aiLoading } = useAIConfig()
   const aiConfiguredRef = useRef(false)
   useEffect(() => { aiConfiguredRef.current = aiConfigured }, [aiConfigured])
@@ -1170,6 +1170,7 @@ function AIReviewSection({ review, locked, onSaveState, targetDate, gapStart, ga
     await completeReview(review.id)
     if (!mountedRef.current) return
     setCompleted(true)
+    onComplete?.()
   }
 
   const handleSuggestionChange = async (updated) => {
@@ -1502,6 +1503,7 @@ export default function Reviews() {
                 targetDate={targetDate}
                 gapStart={gapStart}
                 gapEnd={gapEnd}
+                onComplete={() => navigate(`/daily?date=${tomorrow}`)}
               />
             </SectionWrapper>
             </div>

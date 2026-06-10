@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
 import { useDaily } from '../hooks/useDaily'
 import { useTasks } from '../hooks/useTasks'
@@ -141,7 +141,9 @@ export default function Daily() {
   const navigate = useNavigate()
 
   // ── Date navigation ──
-  const [selectedDate, setSelectedDate] = useState(todayStr)
+  const [searchParams] = useSearchParams()
+  const initialDate = searchParams.get('date') ?? todayStr()
+  const [selectedDate, setSelectedDate] = useState(initialDate)
   const isToday = selectedDate === todayStr()
   const goBack    = () => setSelectedDate(d => shiftDate(d, -1))
   const goForward = () => setSelectedDate(d => shiftDate(d, +1))
