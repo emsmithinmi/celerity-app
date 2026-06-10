@@ -35,6 +35,7 @@ interface ThreadSummary {
   snippet: string
   date: string
   age_days: number
+  starred: boolean
 }
 
 async function getLabelMap(accessToken: string): Promise<Record<string, string>> {
@@ -85,6 +86,7 @@ async function getThreadMetadata(accessToken: string, threadId: string): Promise
     snippet: firstMsg.snippet ?? '',
     date: date.toISOString(),
     age_days: ageDays,
+    starred: firstMsg.labelIds?.includes('STARRED') ?? false,
   }
 }
 

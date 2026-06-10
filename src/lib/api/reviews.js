@@ -29,6 +29,16 @@ export async function getReviewByDate(type, date) {
 
 // ─── Create / Ensure ──────────────────────────────────────────────────────────
 
+export async function createReview(type, date) {
+  const { data, error } = await supabase
+    .from('reviews')
+    .insert({ type, date, status: 'draft', content: {}, suggestions: [] })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
 export async function ensureReview(type, date) {
   const existing = await getReviewByDate(type, date)
   if (existing) return existing

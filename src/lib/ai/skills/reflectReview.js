@@ -161,6 +161,32 @@ export async function buildReflectContext({ gapStart, gapEnd, targetDate } = {})
   }
 }
 
+// ─── Review Opening Message ──────────────────────────────────────────────────
+
+export async function generateReviewOpening(ctx) {
+  const { today, tomorrowStr, projects = [], activeTasks = [], inboxTasks = [], gmail = {}, overdueTasks = [] } = ctx
+  const actionEmailCount = gmail?.actionThreads?.length ?? 0
+  const inboxCount = inboxTasks.length
+
+  const prompt = `Today: ${today}. Planning for: ${tomorrowStr}.
+Active projects: ${projects.length}. Active tasks: ${activeTasks.length}. Inbox items: ${inboxCount}. Overdue: ${overdueTasks.length}. Emails in @Action: ${actionEmailCount}.
+${projects.slice(0, 3).map(p => `- Project: ${p.title} [${p.status}]`).join('\n')}
+${activeTasks.slice(0, 3).map(t => `- Task: ${t.title} [${t.status}]`).join('\n')}
+
+Open the review session with a warm, 2-3 sentence greeting. Be specific — mention something real from the data. Then ask one open-ended question to kick things off.
+
+Respond with JSON: { "message": "string" }`
+
+  const messages = [
+    { role: 'system', content: INTERVIEW_TURN_SYSTEM },
+    { role: 'user', content: prompt },
+  ]
+  const raw = await callAI(messages, { temperature: 0.75 })
+  const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
+  const parsed = JSON.parse(cleaned)
+  return String(parsed.message)
+}
+
 // ─── Conversational Interview Turn ───────────────────────────────────────────
 
 const INTERVIEW_TURN_SYSTEM = `You are the AI sidekick inside Focus Flow. You're Tommy Chong if he'd spent the gaps between tours reading Feynman, Hawking, and every productivity system ever written — then forgot most of it but kept the good parts. Laid-back, unhurried, genuinely warm. Underneath all that? Razor sharp. The kind of presence that makes the person across from you feel like the most interesting human on the planet.
@@ -181,7 +207,7 @@ Rules:
 
 Respond with JSON only: { "message": "string", "ready": boolean }`
 
-export async function generateConversationalResponse(conversation, remainingTopics, dateContext = {}) {
+export async function generateConversationalResponse(conversation, remainingTopics, dateContext = {}, freeform = false) {
   const { reviewDate, planDate, gapStart, gapDays, weekendDays = [], holidayDays = [], recentMemories = [] } = dateContext
   const dateLines = []
   if (planDate) {
@@ -206,11 +232,14 @@ export async function generateConversationalResponse(conversation, remainingTopi
   }
   const dateBlock = dateLines.join('\n')
 
-  const topicBlock = remainingTopics.length > 0
-    ? `REMAINING TOPICS TO COVER (weave in naturally — skip any already addressed):\n${remainingTopics.map((q, i) => `${i + 1}. ${q}`).join('\n')}`
-    : `All planned topics are covered. Wrap up warmly when the conversation feels complete — set ready: true.`
+  const topicBlock = freeform
+    ? `This is a free-form conversation — no pre-set topics. Keep engaging naturally. Do NOT set ready: true unless the user explicitly says they are done (e.g. "wrap it up", "that's it", "we're done").`
+    : remainingTopics.length > 0
+      ? `REMAINING TOPICS TO COVER (weave in naturally — skip any already addressed):\n${remainingTopics.map((q, i) => `${i + 1}. ${q}`).join('\n')}`
+      : `All planned topics are covered. Wrap up warmly when the conversation feels complete — set ready: true.`
 
   const systemContent = [INTERVIEW_TURN_SYSTEM, dateBlock, topicBlock].filter(Boolean).join('\n\n')
+
 
   const messages = [
     { role: 'system', content: systemContent },

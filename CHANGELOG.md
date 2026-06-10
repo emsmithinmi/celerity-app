@@ -4,6 +4,20 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-09 (continued again)
+
+### Changed
+- **Reviews page — full redesign (Step 1 + Step 2):**
+  - Step 1 "Get Current": email feed (New/Action/Waiting tabs with work-email star indicator), upcoming calendar strip, and full Projects/Tasks/People tabs with inline actions and capture buttons. No linear gating — leave when ready.
+  - Step 2 "Make a Plan": free-form AI chat. Actions happen inline during conversation. "Wrap it up" generates the plan, writes summary to DB, navigates to tomorrow.
+  - Multiple reviews per day now allowed (removed unique constraint on reviews table).
+  - Capture modals now accept `initialValues` so email-to-task/project/person pre-fills the title.
+  - Scheduled tasks no longer show a "Move to next action" button (it's a demotion, not a promotion).
+- **gmail-context edge function**: now returns `starred: boolean` on each thread (starred = work email forwarded from work address).
+- **reflectReview.js**: added `generateReviewOpening()` for personalized chat opening; `generateConversationalResponse()` now accepts `freeform` flag that prevents premature wrap-up.
+
+---
+
 ## 2026-06-09 (continued)
 
 ### Changed

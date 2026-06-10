@@ -1,11 +1,12 @@
-﻿import { useState } from 'react'
+﻿import { useState, useEffect } from 'react'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
 
 // ─── Capture Task ─────────────────────────────────────────────────────────────
-export function CaptureTaskModal({ open, onClose, onCreate }) {
+export function CaptureTaskModal({ open, onClose, onCreate, initialValues }) {
   const [title, setTitle] = useState('')
   const [saving, setSaving] = useState(false)
+  useEffect(() => { if (open) setTitle(initialValues?.title ?? '') }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -56,9 +57,10 @@ export function CaptureTaskModal({ open, onClose, onCreate }) {
 }
 
 // ─── Capture Project ──────────────────────────────────────────────────────────
-export function CaptureProjectModal({ open, onClose, onCreate }) {
+export function CaptureProjectModal({ open, onClose, onCreate, initialValues }) {
   const [title, setTitle] = useState('')
   const [saving, setSaving] = useState(false)
+  useEffect(() => { if (open) setTitle(initialValues?.title ?? '') }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -109,10 +111,11 @@ export function CaptureProjectModal({ open, onClose, onCreate }) {
 }
 
 // ─── Capture Person ───────────────────────────────────────────────────────────
-export function CapturePersonModal({ open, onClose, onCreate }) {
+export function CapturePersonModal({ open, onClose, onCreate, initialValues }) {
   const [firstName, setFirstName] = useState('')
   const [lastName,  setLastName]  = useState('')
   const [saving, setSaving]       = useState(false)
+  useEffect(() => { if (open) { setFirstName(initialValues?.first_name ?? ''); setLastName(initialValues?.last_name ?? '') } }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = async (e) => {
     e.preventDefault()
