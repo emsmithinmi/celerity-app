@@ -16,6 +16,7 @@ const TABS = [
 ]
 
 export default function TasksSection({ onRefreshStats }) {
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('inbox')
   const { tasks: allTasks, loading, refresh } = useTasks({ statuses: ACTIVE_STATUSES })
 
