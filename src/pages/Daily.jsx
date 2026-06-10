@@ -165,25 +165,6 @@ export default function Daily() {
   }, [selectedDate])
 
 
-  // ── Morning gate: block if yesterday's review wasn't completed ──
-  const [gateChecked, setGateChecked] = useState(false)
-  const [showGate,    setShowGate]    = useState(false)
-  useEffect(() => {
-    const yesterday = shiftDate(todayStr(), -1)
-    const today     = todayStr()
-    supabase
-      .from('reviews')
-      .select('status')
-      .eq('type', 'daily')
-      .in('date', [yesterday, today])
-      .eq('status', 'completed')
-      .limit(1)
-      .then(({ data }) => {
-        setShowGate(!data || data.length === 0)
-        setGateChecked(true)
-      })
-      .catch(() => setGateChecked(true))
-  }, [])
 
   // Modal state
   const [modal, setModal] = useState(null)
@@ -243,29 +224,6 @@ export default function Daily() {
     )
   }
 
-  if (gateChecked && showGate) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-6 px-6 text-center">
-        <p className="text-5xl">📋</p>
-        <div>
-          <h2 className="text-2xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Yesterday's review isn't done.</h2>
-          <p className="text-sm max-w-sm mx-auto" style={{ color: 'var(--text-secondary)' }}>
-            Complete your review before starting today. Inbox zero is non-negotiable.
-          </p>
-        </div>
-        <Button variant="primary" onClick={() => navigate('/reviews/daily?gate=today')}>
-          Run Yesterday's Review →
-        </Button>
-        <button
-          className="text-xs underline"
-          style={{ color: 'var(--text-dim)' }}
-          onClick={() => setShowGate(false)}
-        >
-          Skip for now
-        </button>
-      </div>
-    )
-  }
 
   return (
     <>

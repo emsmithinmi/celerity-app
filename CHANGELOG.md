@@ -4,6 +4,13 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-09 (continued)
+
+### Changed
+- **Daily page gate removed** — The "Yesterday's review isn't done" wall is gone. Daily page always loads regardless of review status. Skipping days, weekends, vacations — system doesn't care.
+
+---
+
 ## 2026-06-09
 
 ### Added
