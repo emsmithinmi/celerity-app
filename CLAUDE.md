@@ -67,7 +67,10 @@ src/
         openai.js          # OpenAI-compatible adapter (unused directly — proxy handles it)
         anthropic.js       # Anthropic adapter (unused directly — proxy handles it)
       skills/
-        dailyReview.js     # Daily review skill: context builder, prompt, parser, writes tomorrow's note
+        dailyBrief.js      # Daily Brief generator (Stoner Genius voice): greeting, top_of_mind, words_for_the_day
+        reflectReview.js   # Review chat: opening, conversation w/ tools, plan generation, writeReflectResults
+        refreshChallenge.js
+        stuckHelper.js     # "I'm Stuck" easy-wins suggestions
     api/
       tasks.js
       projects.js
@@ -138,7 +141,8 @@ src/
       IconBtn.jsx            # PencilBtn + TrashBtn — 28×28px, canonical icon buttons used app-wide
       index.js
   pages/
-    Login.jsx
+    Login.jsx              # Google OAuth + magic link; auto-redirects to /daily when a session appears
+    ResetPassword.jsx      # handles Supabase PASSWORD_RECOVERY flow at /reset-password
     Daily.jsx                # date nav (← →), top-of-mind, stat cards, agenda, habits, notes, challenge
     Tasks.jsx                # tabbed by status, stat row, capture modal
     TaskPage.jsx             # full detail page at /tasks/:id
@@ -226,6 +230,12 @@ Contexts mounted at App root (outside BrowserRouter):
 - Magic link auth via Supabase
 - Custom SMTP: Resend (`smtp.resend.com:465`, user: `resend`)
 - Redirect URLs configured in Supabase: `https://gtd-manager.pages.dev` + `https://*.gtd-manager.pages.dev`
+- Email+password also enabled on the primary account (used for dev auto-login; password recovery handled at `/reset-password`)
+
+## Dev Preview Auto-Login
+- `src/lib/supabase.js` calls `signInWithPassword` on startup when running in dev mode with `VITE_DEV_EMAIL` + `VITE_DEV_PASSWORD` set in `.env.local` (gitignored).
+- `Login.jsx` watches the session and redirects to `/daily` when it appears, so the auto-login lands without manual interaction.
+- This gives Claude permanent live-preview access via `preview_start` — no tokens to paste. Signing out is fine; next reload signs back in.
 
 ## Pages — Current State
 - **Daily** — date nav, daily quote, quick capture bar, top-of-mind, stat cards, agenda (Google Calendar events + all-day tasks/project deadlines), projects section, tasks section, notes log, habit toggles (7 habits, code challenge excluded), collapsible Challenge section (auto-marks habit on submit), review buttons
@@ -236,38 +246,35 @@ Contexts mounted at App root (outside BrowserRouter):
 - **People** — tabbed by status, click row → `/people/:id`
 - **PersonPage** — avatar, Identity, Contact Details, Addresses, Social Media, Notes; tasks, projects, **Notes** (was Comments), What's Next
 - **Habits** — calendar heatmap, streaks, % bars. Includes Code Challenge habit (💻) auto-marked when challenge submitted.
-- **Reviews** — Two-step flow: Step 1 "Get Current" (email feed + calendar strip + Projects/Tasks/People tabs with inline actions), Step 2 "Make a Plan" (free-form AI chat, inline tool use, "Wrap it up" writes summary to DB and navigates to tomorrow). Multiple reviews per day allowed. Weekly/Monthly show a "coming soon" placeholder.
+- **Reviews** — Landing screen with "Start Review" button (data fetches only fire on click, guaranteeing freshness). Then two-step flow: Step 1 "Get Current" (email feed + calendar strip + Projects/Tasks/People tabs with inline actions), Step 2 "Make a Plan" (free-form AI chat, inline tool use, "Wrap it up" stores plan + brief + summary on the review row and navigates to tomorrow). Multiple reviews per day allowed. Weekly/Monthly show a "coming soon" placeholder.
 - **Settings** — Appearance (theme switcher: Catppuccin / GitHub Dark), Energy Levels, Priorities, Areas, AI Assistant config.
 
 ## AI Layer — Current State
 - **Architecture:** brand-agnostic. All calls route through `supabase/functions/ai-proxy` Edge Function to avoid CORS. Client sends `{ provider, apiKey, model, messages }` to the proxy.
 - **Config storage:** provider, model, baseUrl, apiKey stored in Supabase `auth.users.raw_user_meta_data`. Never in source bundle.
 - **Providers supported:** Anthropic (x-api-key header), all OpenAI-compatible (Bearer token).
-- **Daily Review skill** (`src/lib/ai/skills/dailyReview.js`):
-  - Pulls: active projects, active tasks, last 30 daily notes (memory), inbox count, habit state, tomorrow's `calendar_events`, last completed challenge, user's typed review notes
-  - Generates: top_of_mind[], agenda (calendar-anchored, real times only), code_challenge (with ai_feedback critique if previous was completed), quote, suggestions[]
-  - Writes to: tomorrow's `daily_notes` row (top_of_mind, agenda, code_challenge), today's `reviews` row (suggestions)
-  - **Challenge progression:** only generates a new challenge when the previous one has `completed: true`; includes the user's answer + AI critique (`ai_feedback`) in the next challenge
-  - **Code challenge topics:** python, javascript, ai, llm, algorithms, data_structures, bash, general_cs — always a concrete technical exercise, never a reflective prompt
+- **Daily Brief skill** (`src/lib/ai/skills/dailyBrief.js`):
+  - `generateDailyBrief(date, isRefresh, extraTopOfMind)` — pulls that date's note (user top_of_mind + habits), active tasks/projects, calendar events, upcoming birthdays
+  - Generates: `{ greeting, top_of_mind[], remember[], to_do[], words_for_the_day }` in the Stoner Genius voice
+  - Called at review wrap-up (brief stored on the review row) and by the Daily page Refresh button (stored in `daily_notes.daily_brief`)
 - **Reflect Review skill** (`src/lib/ai/skills/reflectReview.js`):
   - Powers the Step 2 chat. `generateReviewOpening(ctx)` creates a personalized opening message. `generateConversationalResponse(conv, topics, dateCtx, freeform)` handles chat turns — pass `freeform=true` to disable auto-wrap-up. `generateReflectPlan()` + `writeReflectResults()` called on "Wrap it up".
   - Tools: mid-conversation tool use via `callAIWithTools` — create_task, update_task, update_project, archive_email, calendar operations
-  - Writes: review summary + top_of_mind to `reviews` table (NOT to daily_notes — that write path is legacy and may be cleaned up later)
+  - Writes (as of 2026-06-10): `writeReflectResults` stores `{ conversation, plan, target_date, brief }` in `reviews.content` plus `summary` and `suggestions` on the review row. `daily_notes` only receives code challenge + quote. The Daily page reads the brief via `getReviewForTargetDate(date)` (latest completed daily review whose `content.target_date` matches), with `note.daily_brief` (mid-day refresh) taking priority.
 - **Edge Function:** `supabase/functions/ai-proxy/index.ts` — deployed to Supabase, handles CORS, proxies to provider.
 - **Multi-account Google:** `supabase/functions/google-connect` handles secondary OAuth flow. `google-calendar` and `gmail-context` edge functions fetch from ALL connected accounts in parallel via `user_integrations` table.
 - **gmail-context** returns `{ actionThreads, waitingThreads, recentUnread }` — each thread has `{ id, subject, sender, snippet, date, age_days, starred }`. `starred: true` = work email (auto-forwarded from work address via Gmail filter). AI context and email feed UI both use this to flag work emails appropriately.
 
-## Next Session — Review System Follow-ups
+## Review System — Data Flow (as of 2026-06-10)
 
-The two-step Review redesign shipped (2026-06-09). A few follow-up items to pick up next time:
+The two-step Review redesign shipped 2026-06-09; the data-flow cleanup shipped 2026-06-10:
 
-1. **Daily page — read top_of_mind + summary from latest review** — `DailyBrief` currently reads from `daily_notes.daily_brief` (AI-generated JSON). Next step: read from `reviews.content.plan` or `reviews.summary` from the most recent completed review instead. `daily_notes` stays for habits, user notes, and code challenge — but the AI-generated brief content should come from the review going forward.
+- **Wrap-up writes:** `writeReflectResults` stores `{ conversation, plan, target_date, brief }` in `reviews.content` (brief generated async after plan write). `daily_notes` only gets code challenge + quote. Legacy writes of top_of_mind/agenda/daily_brief to daily_notes are removed.
+- **Daily page reads:** brief comes from `note.daily_brief` (set by the Refresh button, mid-day refresh) falling back to `getReviewForTargetDate(date)` → `content.brief` of the latest completed daily review that planned that date.
+- **Start Review landing screen:** Reviews page shows a "Start Review" button; email/calendar/data hooks only fire after click, so every review starts with fresh data.
+- Unused legacy `dailyReview.js` skill deleted (no imports remained).
 
-2. **writeReflectResults still writes to daily_notes** — the `writeReflectResults()` function in reflectReview.js writes top_of_mind/agenda/challenge/quote to tomorrow's daily_notes. This is the legacy path. Once the Daily page reads from the review directly, this write can be removed or kept for backwards compat.
-
-3. **Weekly/Monthly reviews** — currently show "coming soon." Needs design + implementation.
-
-4. **Color theme system** — theme switcher (Catppuccin / GitHub Dark) only re-themes sidebar chrome. Rest of app uses hardcoded hex values. Extend CSS variable coverage to page content, modals, forms, cards, badges.
+Remaining follow-up: **Color theme system** — theme switcher (Catppuccin / GitHub Dark) only re-themes sidebar chrome. Rest of app uses hardcoded hex values. Extend CSS variable coverage to page content, modals, forms, cards, badges.
 
 ## Project Rename — Completed (2026-05-29)
 The project was officially renamed to **Focus Flow**. All references updated:
@@ -297,7 +304,7 @@ Adopt this personality for all interactions with the user. This is a long-term t
 - **Second Google account (work .edu):** Infrastructure is built and deployed. Blocked by Google Workspace admin restrictions on OAuth. Infrastructure ready when/if restrictions lift.
 - **Agentic Review AI (Phase 1):** ✅ Done — action buttons on suggestion cards wired to DB (create_task, update_task, update_project, archive_email, calendar ops).
 - **Agentic Review AI (Phase 2):** Mid-conversation tool use during Reflect interview — AI proposes actions, user confirms. Partially implemented via `callAIWithTools`.
-- Weekly Review — full implementation. Next action auditing belongs here, not in Daily Review.
+- Weekly & Monthly Reviews — full implementation (currently "coming soon" placeholders on the Reviews page). Next action auditing belongs in Weekly, not Daily.
 - Obsidian migration script
 - Per-user RLS scoping (if ever multi-user)
 - Color theme system extension — CSS variables currently cover sidebar only; extend to all page content, cards, modals, forms

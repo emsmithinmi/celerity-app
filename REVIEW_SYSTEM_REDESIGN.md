@@ -83,10 +83,10 @@ Dropped the unique constraint `reviews_type_date_unique` on `(type, date)`.
 
 ## What's Next (pick up here)
 
-1. **Wire Daily page brief to reviews table** — `DailyBrief` component reads `note?.daily_brief` from `daily_notes`. Change it to fetch the most recent completed review and read `reviews.summary` or `reviews.content.plan` instead. `daily_notes` stays for habits, user notes, and code challenge only.
+1. ~~**Wire Daily page brief to reviews table**~~ ✅ Done 2026-06-10. Wrap-up stores `{ plan, brief, target_date }` in `reviews.content`; Daily page reads the brief via `getReviewForTargetDate(date)` with `note.daily_brief` (mid-day refresh) taking priority.
 
-2. **Clean up `writeReflectResults`** — still writes top_of_mind/agenda/challenge/quote to `daily_notes` (legacy path). Once #1 is done, this write can be removed.
+2. ~~**Clean up `writeReflectResults`**~~ ✅ Done 2026-06-10. No longer writes top_of_mind/agenda/daily_brief to `daily_notes` — only code challenge + quote remain there. Unused `dailyReview.js` skill deleted.
 
-3. **Weekly/Monthly reviews** — currently show "coming soon." Needs design and implementation.
+3. **Weekly/Monthly reviews** — moved to Future Phases in CLAUDE.md. Currently show "coming soon."
 
 4. **Color theme system** — extend CSS variables beyond sidebar chrome to all page content, cards, modals, forms.

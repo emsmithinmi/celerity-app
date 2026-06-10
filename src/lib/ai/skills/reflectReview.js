@@ -1,9 +1,9 @@
 ﻿import { supabase } from '../../supabase'
 import { callAI, callAIWithTools } from '../client'
 import { INTERVIEW_TOOLS, INTERVIEW_EXECUTORS } from '../tools'
-import { ensureNoteForDate, updateTopOfMind, updateAgenda, updateChallenge, updateQuote, updateDailyBrief } from '../../api/daily'
+import { ensureNoteForDate, updateChallenge, updateQuote } from '../../api/daily'
 import { generateDailyBrief } from './dailyBrief'
-import { updateSuggestions, updateReviewSummary } from '../../api/reviews'
+import { updateSuggestions, updateReviewSummary, updateReviewContent } from '../../api/reviews'
 import { cleanupExpiredDoneTasks } from '../../api/tasks'
 
 async function getSessionToken() {
@@ -566,13 +566,12 @@ export async function writeReflectResults(reviewId, result, conversation = [], r
   const resolvedReviewDate = reviewDate ?? new Date().toLocaleDateString('en-CA')
   const tomorrowNote = await ensureNoteForDate(tomorrowStr)
 
-  // Run daily note writes and memory summarization in parallel
+  // daily_notes keeps only what it still owns: code challenge + quote.
+  // The plan (top_of_mind, agenda) and brief live on the review row.
   const [summary] = await Promise.all([
     summarizeReviewConversation(conversation, resolvedReviewDate),
-    result.top_of_mind?.length > 0 && updateTopOfMind(tomorrowNote.id, result.top_of_mind),
-    result.agenda?.length > 0      && updateAgenda(tomorrowNote.id, result.agenda),
-    result.challenge               && updateChallenge(tomorrowNote.id, result.challenge),
-    result.quote?.text             && updateQuote(tomorrowNote.id, result.quote.text, result.quote.author),
+    result.challenge   && updateChallenge(tomorrowNote.id, result.challenge),
+    result.quote?.text && updateQuote(tomorrowNote.id, result.quote.text, result.quote.author),
   ])
 
   const suggestions = [
@@ -585,15 +584,17 @@ export async function writeReflectResults(reviewId, result, conversation = [], r
     },
   ].filter(Boolean)
 
+  const content = { conversation, plan: result, target_date: tomorrowStr }
   if (reviewId) {
+    await updateReviewContent(reviewId, content)
     await updateSuggestions(reviewId, suggestions)
     if (summary) updateReviewSummary(reviewId, summary).catch(() => {})  // fire-and-forget, non-blocking
-  }
 
-  // Generate Daily Brief for tomorrow and save it. Non-blocking.
-  generateDailyBrief(tomorrowStr, false)
-    .then(brief => updateDailyBrief(tomorrowNote.id, brief))
-    .catch(() => {})
+    // Generate tomorrow's Daily Brief and attach it to the review. Non-blocking.
+    generateDailyBrief(tomorrowStr, false, result.top_of_mind ?? [])
+      .then(brief => updateReviewContent(reviewId, { ...content, brief }))
+      .catch(() => {})
+  }
 
   // Housekeeping — delete done tasks older than 30 days. Non-blocking.
   cleanupExpiredDoneTasks().catch(() => {})

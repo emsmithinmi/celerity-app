@@ -27,6 +27,21 @@ export async function getReviewByDate(type, date) {
   return data
 }
 
+// Latest completed daily review whose plan targets the given date.
+// content.target_date is set at wrap-up — the review done on day N plans day N+1.
+export async function getReviewForTargetDate(date) {
+  const { data, error } = await supabase
+    .from('reviews')
+    .select('*')
+    .eq('type', 'daily')
+    .eq('status', 'completed')
+    .contains('content', { target_date: date })
+    .order('updated_at', { ascending: false })
+    .limit(1)
+  if (error) throw error
+  return data?.[0] ?? null
+}
+
 // ─── Create / Ensure ──────────────────────────────────────────────────────────
 
 export async function createReview(type, date) {

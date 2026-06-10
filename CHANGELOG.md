@@ -4,6 +4,18 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-10 (continued)
+
+### Changed
+- **Review wrap-up is now the source of truth for the Daily Brief** — `writeReflectResults` stores `{ conversation, plan, target_date, brief }` in `reviews.content` instead of writing top_of_mind/agenda/daily_brief to tomorrow's `daily_notes`. Only code challenge + quote still go to `daily_notes`.
+- **Daily page reads the brief from the review** — new `getReviewForTargetDate(date)` API finds the latest completed daily review that planned the selected date and renders its `content.brief`. The Refresh button still writes `daily_notes.daily_brief`, which takes priority (mid-day refresh).
+- `generateDailyBrief` accepts an `extraTopOfMind` array so the review plan's top-of-mind items feed the brief generated at wrap-up.
+
+### Removed
+- Deleted `src/lib/ai/skills/dailyReview.js` — legacy daily review skill, no longer imported anywhere (replaced by the two-step Reflect flow + dailyBrief skill).
+
+---
+
 ## 2026-06-10
 
 ### Added

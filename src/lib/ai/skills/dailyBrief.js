@@ -90,7 +90,7 @@ async function buildBriefContext(date) {
 
 // ─── Generator ────────────────────────────────────────────────────────────────
 
-export async function generateDailyBrief(date, isRefresh = false) {
+export async function generateDailyBrief(date, isRefresh = false, extraTopOfMind = []) {
   const { note, tasks, projects, calEvents, upcomingBirthdays, today } = await buildBriefContext(date)
 
   const now = new Date()
@@ -102,9 +102,10 @@ export async function generateDailyBrief(date, isRefresh = false) {
   lines.push(isRefresh ? 'MODE: Mid-day refresh — acknowledge where they are in the day.' : 'MODE: Morning brief — set the tone for the whole day.')
   lines.push('')
 
-  if (note?.top_of_mind?.length > 0) {
-    lines.push("USER'S TOP OF MIND (manually entered — incorporate these into your top_of_mind bullets):")
-    note.top_of_mind.forEach(item => lines.push(`- ${item}`))
+  const topOfMind = [...(note?.top_of_mind ?? []), ...extraTopOfMind]
+  if (topOfMind.length > 0) {
+    lines.push("USER'S TOP OF MIND (from manual entry and their review — incorporate these into your top_of_mind bullets):")
+    topOfMind.forEach(item => lines.push(`- ${item}`))
     lines.push('')
   }
 

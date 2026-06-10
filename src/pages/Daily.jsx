@@ -6,6 +6,7 @@ import { useTasks } from '../hooks/useTasks'
 import { useProjects } from '../hooks/useProjects'
 import { createPerson } from '../lib/api/people'
 import { updateChallenge, updateDailyBrief } from '../lib/api/daily'
+import { getReviewForTargetDate } from '../lib/api/reviews'
 import { generateDailyBrief } from '../lib/ai/skills/dailyBrief'
 import { refreshChallenge } from '../lib/ai/skills/refreshChallenge'
 import { getStuckSuggestions } from '../lib/ai/skills/stuckHelper'
@@ -164,6 +165,16 @@ export default function Daily() {
     fetchCalendarEventsForDate(selectedDate).then(setCalendarEvents).catch(() => {})
   }, [selectedDate])
 
+  // Brief from the latest completed review that planned this date.
+  // note.daily_brief (mid-day refresh) takes priority when present.
+  const [reviewBrief, setReviewBrief] = useState(null)
+  useEffect(() => {
+    setReviewBrief(null)
+    getReviewForTargetDate(selectedDate)
+      .then(r => setReviewBrief(r?.content?.brief ?? null))
+      .catch(() => {})
+  }, [selectedDate])
+
 
 
   // Modal state
@@ -202,7 +213,7 @@ export default function Daily() {
 
   const handleBriefRefresh = async () => {
     if (!note) return
-    const isRefresh = !!note.daily_brief  // already has one → mid-day refresh
+    const isRefresh = !!(note.daily_brief || reviewBrief)  // already has one → mid-day refresh
     const brief = await generateDailyBrief(selectedDate, isRefresh)
     await updateDailyBrief(note.id, brief)
     await reloadNote()
@@ -328,7 +339,7 @@ export default function Daily() {
 
         {/* Daily Brief */}
         <DailyBrief
-          brief={note?.daily_brief ?? null}
+          brief={note?.daily_brief ?? reviewBrief ?? null}
           topOfMind={note?.top_of_mind ?? []}
           noteId={note?.id}
           onRefresh={handleBriefRefresh}
