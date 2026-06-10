@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
 import { useDaily } from '../hooks/useDaily'
@@ -6,7 +6,7 @@ import { useTasks } from '../hooks/useTasks'
 import { useProjects } from '../hooks/useProjects'
 import { createPerson } from '../lib/api/people'
 import { updateChallenge, updateDailyBrief } from '../lib/api/daily'
-import { getReviewForTargetDate } from '../lib/api/reviews'
+import { getLatestCompletedReview } from '../lib/api/reviews'
 import { generateDailyBrief } from '../lib/ai/skills/dailyBrief'
 import { refreshChallenge } from '../lib/ai/skills/refreshChallenge'
 import { getStuckSuggestions } from '../lib/ai/skills/stuckHelper'
@@ -165,15 +165,40 @@ export default function Daily() {
     fetchCalendarEventsForDate(selectedDate).then(setCalendarEvents).catch(() => {})
   }, [selectedDate])
 
-  // Brief from the latest completed review that planned this date.
-  // note.daily_brief (mid-day refresh) takes priority when present.
-  const [reviewBrief, setReviewBrief] = useState(null)
+  // Lazy Daily Brief: generated at READ time so the greeting always matches the
+  // moment it's seen. For today, regenerate when the brief is missing, was
+  // generated on a previous day, or a newer review has superseded it.
+  // Past dates keep their archived brief untouched.
+  const { configured: aiReady } = useAIConfig()
+  const [briefGenerating, setBriefGenerating] = useState(false)
+  const briefAttemptRef = useRef(null)
   useEffect(() => {
-    setReviewBrief(null)
-    getReviewForTargetDate(selectedDate)
-      .then(r => setReviewBrief(r?.content?.brief ?? null))
-      .catch(() => {})
-  }, [selectedDate])
+    if (!note || !isToday || !aiReady) return
+    const brief = note.daily_brief
+    ;(async () => {
+      try {
+        const review = await getLatestCompletedReview('daily')
+        const reviewAt    = review?.completed_at ?? null
+        const generatedAt = brief?.generated_at ?? null
+        const generatedDay = generatedAt ? new Date(generatedAt).toLocaleDateString('en-CA') : null
+        const stale =
+          !brief ||
+          !generatedAt ||
+          generatedDay !== selectedDate ||
+          (reviewAt && new Date(generatedAt) < new Date(reviewAt))
+        if (!stale) return
+        // One attempt per (note, review, brief) state — don't loop on AI failures
+        const attemptKey = `${note.id}:${reviewAt ?? 'none'}:${generatedAt ?? 'none'}`
+        if (briefAttemptRef.current === attemptKey) return
+        briefAttemptRef.current = attemptKey
+        setBriefGenerating(true)
+        const fresh = await generateDailyBrief(selectedDate, !!brief, review)
+        await updateDailyBrief(note.id, fresh)
+        await reloadNote()
+      } catch { /* AI call failed — keep whatever brief we have */ }
+      finally { setBriefGenerating(false) }
+    })()
+  }, [note, isToday, selectedDate, aiReady])
 
 
 
@@ -213,8 +238,9 @@ export default function Daily() {
 
   const handleBriefRefresh = async () => {
     if (!note) return
-    const isRefresh = !!(note.daily_brief || reviewBrief)  // already has one → mid-day refresh
-    const brief = await generateDailyBrief(selectedDate, isRefresh)
+    const isRefresh = !!note.daily_brief  // already has one → mid-day refresh
+    const review = await getLatestCompletedReview('daily').catch(() => null)
+    const brief = await generateDailyBrief(selectedDate, isRefresh, review)
     await updateDailyBrief(note.id, brief)
     await reloadNote()
   }
@@ -339,7 +365,8 @@ export default function Daily() {
 
         {/* Daily Brief */}
         <DailyBrief
-          brief={note?.daily_brief ?? reviewBrief ?? null}
+          brief={note?.daily_brief ?? null}
+          generating={briefGenerating}
           topOfMind={note?.top_of_mind ?? []}
           noteId={note?.id}
           onRefresh={handleBriefRefresh}

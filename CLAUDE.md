@@ -171,7 +171,7 @@ All tables have RLS enabled with `USING (true) WITH CHECK (true)` + `GRANT ALL T
 | `projects` | id, title, slug, status, priority, area, start_date, end_date, is_highlight, archived_at |
 | `people` | id, first_name, last_name, preferred_name, professional_title, relationship, contact_type, occupation, company, email_personal, email_work, phone_personal, phone_work, birthday, address_street, address_city, address_state, address_zip, address_work_street, address_work_city, address_work_state, address_work_zip, social_media (jsonb), notes, is_stale, status, avatar_url |
 | `daily_notes` | id, date, top_of_mind[], agenda jsonb, notes jsonb, habit_morning_meds, habit_evening_meds, habit_journal, habit_meditation, habit_breathwork, habit_stretching, habit_health_tracking, habit_code_challenge, code_challenge jsonb, quote text, quote_author text |
-| `reviews` | id, type, date, status, content jsonb, suggestions jsonb, insights jsonb, summary text, updated_at |
+| `reviews` | id, type, date, status, completed_at, content jsonb ({conversation, plan, completed_at}), suggestions jsonb, insights jsonb, summary text, updated_at |
 | `calendar_events` | id (text PK), date, summary, start_time (timestamptz), end_time (timestamptz), all_day (bool), calendar_name, notes, synced_at |
 | `energy_levels` | id, value, label, icon, bg_color, text_color, sort_order |
 | `priorities` | id, value, label, bg_color, text_color, sort_order |
@@ -246,7 +246,7 @@ Contexts mounted at App root (outside BrowserRouter):
 - **People** — tabbed by status, click row → `/people/:id`
 - **PersonPage** — avatar, Identity, Contact Details, Addresses, Social Media, Notes; tasks, projects, **Notes** (was Comments), What's Next
 - **Habits** — calendar heatmap, streaks, % bars. Includes Code Challenge habit (💻) auto-marked when challenge submitted.
-- **Reviews** — Landing screen with "Start Review" button (data fetches only fire on click, guaranteeing freshness). Then two-step flow: Step 1 "Get Current" (email feed + calendar strip + Projects/Tasks/People tabs with inline actions), Step 2 "Make a Plan" (free-form AI chat, inline tool use, "Wrap it up" stores plan + brief + summary on the review row and navigates to tomorrow). Multiple reviews per day allowed. Weekly/Monthly show a "coming soon" placeholder.
+- **Reviews** — Landing screen with "Start Review" button (data fetches only fire on click, guaranteeing freshness). Then two-step flow: Step 1 "Get Current" (email feed + calendar strip + Projects/Tasks/People tabs with inline actions), Step 2 "Make a Plan" (free-form AI chat, inline tool use, time-of-day aware — "Wrap it up" stores plan + summary on the review row and offers today's Daily page). Runs any time of day, multiple per day; latest completed review is the current picture. Weekly/Monthly show a "coming soon" placeholder.
 - **Settings** — Appearance (theme switcher: Catppuccin / GitHub Dark), Energy Levels, Priorities, Areas, AI Assistant config.
 
 ## AI Layer — Current State
@@ -254,25 +254,33 @@ Contexts mounted at App root (outside BrowserRouter):
 - **Config storage:** provider, model, baseUrl, apiKey stored in Supabase `auth.users.raw_user_meta_data`. Never in source bundle.
 - **Providers supported:** Anthropic (x-api-key header), all OpenAI-compatible (Bearer token).
 - **Daily Brief skill** (`src/lib/ai/skills/dailyBrief.js`):
-  - `generateDailyBrief(date, isRefresh, extraTopOfMind)` — pulls that date's note (user top_of_mind + habits), active tasks/projects, calendar events, upcoming birthdays
-  - Generates: `{ greeting, top_of_mind[], remember[], to_do[], words_for_the_day }` in the Stoner Genius voice
-  - Called at review wrap-up (brief stored on the review row) and by the Daily page Refresh button (stored in `daily_notes.daily_brief`)
+  - `generateDailyBrief(date, isRefresh, review)` — pulls that date's note (user top_of_mind + habits), active tasks/projects, calendar events, birthdays, plus the latest review's plan (`review.content.plan`) and how long ago it was locked in
+  - Generates: `{ greeting, top_of_mind[], remember[], to_do[], words_for_the_day, generated_at }` in the Stoner Genius voice, time-of-day aware (generated at read time, so the greeting matches the moment it's seen)
+  - Called lazily by the Daily page (auto, today only) and by the Refresh button — result cached in `daily_notes.daily_brief`
 - **Reflect Review skill** (`src/lib/ai/skills/reflectReview.js`):
   - Powers the Step 2 chat. `generateReviewOpening(ctx)` creates a personalized opening message. `generateConversationalResponse(conv, topics, dateCtx, freeform)` handles chat turns — pass `freeform=true` to disable auto-wrap-up. `generateReflectPlan()` + `writeReflectResults()` called on "Wrap it up".
   - Tools: mid-conversation tool use via `callAIWithTools` — create_task, update_task, update_project, archive_email, calendar operations
-  - Writes (as of 2026-06-10): `writeReflectResults` stores `{ conversation, plan, target_date, brief }` in `reviews.content` plus `summary` and `suggestions` on the review row. `daily_notes` only receives code challenge + quote. The Daily page reads the brief via `getReviewForTargetDate(date)` (latest completed daily review whose `content.target_date` matches), with `note.daily_brief` (mid-day refresh) taking priority.
+  - Writes: see "Review System — Current Picture Data Flow" section above. All prompts are anchored to the actual current time via `nowContext()`.
 - **Edge Function:** `supabase/functions/ai-proxy/index.ts` — deployed to Supabase, handles CORS, proxies to provider.
 - **Multi-account Google:** `supabase/functions/google-connect` handles secondary OAuth flow. `google-calendar` and `gmail-context` edge functions fetch from ALL connected accounts in parallel via `user_integrations` table.
 - **gmail-context** returns `{ actionThreads, waitingThreads, recentUnread }` — each thread has `{ id, subject, sender, snippet, date, age_days, starred }`. `starred: true` = work email (auto-forwarded from work address via Gmail filter). AI context and email feed UI both use this to flag work emails appropriately.
 
-## Review System — Data Flow (as of 2026-06-10)
+## Review System — "Current Picture" Data Flow (as of 2026-06-10)
 
-The two-step Review redesign shipped 2026-06-09; the data-flow cleanup shipped 2026-06-10:
+Core principle: a "daily" review is daily in *cadence*, not end-of-day. It can run at any time, multiple times a day. Each review is a lock-it-in checkpoint; its output is live the moment it wraps, superseded by the next review.
 
-- **Wrap-up writes:** `writeReflectResults` stores `{ conversation, plan, target_date, brief }` in `reviews.content` (brief generated async after plan write). `daily_notes` only gets code challenge + quote. Legacy writes of top_of_mind/agenda/daily_brief to daily_notes are removed.
-- **Daily page reads:** brief comes from `note.daily_brief` (set by the Refresh button, mid-day refresh) falling back to `getReviewForTargetDate(date)` → `content.brief` of the latest completed daily review that planned that date.
-- **Start Review landing screen:** Reviews page shows a "Start Review" button; email/calendar/data hooks only fire after click, so every review starts with fresh data.
-- Unused legacy `dailyReview.js` skill deleted (no imports remained).
+**Two kinds of output, separated deliberately:**
+- **The plan = timeless facts.** `generateReflectPlan` is anchored to the actual current time (`nowContext()` in reflectReview.js) and produces content with explicit dates ("Thursday June 11"), never "today"/"tomorrow". Agenda items carry a `date` field. Morning review plans the rest of today; evening review sets up tomorrow.
+- **The brief = the delivery, generated at READ time.** No brief is created at wrap-up. The Daily page lazily generates it when viewed (today only) and caches it in `daily_notes.daily_brief` with a `generated_at` stamp. Regeneration triggers: no brief, brief from a previous calendar day, or a review completed after `generated_at`. Manual Refresh forces it. Past dates keep their archived brief (per-day history for free).
+
+**Writes at wrap-up** (`writeReflectResults`): `reviews.content = { conversation, plan, completed_at }`, plus `summary` + `suggestions` on the row. `reviews.completed_at` column (added 2026-06-10) drives "latest wins" via `getLatestCompletedReview()`. Challenge + quote land on today's `daily_notes` if today's slots are empty (morning review), else tomorrow's (evening review).
+
+**Time awareness:** every reflect prompt (opening, conversation turns, questions, plan) receives `RIGHT NOW: <date, time> (<morning|afternoon|evening>)` — so a 7 AM review says "start the day strong," not "get some sleep." The brief generator gets the same plus "plan was locked in N hours ago."
+
+Other notes:
+- **Start Review landing screen:** Reviews page data hooks only fire after the Start click — fresh data every review.
+- Done screen navigates to today's Daily page ("the fresh picture"), not tomorrow.
+- Unused legacy `dailyReview.js` skill deleted 2026-06-10.
 
 Remaining follow-up: **Color theme system** — theme switcher (Catppuccin / GitHub Dark) only re-themes sidebar chrome. Rest of app uses hardcoded hex values. Extend CSS variable coverage to page content, modals, forms, cards, badges.
 

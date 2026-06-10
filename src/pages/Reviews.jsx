@@ -892,8 +892,7 @@ export default function Reviews() {
   const [done,     setDone]     = useState(false)
   const [starting, setStarting] = useState(false)
 
-  const today    = new Date().toLocaleDateString('en-CA')
-  const tomorrow = (() => { const d = new Date(today + 'T12:00:00'); d.setDate(d.getDate() + 1); return d.toLocaleDateString('en-CA') })()
+  const today = new Date().toLocaleDateString('en-CA')
 
   const handleReady = async () => {
     if (starting) return
@@ -975,10 +974,10 @@ export default function Reviews() {
             <p className="text-5xl">✅</p>
             <div>
               <h2 className="text-2xl font-semibold mb-2" style={S.text}>Review done.</h2>
-              <p className="text-sm max-w-sm mx-auto" style={S.muted}>Your plan for {new Date(tomorrow + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} is locked in.</p>
+              <p className="text-sm max-w-sm mx-auto" style={S.muted}>Everything's locked in as of right now. Your Daily page has the fresh picture.</p>
             </div>
             <div className="flex gap-3">
-              <Button variant="primary" onClick={() => navigate(`/daily?date=${tomorrow}`)}>Go to Tomorrow →</Button>
+              <Button variant="primary" onClick={() => navigate('/daily')}>Go to Daily →</Button>
               <Button variant="secondary" onClick={handleNewReview}>Run Another Review</Button>
             </div>
           </div>

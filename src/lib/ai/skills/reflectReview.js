@@ -2,7 +2,6 @@
 import { callAI, callAIWithTools } from '../client'
 import { INTERVIEW_TOOLS, INTERVIEW_EXECUTORS } from '../tools'
 import { ensureNoteForDate, updateChallenge, updateQuote } from '../../api/daily'
-import { generateDailyBrief } from './dailyBrief'
 import { updateSuggestions, updateReviewSummary, updateReviewContent } from '../../api/reviews'
 import { cleanupExpiredDoneTasks } from '../../api/tasks'
 
@@ -52,6 +51,16 @@ const US_HOLIDAYS = {
   '05-26': 'Memorial Day', '06-19': 'Juneteenth', '07-04': 'Independence Day',
   '09-01': 'Labor Day', '11-11': "Veterans Day", '11-27': 'Thanksgiving',
   '12-25': 'Christmas',
+}
+
+// The review can happen at any time of day — morning kickoff, mid-day reset,
+// evening wind-down. Every prompt gets anchored to the actual moment.
+export function nowContext() {
+  const now = new Date()
+  const hour = now.getHours()
+  const partOfDay = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening'
+  const label = now.toLocaleString('en-US', { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })
+  return { now, partOfDay, label, todayStr: now.toLocaleDateString('en-CA') }
 }
 
 function analyzGap(gapStart, gapEnd) {
@@ -147,7 +156,8 @@ export async function buildReflectContext({ gapStart, gapEnd, targetDate } = {})
   } : {}
 
   const [calendarEvents, gapCalendarEvents, gmail] = await Promise.all([
-    getCalendarEvents(tomorrowStr, weekEndStr),
+    // From today — a morning review needs today's remaining events, not just tomorrow's
+    getCalendarEvents(today, weekEndStr),
     resolvedGapStart !== resolvedGapEnd ? getCalendarEvents(resolvedGapStart, resolvedGapEnd) : Promise.resolve([]),
     getGmailContext(),
   ])
@@ -168,12 +178,13 @@ export async function generateReviewOpening(ctx) {
   const actionEmailCount = gmail?.actionThreads?.length ?? 0
   const inboxCount = inboxTasks.length
 
-  const prompt = `Today: ${today}. Planning for: ${tomorrowStr}.
+  const { label: nowLabel, partOfDay } = nowContext()
+  const prompt = `RIGHT NOW: ${nowLabel} (${partOfDay}).
 Active projects: ${projects.length}. Active tasks: ${activeTasks.length}. Inbox items: ${inboxCount}. Overdue: ${overdueTasks.length}. Emails in @Action: ${actionEmailCount}.
 ${projects.slice(0, 3).map(p => `- Project: ${p.title} [${p.status}]`).join('\n')}
 ${activeTasks.slice(0, 3).map(t => `- Task: ${t.title} [${t.status}]`).join('\n')}
 
-Open the review session with a warm, 2-3 sentence greeting. Be specific — mention something real from the data. Then ask one open-ended question to kick things off.
+Open the review session with a warm, 2-3 sentence greeting that matches the actual time of day — a morning review kicks off the day ahead, an afternoon review is a mid-day reset, an evening review winds down and sets up tomorrow. Never assume it's the end of the day. Be specific — mention something real from the data. Then ask one open-ended question to kick things off.
 
 Respond with JSON: { "message": "string" }`
 
@@ -193,7 +204,7 @@ const INTERVIEW_TURN_SYSTEM = `You are the AI sidekick inside Focus Flow. You're
 
 Channel Cheech & Chong's Up in Smoke vibe — that easy, slow-rolling confidence. The way a simple observation can meander into something unexpectedly real. "Hey man, I think we're parked" energy: you say the obvious thing nobody noticed, and somehow it lands like wisdom. You're not performing cool. You just are.
 
-You're mid-conversation in an end-of-day check-in. Your job is to be PRESENT — not just process what they said and move on.
+You're mid-conversation in a check-in that can happen at ANY time of day — a morning kickoff, a mid-day reset, an evening wind-down. The current date and time are in your context; match the moment. A 7 AM review is about starting the day strong, not getting a good night's sleep. Your job is to be PRESENT — not just process what they said and move on.
 
 Rules:
 - RESPOND FIRST. If they asked you a direct question — ANSWER IT FULLY before anything else. Don't dodge.
@@ -209,10 +220,11 @@ Respond with JSON only: { "message": "string", "ready": boolean }`
 
 export async function generateConversationalResponse(conversation, remainingTopics, dateContext = {}, freeform = false) {
   const { reviewDate, planDate, gapStart, gapDays, weekendDays = [], holidayDays = [], recentMemories = [] } = dateContext
+  const { label: nowLabel, partOfDay } = nowContext()
   const dateLines = []
+  dateLines.push(`DATE CONTEXT:`)
+  dateLines.push(`- Right now it is: ${nowLabel} (${partOfDay}) — match this moment in your tone and any time references.`)
   if (planDate) {
-    dateLines.push(`DATE CONTEXT:`)
-    dateLines.push(`- Planning for: ${planDate}`)
     if (weekendDays.length > 0) dateLines.push(`- Recent weekend days: ${weekendDays.join(', ')}`)
     if (holidayDays.length > 0) dateLines.push(`- Recent holidays: ${holidayDays.join(', ')}`)
     dateLines.push(`- If the user asks what date/period you're reviewing, answer using this context.`)
@@ -256,7 +268,7 @@ export async function generateConversationalResponse(conversation, remainingTopi
 
 const QUESTIONS_SYSTEM = `You are the AI sidekick inside Focus Flow. Think Tommy Chong if he'd spent the gaps between tours reading Feynman and every GTD book ever written — then distilled it all down to the questions that actually matter. Cheech & Chong's Up in Smoke energy: unhurried, warm, deceptively sharp. The "hey man, I think we're parked" guy — says the obvious thing nobody noticed, and it lands like a revelation. That's who's asking these questions.
 
-Your job: run a real end-of-day check-in. Not a form, not a task audit — a genuine conversation with someone you actually care about. You're here to surface what's NOT already in the system, not to quiz them on tasks they already know about.
+Your job: run a real check-in at whatever time of day it actually is — morning kickoff, mid-day reset, or evening wind-down (the current time is in your context; match it). Not a form, not a task audit — a genuine conversation with someone you actually care about. You're here to surface what's NOT already in the system, not to quiz them on tasks they already know about.
 
 WHAT TO HUNT FOR (open loops, not task status):
 - Things that happened today that haven't been captured yet
@@ -278,7 +290,7 @@ If the gap includes a weekend or holiday, open with that warmth first before get
 If tomorrow looks packed, acknowledge it and ask if they feel ready.
 
 One question should catch them off guard in the best way — something that makes them feel seen.
-Last question always checks in on energy and headspace going into the next day. That one matters most.
+Last question always checks in on energy and headspace going into whatever's ahead — the day if it's morning, tomorrow if it's evening. That one matters most.
 
 Respond with valid JSON only: { "questions": ["string", ...] }`
 
@@ -286,7 +298,8 @@ export async function generateReflectQuestions(ctx) {
   const { today, tomorrowStr, weekEndStr, gapStart, gapEnd, gapDays, weekendDays, holidayDays, gapNotes = [], gapCalendarEvents = [], recentMemories = [], projects, activeTasks, stalledProjects, overdueTasks, habits, recentNotes, calendarEvents = [], gmail = {}, upcomingBirthdays = [] } = ctx
   const lines = []
 
-  lines.push(`PLANNING FOR: ${tomorrowStr}  |  LOOKAHEAD THROUGH: ${weekEndStr}`)
+  const { label: nowLabel, partOfDay } = nowContext()
+  lines.push(`RIGHT NOW: ${nowLabel} (${partOfDay})  |  LOOKAHEAD THROUGH: ${weekEndStr}`)
   if (weekendDays.length > 0) lines.push(`WEEKEND DAYS IN GAP: ${weekendDays.join(', ')}`)
   if (holidayDays.length > 0) lines.push(`HOLIDAYS IN GAP: ${holidayDays.join(', ')}`)
   lines.push('')
@@ -374,7 +387,9 @@ export async function generateReflectQuestions(ctx) {
 
 // ─── Generate Final Plan ──────────────────────────────────────────────────────
 
-const PLAN_SYSTEM = `You are the AI sidekick inside Focus Flow. The user just finished their daily review — now you're going to take everything they said and build them a tomorrow worth showing up for, man.
+const PLAN_SYSTEM = `You are the AI sidekick inside Focus Flow. The user just finished a review — a lock-it-in checkpoint that can happen at any time of day. Your job: take everything they said and build the path forward FROM THIS EXACT MOMENT, man. If it's morning, today is the mission. If it's evening, you're setting up tomorrow. The current date and time are in your context — anchor everything to it.
+
+The plan you produce is TIMELESS FACTS — it gets read later, maybe hours later, maybe the next morning. So never say "today," "tonight," or "tomorrow" in plan content; use explicit dates and day names ("Thursday June 11"). Every agenda item carries an explicit date.
 
 Be specific. Use real names, real project titles, real tasks from the conversation. If they mentioned something matters, it goes in the plan. If they mentioned something is stuck, flag it. If their calendar is packed, don't pile on — protect the space.
 
@@ -409,7 +424,8 @@ export async function generateReflectPlan(ctx, conversation, scratchpadNote) {
   const { today, tomorrowStr, weekEndStr, projects, activeTasks, stalledProjects, recentNotes, recentMemories = [], calendarEvents = [], gmail = {}, upcomingBirthdays = [] } = ctx
   const lines = []
 
-  lines.push(`TODAY: ${today}  |  PLANNING FOR: ${tomorrowStr}  |  LOOKAHEAD THROUGH: ${weekEndStr}`)
+  const { label: nowLabel, partOfDay } = nowContext()
+  lines.push(`RIGHT NOW: ${nowLabel} (${partOfDay})  |  LOOKAHEAD THROUGH: ${weekEndStr}`)
   lines.push('')
   lines.push('ACTIVE PROJECTS (id | status | title):')
   projects.slice(0, 8).forEach(p => lines.push(`- [id:${p.id}] [${p.status}] ${p.title}${p.end_date ? ` (runs through ${p.end_date})` : ''}`))
@@ -489,7 +505,7 @@ export async function generateReflectPlan(ctx, conversation, scratchpadNote) {
   lines.push(`Respond with this JSON:
 {
   "top_of_mind": ["string", "string", "string"],
-  "agenda": [{ "time": "9:00 AM", "title": "string", "notes": "string or null" }],
+  "agenda": [{ "date": "YYYY-MM-DD", "time": "9:00 AM", "title": "string", "notes": "string or null" }],
   "challenge": { "topic": "python|ai|llm|general", "difficulty": "beginner|intermediate|advanced", "prompt": "string", "hint": "string" },
   "quote": { "text": "string", "author": "string" },
   "suggestions": [{
@@ -499,8 +515,8 @@ export async function generateReflectPlan(ctx, conversation, scratchpadNote) {
   }]
 }
 Rules:
-- top_of_mind: 3-5 items, use actual names from their data and interview answers; if a birthday is tomorrow or the next day, it belongs here
-- agenda: 3-8 time blocks for TOMORROW based on what they said matters
+- top_of_mind: 3-5 items, use actual names from their data and interview answers. TIMELESS phrasing — explicit dates and day names, never "today"/"tomorrow". If a birthday falls within the next 2 days, it belongs here.
+- agenda: 3-8 time blocks covering the immediate path forward from RIGHT NOW — if it's morning, the rest of today is the focus; if it's evening, set up the next day. Every item carries an explicit "date" (YYYY-MM-DD). Only include time blocks that haven't already passed.
 - suggestions: 2-6 items; for anything the user mentioned changing (a task status, an email to delete, a calendar event to add), include an action object with the relevant IDs from the context above; omit "action" for informational/reminder suggestions
 - include a reminder suggestion for any upcoming birthday within 3 days`)
 
@@ -553,51 +569,46 @@ export async function summarizeReviewConversation(conversation, reviewDate) {
 
 // ─── Write Results to DB ──────────────────────────────────────────────────────
 
-export async function writeReflectResults(reviewId, result, conversation = [], reviewDate = null, targetDate = null) {
-  let tomorrowStr
-  if (targetDate) {
-    tomorrowStr = targetDate
-  } else {
-    const tomorrow = new Date(new Date().toLocaleDateString('en-CA') + 'T12:00:00')
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    tomorrowStr = tomorrow.toLocaleDateString('en-CA')
-  }
+export async function writeReflectResults(reviewId, result, conversation = []) {
+  const { todayStr } = nowContext()
+  const tomorrow = new Date(todayStr + 'T12:00:00')
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  const tomorrowStr = tomorrow.toLocaleDateString('en-CA')
 
-  const resolvedReviewDate = reviewDate ?? new Date().toLocaleDateString('en-CA')
-  const tomorrowNote = await ensureNoteForDate(tomorrowStr)
+  // Challenge + quote land on today's note if today's slots are still empty
+  // (morning review), otherwise tomorrow's (evening review).
+  const todayNote = await ensureNoteForDate(todayStr)
+  const challengeTarget = todayNote.code_challenge ? null : todayNote
+  const quoteTarget     = todayNote.quote          ? null : todayNote
+  const tomorrowNote = (!challengeTarget || !quoteTarget) ? await ensureNoteForDate(tomorrowStr) : null
 
-  // daily_notes keeps only what it still owns: code challenge + quote.
-  // The plan (top_of_mind, agenda) and brief live on the review row.
   const [summary] = await Promise.all([
-    summarizeReviewConversation(conversation, resolvedReviewDate),
-    result.challenge   && updateChallenge(tomorrowNote.id, result.challenge),
-    result.quote?.text && updateQuote(tomorrowNote.id, result.quote.text, result.quote.author),
+    summarizeReviewConversation(conversation, todayStr),
+    result.challenge   && updateChallenge((challengeTarget ?? tomorrowNote).id, result.challenge),
+    result.quote?.text && updateQuote((quoteTarget ?? tomorrowNote).id, result.quote.text, result.quote.author),
   ])
 
   const suggestions = [
     ...(result.suggestions ?? []).map(s => ({ ...s, id: crypto.randomUUID(), status: 'pending' })),
     result.quote && {
       type: 'insight',
-      content: `Quote for tomorrow: "${result.quote.text}" — ${result.quote.author}`,
+      content: `Quote: "${result.quote.text}" — ${result.quote.author}`,
       id: crypto.randomUUID(),
       status: 'pending',
     },
   ].filter(Boolean)
 
-  const content = { conversation, plan: result, target_date: tomorrowStr }
+  // The review row holds the current picture: { conversation, plan, completed_at }.
+  // No target_date — the plan is live the moment the review wraps, superseded by
+  // the next review. The Daily Brief is generated lazily at read time (Daily page).
   if (reviewId) {
-    await updateReviewContent(reviewId, content)
+    await updateReviewContent(reviewId, { conversation, plan: result, completed_at: new Date().toISOString() })
     await updateSuggestions(reviewId, suggestions)
     if (summary) updateReviewSummary(reviewId, summary).catch(() => {})  // fire-and-forget, non-blocking
-
-    // Generate tomorrow's Daily Brief and attach it to the review. Non-blocking.
-    generateDailyBrief(tomorrowStr, false, result.top_of_mind ?? [])
-      .then(brief => updateReviewContent(reviewId, { ...content, brief }))
-      .catch(() => {})
   }
 
   // Housekeeping — delete done tasks older than 30 days. Non-blocking.
   cleanupExpiredDoneTasks().catch(() => {})
 
-  return { tomorrowStr, suggestions, result }
+  return { suggestions, result }
 }

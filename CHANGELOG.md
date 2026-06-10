@@ -4,6 +4,26 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-10 (continued again) — "Current Picture" review system
+
+### Changed
+- **Reviews are no longer end-of-day rituals.** A "daily" review is daily in cadence, not timing — run it morning, mid-day, evening, multiple times. The latest completed review is always "the current picture," live the moment it wraps.
+- **All review AI prompts are time-of-day aware** — new `nowContext()` injects the actual date/time (morning/afternoon/evening) into the opening, conversation, questions, and plan prompts. A 7 AM review says "start the day strong," not "get some sleep."
+- **Plans are timeless facts** — plan content uses explicit dates ("Thursday June 11"), never "today"/"tomorrow"; agenda items carry a `date` field. Morning review plans the rest of today; evening sets up tomorrow.
+- **Daily Brief is generated at read time** — no brief is created at wrap-up. The Daily page lazily generates it on view (today only) and caches it in `daily_notes.daily_brief` with a `generated_at` stamp. Regenerates when: missing, from a previous day, or superseded by a newer review. The greeting always matches the moment it's actually read. Past dates keep their archived briefs.
+- **Brief generator knows the plan** — `generateDailyBrief` receives the latest review and how long ago it was locked in.
+- Challenge + quote land on today's note if today's slots are empty (morning review), else tomorrow's (evening review).
+- Review calendar context now starts from today (a morning review needs today's remaining events).
+- Done screen now points at today's Daily page ("Go to Daily") instead of tomorrow.
+
+### Added
+- `reviews.completed_at` column (migration) + `getLatestCompletedReview()` — precise "latest wins" ordering.
+
+### Removed
+- `target_date` concept and `getReviewForTargetDate()` (added earlier today, superseded by the current-picture model).
+
+---
+
 ## 2026-06-10 (continued)
 
 ### Changed

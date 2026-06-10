@@ -90,7 +90,10 @@ async function buildBriefContext(date) {
 
 // ─── Generator ────────────────────────────────────────────────────────────────
 
-export async function generateDailyBrief(date, isRefresh = false, extraTopOfMind = []) {
+// `review` is the latest completed review (the current picture). The brief is
+// generated at READ time — the time-of-day context below is the reader's moment,
+// so the greeting is always right for when it's actually being seen.
+export async function generateDailyBrief(date, isRefresh = false, review = null) {
   const { note, tasks, projects, calEvents, upcomingBirthdays, today } = await buildBriefContext(date)
 
   const now = new Date()
@@ -102,10 +105,30 @@ export async function generateDailyBrief(date, isRefresh = false, extraTopOfMind
   lines.push(isRefresh ? 'MODE: Mid-day refresh — acknowledge where they are in the day.' : 'MODE: Morning brief — set the tone for the whole day.')
   lines.push('')
 
-  const topOfMind = [...(note?.top_of_mind ?? []), ...extraTopOfMind]
-  if (topOfMind.length > 0) {
-    lines.push("USER'S TOP OF MIND (from manual entry and their review — incorporate these into your top_of_mind bullets):")
-    topOfMind.forEach(item => lines.push(`- ${item}`))
+  const plan = review?.content?.plan
+  if (plan) {
+    const completedAt = review.completed_at ?? review.content?.completed_at
+    let when = ''
+    if (completedAt) {
+      const hoursAgo = Math.max(1, Math.round((Date.now() - new Date(completedAt).getTime()) / 3600000))
+      const completedDay = new Date(completedAt).toLocaleDateString('en-CA')
+      when = completedDay === today ? `about ${hoursAgo}h ago (today)` : `on ${completedDay}`
+    }
+    lines.push(`CURRENT PLAN — locked in at their last review${when ? `, completed ${when}` : ''}. This is the operating picture; the brief should be built on it:`)
+    if (plan.top_of_mind?.length > 0) {
+      lines.push('Plan top of mind:')
+      plan.top_of_mind.forEach(item => lines.push(`- ${item}`))
+    }
+    if (plan.agenda?.length > 0) {
+      lines.push('Plan agenda (explicit dates — only surface what is still ahead from NOW):')
+      plan.agenda.forEach(a => lines.push(`- [${a.date ?? ''}] ${a.time ?? ''} ${a.title}${a.notes ? ` — ${a.notes}` : ''}`))
+    }
+    lines.push('')
+  }
+
+  if (note?.top_of_mind?.length > 0) {
+    lines.push("USER'S TOP OF MIND (manually entered — incorporate these into your top_of_mind bullets):")
+    note.top_of_mind.forEach(item => lines.push(`- ${item}`))
     lines.push('')
   }
 
@@ -183,5 +206,6 @@ export async function generateDailyBrief(date, isRefresh = false, extraTopOfMind
 
   const raw = await callAI(messages, { temperature: 0.8 })
   const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
-  return JSON.parse(cleaned)
+  // generated_at drives staleness: regenerate on day rollover or when a newer review lands
+  return { ...JSON.parse(cleaned), generated_at: new Date().toISOString() }
 }

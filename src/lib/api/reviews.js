@@ -27,16 +27,15 @@ export async function getReviewByDate(type, date) {
   return data
 }
 
-// Latest completed daily review whose plan targets the given date.
-// content.target_date is set at wrap-up — the review done on day N plans day N+1.
-export async function getReviewForTargetDate(date) {
+// The current picture: most recently completed review, regardless of when.
+// A review locks in the plan as of that moment; the latest one always wins.
+export async function getLatestCompletedReview(type = 'daily') {
   const { data, error } = await supabase
     .from('reviews')
     .select('*')
-    .eq('type', 'daily')
+    .eq('type', type)
     .eq('status', 'completed')
-    .contains('content', { target_date: date })
-    .order('updated_at', { ascending: false })
+    .order('completed_at', { ascending: false, nullsFirst: false })
     .limit(1)
   if (error) throw error
   return data?.[0] ?? null
@@ -89,7 +88,7 @@ export async function updateReviewContent(id, content) {
 export async function completeReview(id) {
   const { data, error } = await supabase
     .from('reviews')
-    .update({ status: 'completed', updated_at: new Date().toISOString() })
+    .update({ status: 'completed', completed_at: new Date().toISOString(), updated_at: new Date().toISOString() })
     .eq('id', id)
     .select()
     .single()

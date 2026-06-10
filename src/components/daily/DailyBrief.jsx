@@ -62,7 +62,7 @@ function WeatherWidget() {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function DailyBrief({ brief, topOfMind = [], noteId, onRefresh, onSaveTopOfMind }) {
+export default function DailyBrief({ brief, generating = false, topOfMind = [], noteId, onRefresh, onSaveTopOfMind }) {
   const [loading,    setLoading]    = useState(false)
   const [editingTom, setEditingTom] = useState(false)
   const [tomDraft,   setTomDraft]   = useState(topOfMind)
@@ -154,7 +154,13 @@ export default function DailyBrief({ brief, topOfMind = [], noteId, onRefresh, o
         className="rounded-xl border overflow-hidden"
         style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
       >
-        {!brief ? (
+        {generating && !brief ? (
+          <div className="px-4 py-6 text-center">
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+              ⏳ Putting your brief together, man — one sec…
+            </p>
+          </div>
+        ) : !brief ? (
           <div className="px-4 py-6 text-center space-y-3">
             <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
               No brief yet — run your Daily Review to generate one, or hit Refresh to generate one now.
