@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom'
-import { Pencil, RotateCcw, Loader2, Check, CheckCheck, Zap, CalendarDays, Folder, Clock, Trash2, AlertCircle, X, ListPlus, Play } from 'lucide-react'
+import { Pencil, RotateCcw, Loader2, Check, CheckCheck, Zap, CalendarDays, Folder, Clock, Trash2, AlertCircle, X, ListPlus, Play, Download } from 'lucide-react'
 import { ensureReview, updateReviewContent, completeReview, updateSuggestions } from '../lib/api/reviews'
 import { buildReflectContext, generateReflectQuestions, generateConversationalResponse, generateReflectPlan, writeReflectResults } from '../lib/ai/skills/reflectReview'
 import { useAIConfig } from '../hooks/useAI'
@@ -1337,6 +1337,38 @@ export default function Reviews() {
     setTimeout(() => aiReviewRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150)
   }, [saveContent])
 
+  const handleDownload = useCallback(async () => {
+    if (!review) return
+
+    // Fetch the daily note that was written as the plan
+    const { data: plannedNote } = await supabase
+      .from('daily_notes')
+      .select('top_of_mind, agenda, code_challenge, quote, quote_author')
+      .eq('date', targetDate)
+      .maybeSingle()
+
+    const exportData = {
+      meta: {
+        exported_at: new Date().toISOString(),
+        review_date: review.date,
+        review_type: review.type,
+        review_status: review.status,
+        plan_date: targetDate,
+      },
+      conversation: review.content?.conversation ?? [],
+      suggestions: review.suggestions ?? [],
+      plan_written: plannedNote ?? null,
+    }
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = url
+    a.download = `focus-flow-review-${review.date}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }, [review, targetDate])
+
   const resetReview = useCallback(async () => {
     if (!reviewRef.current?.id || resetting) return
     setResetting(true)
@@ -1420,6 +1452,18 @@ export default function Reviews() {
       <div className="flex items-center justify-between px-6 py-4 border-b shrink-0" style={{ borderColor: 'var(--border)' }}>
         <h1 className="text-xl font-semibold" style={S.text}>Reviews</h1>
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleDownload}
+            disabled={!review || loading}
+            title="Download review as JSON"
+            className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-colors"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', backgroundColor: 'transparent', opacity: (!review || loading) ? 0.4 : 1 }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
+          >
+            <Download size={12} />
+            Export
+          </button>
           <button
             onClick={resetReview}
             disabled={resetting || loading}
