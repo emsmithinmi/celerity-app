@@ -236,7 +236,7 @@ Contexts mounted at App root (outside BrowserRouter):
 - **People** — tabbed by status, click row → `/people/:id`
 - **PersonPage** — avatar, Identity, Contact Details, Addresses, Social Media, Notes; tasks, projects, **Notes** (was Comments), What's Next
 - **Habits** — calendar heatmap, streaks, % bars. Includes Code Challenge habit (💻) auto-marked when challenge submitted.
-- **Reviews** — Daily/Weekly/Monthly, autosave, suggestion cards. Daily Review has "Generate with AI" button.
+- **Reviews** — Two-step flow: Step 1 "Get Current" (email feed + calendar strip + Projects/Tasks/People tabs with inline actions), Step 2 "Make a Plan" (free-form AI chat, inline tool use, "Wrap it up" writes summary to DB and navigates to tomorrow). Multiple reviews per day allowed. Weekly/Monthly show a "coming soon" placeholder.
 - **Settings** — Appearance (theme switcher: Catppuccin / GitHub Dark), Energy Levels, Priorities, Areas, AI Assistant config.
 
 ## AI Layer — Current State
@@ -250,21 +250,24 @@ Contexts mounted at App root (outside BrowserRouter):
   - **Challenge progression:** only generates a new challenge when the previous one has `completed: true`; includes the user's answer + AI critique (`ai_feedback`) in the next challenge
   - **Code challenge topics:** python, javascript, ai, llm, algorithms, data_structures, bash, general_cs — always a concrete technical exercise, never a reflective prompt
 - **Reflect Review skill** (`src/lib/ai/skills/reflectReview.js`):
-  - Conversational interview: generates 4-5 personalized questions, runs multi-turn chat, then produces a plan
-  - **Interview focus:** open loops and uncaptured commitments — NOT next action status audits. Next actions already queued are excluded from question context; only overdue tasks surface.
-  - Generates: top_of_mind[], agenda, challenge, quote, suggestions[] (with optional machine-executable action objects)
-  - Writes: tomorrow's daily_notes, today's review suggestions, persistent memory summary (stored in reviews.summary as JSON)
+  - Powers the Step 2 chat. `generateReviewOpening(ctx)` creates a personalized opening message. `generateConversationalResponse(conv, topics, dateCtx, freeform)` handles chat turns — pass `freeform=true` to disable auto-wrap-up. `generateReflectPlan()` + `writeReflectResults()` called on "Wrap it up".
   - Tools: mid-conversation tool use via `callAIWithTools` — create_task, update_task, update_project, archive_email, calendar operations
+  - Writes: review summary + top_of_mind to `reviews` table (NOT to daily_notes — that write path is legacy and may be cleaned up later)
 - **Edge Function:** `supabase/functions/ai-proxy/index.ts` — deployed to Supabase, handles CORS, proxies to provider.
 - **Multi-account Google:** `supabase/functions/google-connect` handles secondary OAuth flow. `google-calendar` and `gmail-context` edge functions fetch from ALL connected accounts in parallel via `user_integrations` table.
+- **gmail-context** returns `{ actionThreads, waitingThreads, recentUnread }` — each thread has `{ id, subject, sender, snippet, date, age_days, starred }`. `starred: true` = work email (auto-forwarded from work address via Gmail filter). AI context and email feed UI both use this to flag work emails appropriately.
 
-## Next Session — Color Theme System
-The theme switcher (Catppuccin / GitHub Dark) currently only re-themes the sidebar chrome. The rest of the app uses hardcoded hex values. Next focus:
-- Extend CSS variable coverage to page content, modals, forms, cards, badges
-- Potentially add more themes
-- Consider a theme preview in Settings → Appearance
+## Next Session — Review System Follow-ups
 
-**Note:** Style continuity pass (2026-06-08) unified tabs, buttons, empty states, and overlays — but this full theme extension is still pending.
+The two-step Review redesign shipped (2026-06-09). A few follow-up items to pick up next time:
+
+1. **Daily page — read top_of_mind + summary from latest review** — `DailyBrief` currently reads from `daily_notes.daily_brief` (AI-generated JSON). Next step: read from `reviews.content.plan` or `reviews.summary` from the most recent completed review instead. `daily_notes` stays for habits, user notes, and code challenge — but the AI-generated brief content should come from the review going forward.
+
+2. **writeReflectResults still writes to daily_notes** — the `writeReflectResults()` function in reflectReview.js writes top_of_mind/agenda/challenge/quote to tomorrow's daily_notes. This is the legacy path. Once the Daily page reads from the review directly, this write can be removed or kept for backwards compat.
+
+3. **Weekly/Monthly reviews** — currently show "coming soon." Needs design + implementation.
+
+4. **Color theme system** — theme switcher (Catppuccin / GitHub Dark) only re-themes sidebar chrome. Rest of app uses hardcoded hex values. Extend CSS variable coverage to page content, modals, forms, cards, badges.
 
 ## Project Rename — Completed (2026-05-29)
 The project was officially renamed to **Focus Flow**. All references updated:
