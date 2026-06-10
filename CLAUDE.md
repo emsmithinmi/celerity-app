@@ -279,8 +279,12 @@ Core principle: a "daily" review is daily in *cadence*, not end-of-day. It can r
 
 Other notes:
 - **Start Review landing screen:** Reviews page data hooks only fire after the Start click — fresh data every review.
+- **Resume:** the landing screen offers "↩ Resume the review you started at H:MM" when today has a draft review with ≥2 conversation messages (`getResumableReview`). Resuming passes `initialConversation` to MakePlanStep, which skips opening generation but still rebuilds context.
+- **"open →" links** in Step 1 open tasks/projects/people in a new tab so the review session survives.
+- **Prose-tolerant chat parser:** the AI sometimes answers chat turns in plain prose instead of the `{ message, ready }` JSON envelope (especially after tool use). Parser falls back: JSON → embedded JSON → prose-as-message. Never surface a parse error for a good response.
 - Done screen navigates to today's Daily page ("the fresh picture"), not tomorrow.
 - Unused legacy `dailyReview.js` skill deleted 2026-06-10.
+- **PWA update race:** right after a deploy, an open tab can briefly blank while the service worker swaps versions — a refresh fixes it. Not a code bug.
 
 Remaining follow-up: **Color theme system** — theme switcher (Catppuccin / GitHub Dark) only re-themes sidebar chrome. Rest of app uses hardcoded hex values. Extend CSS variable coverage to page content, modals, forms, cards, badges.
 

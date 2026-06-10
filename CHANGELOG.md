@@ -4,6 +4,16 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-10 (session close)
+
+### Removed
+- Stale `TASKS.md` at repo root — belonged to another project, committed by accident.
+
+### Notes
+- Blank-screen report right after the evening deploy was the PWA service-worker version swap, not a code bug — refresh resolved it. Production verified healthy on Daily + Reviews.
+
+---
+
 ## 2026-06-10 (evening — Jam fixes)
 
 ### Fixed
