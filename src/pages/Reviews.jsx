@@ -1367,7 +1367,16 @@ export default function Reviews() {
       activeType === 'daily'
         ? supabase.from('reviews').select('date').eq('type', 'daily').eq('status', 'completed').lt('date', today).order('date', { ascending: false }).limit(1).maybeSingle()
         : Promise.resolve({ data: null }),
-    ]).then(([r, noteRes, lastReviewRes]) => {
+    ]).then(async ([r, noteRes, lastReviewRes]) => {
+      // If the loaded review is already completed, auto-reset so the user
+      // starts fresh without having to manually hit Reset.
+      if (r.status === 'completed') {
+        await supabase.from('reviews')
+          .update({ content: {}, status: 'draft', suggestions: [] })
+          .eq('id', r.id)
+        r = { ...r, status: 'draft', content: {}, suggestions: [] }
+      }
+
       reviewRef.current = r
       const content = r.content ?? {}
       contentRef.current = content
