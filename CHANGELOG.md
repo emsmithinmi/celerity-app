@@ -4,6 +4,16 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-10 (evening — Jam fixes)
+
+### Fixed
+- **"Something went sideways" mid-review chat** — the AI sometimes answers in plain prose instead of the JSON envelope (especially after tool use); the parser crashed on it and showed an error even though the response was fine. Parser now falls back: try JSON → extract embedded JSON → use the prose as the message. Same hardening on the opening message.
+- **Leaving a review lost the session** — Reviews landing screen now detects today's draft review with a conversation in progress and offers "Resume the review you started at H:MM". Resuming restores the full conversation and rebuilds AI context without generating a new opening.
+- **"open →" links inside a review** (tasks/projects/people in Step 1) now open in a new tab so the review keeps running.
+- **Dev-only: chat stuck on "thinking…"** — React StrictMode's simulated remount left `mountedRef` permanently false, so async results were discarded. Ref now resets on mount.
+
+---
+
 ## 2026-06-10 (continued again) — "Current Picture" review system
 
 ### Changed

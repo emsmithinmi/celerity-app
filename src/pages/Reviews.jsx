@@ -5,7 +5,7 @@ import {
   X, ListPlus, Play, Send, Loader2, RotateCcw, ChevronDown, ChevronUp,
   Briefcase, Star,
 } from 'lucide-react'
-import { createReview, updateReviewContent, completeReview } from '../lib/api/reviews'
+import { createReview, updateReviewContent, completeReview, getResumableReview } from '../lib/api/reviews'
 import {
   buildReflectContext, generateReviewOpening, generateConversationalResponse,
   generateReflectPlan, writeReflectResults,
@@ -119,7 +119,7 @@ function ReviewTaskRow({ task }) {
         <span className="flex-1 text-sm font-medium truncate" style={S.text}>{task.title}</span>
         {task.due_date && <span className="text-xs shrink-0" style={S.yellow}>{task.due_date}</span>}
         <span className="text-xs shrink-0 px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--border)', ...S.muted }}>{status}</span>
-        <Link to={`/tasks/${task.id}`} className="text-xs shrink-0 hover:underline" style={S.muted}>open →</Link>
+        <Link to={`/tasks/${task.id}`} target="_blank" rel="noopener" className="text-xs shrink-0 hover:underline" style={S.muted}>open →</Link>
       </div>
 
       {/* Inline prompts */}
@@ -305,7 +305,7 @@ function ReviewProjectRow({ project }) {
         <span className="flex-1 text-sm font-medium truncate" style={S.text}>{project.title}</span>
         {project.end_date && <span className="text-xs shrink-0" style={S.muted}>through {project.end_date}</span>}
         <span className="text-xs shrink-0 px-1.5 py-0.5 rounded" style={{ backgroundColor: 'var(--border)', ...S.muted }}>{PROJECT_STATUS_LABELS[s] ?? s}</span>
-        <Link to={`/projects/${project.id}`} className="text-xs shrink-0 hover:underline" style={S.muted}>open →</Link>
+        <Link to={`/projects/${project.id}`} target="_blank" rel="noopener" className="text-xs shrink-0 hover:underline" style={S.muted}>open →</Link>
       </div>
       <div className="px-3 pb-2.5 flex flex-wrap gap-1">
         {(s === 'inbox' || s === 'planning') && (
@@ -368,7 +368,7 @@ function ReviewPersonRow({ person, onFollowUp }) {
     <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg border mb-1.5" style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)' }}>
       <span className="flex-1 text-sm font-medium truncate" style={S.text}>{name}</span>
       {person.relationship && <span className="text-xs shrink-0" style={S.muted}>{person.relationship}</span>}
-      <Link to={`/people/${person.id}`} className="text-xs shrink-0 hover:underline" style={S.muted}>open →</Link>
+      <Link to={`/people/${person.id}`} target="_blank" rel="noopener" className="text-xs shrink-0 hover:underline" style={S.muted}>open →</Link>
       <div className="flex gap-1 shrink-0">
         <ActionBtn variant="secondary" title="Create follow-up task"
           onClick={() => { onFollowUp(person); setResolved(true); setResolvedLabel('Follow-up') }}>
@@ -723,9 +723,9 @@ function ChatBubble({ message }) {
 
 // ─── Step 2: Make a Plan ──────────────────────────────────────────────────────
 
-function MakePlanStep({ reviewId, onSaveConversation, onComplete }) {
+function MakePlanStep({ reviewId, initialConversation, onSaveConversation, onComplete }) {
   const { configured: aiConfigured, config } = useAIConfig()
-  const [conversation, setConversation] = useState([])
+  const [conversation, setConversation] = useState(initialConversation ?? [])
   const [input,        setInput]        = useState('')
   const [thinking,     setThinking]     = useState(false)
   const [wrapping,     setWrapping]     = useState(false)
@@ -733,7 +733,10 @@ function MakePlanStep({ reviewId, onSaveConversation, onComplete }) {
   const mountedRef = useRef(true)
   const scrollRef  = useRef(null)
 
-  useEffect(() => () => { mountedRef.current = false }, [])
+  useEffect(() => {
+    mountedRef.current = true // StrictMode remounts: reset after simulated unmount
+    return () => { mountedRef.current = false }
+  }, [])
 
   // Scroll to bottom when conversation updates
   useEffect(() => {
@@ -750,6 +753,11 @@ function MakePlanStep({ reviewId, onSaveConversation, onComplete }) {
       .then(async (context) => {
         if (cancelled || !mountedRef.current) return
         setCtx(context)
+        if (initialConversation?.length) {
+          // Resuming a saved session — conversation already on screen, no new opening
+          setThinking(false)
+          return
+        }
         const openingMsg = await generateReviewOpening(context)
         if (cancelled || !mountedRef.current) return
         const opening = { role: 'ai', content: openingMsg }
@@ -759,8 +767,10 @@ function MakePlanStep({ reviewId, onSaveConversation, onComplete }) {
       })
       .catch(() => {
         if (!mountedRef.current) return
-        const fallback = { role: 'ai', content: "Hey man, I've loaded everything up. What's on your mind?" }
-        setConversation([fallback])
+        if (!initialConversation?.length) {
+          const fallback = { role: 'ai', content: "Hey man, I've loaded everything up. What's on your mind?" }
+          setConversation([fallback])
+        }
         setThinking(false)
       })
 
@@ -891,8 +901,22 @@ export default function Reviews() {
   const [review,   setReview]   = useState(null)
   const [done,     setDone]     = useState(false)
   const [starting, setStarting] = useState(false)
+  const [resumable, setResumable] = useState(null)
 
   const today = new Date().toLocaleDateString('en-CA')
+
+  // Landing screen: check for a review-in-progress so leaving the page doesn't lose it
+  useEffect(() => {
+    if (started || done || activeType !== 'daily') return
+    getResumableReview('daily', today).then(setResumable).catch(() => {})
+  }, [started, done, activeType, today])
+
+  const handleResume = () => {
+    if (!resumable) return
+    setReview(resumable)
+    setStarted(true)
+    setStep(2)
+  }
 
   const handleReady = async () => {
     if (starting) return
@@ -993,6 +1017,12 @@ export default function Reviews() {
             <Button variant="primary" onClick={() => setStarted(true)} style={{ padding: '0.625rem 3rem', fontSize: '1rem' }}>
               Start Review
             </Button>
+            {resumable && (
+              <Button variant="secondary" onClick={handleResume}>
+                ↩ Resume the review you started at{' '}
+                {new Date(resumable.updated_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+              </Button>
+            )}
           </div>
         ) : step === 1 ? (
           <div className="max-w-2xl mx-auto">
@@ -1032,6 +1062,7 @@ export default function Reviews() {
             <div className="flex-1 min-h-0">
               <MakePlanStep
                 reviewId={review?.id}
+                initialConversation={review?.content?.conversation}
                 onSaveConversation={handleSaveConversation}
                 onComplete={handleComplete}
               />

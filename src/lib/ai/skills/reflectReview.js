@@ -194,8 +194,11 @@ Respond with JSON: { "message": "string" }`
   ]
   const raw = await callAI(messages, { temperature: 0.75 })
   const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
-  const parsed = JSON.parse(cleaned)
-  return String(parsed.message)
+  try {
+    return String(JSON.parse(cleaned).message)
+  } catch {
+    return cleaned // plain-prose response — use it as-is
+  }
 }
 
 // ─── Conversational Interview Turn ───────────────────────────────────────────
@@ -260,7 +263,14 @@ export async function generateConversationalResponse(conversation, remainingTopi
 
   const { text, created } = await callAIWithTools(messages, INTERVIEW_TOOLS, INTERVIEW_EXECUTORS, { temperature: 0.75 })
   const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
-  const parsed = JSON.parse(cleaned)
+  // The model sometimes answers in plain prose instead of the JSON envelope
+  // (especially after tool use). The prose IS the message — never crash on it.
+  let parsed = null
+  try { parsed = JSON.parse(cleaned) } catch {
+    const embedded = cleaned.match(/\{[\s\S]*\}/)
+    if (embedded) { try { parsed = JSON.parse(embedded[0]) } catch { /* fall through */ } }
+  }
+  if (!parsed || typeof parsed.message !== 'string') parsed = { message: cleaned, ready: false }
   return { message: String(parsed.message), ready: parsed.ready === true, created: created ?? [] }
 }
 

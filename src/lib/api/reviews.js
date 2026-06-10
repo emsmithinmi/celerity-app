@@ -41,6 +41,23 @@ export async function getLatestCompletedReview(type = 'daily') {
   return data?.[0] ?? null
 }
 
+// Most recent draft review for `date` with a real conversation in progress —
+// offered as a resume option on the landing screen so leaving mid-review
+// (e.g. to open a task) doesn't lose the session.
+export async function getResumableReview(type, date) {
+  const { data, error } = await supabase
+    .from('reviews')
+    .select('*')
+    .eq('type', type)
+    .eq('date', date)
+    .eq('status', 'draft')
+    .order('updated_at', { ascending: false })
+    .limit(5)
+  if (error) throw error
+  // Needs at least opening + one user message to be worth resuming
+  return (data ?? []).find(r => (r.content?.conversation?.length ?? 0) >= 2) ?? null
+}
+
 // ─── Create / Ensure ──────────────────────────────────────────────────────────
 
 export async function createReview(type, date) {
