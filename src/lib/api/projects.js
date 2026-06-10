@@ -1,5 +1,6 @@
 import { supabase } from '../supabase'
 import { addTaskComment } from './tasks'
+import { eventBus } from '../eventBus'
 
 // ─── Fetch ────────────────────────────────────────────────────────────────────
 
@@ -62,6 +63,7 @@ export async function createProject({ title }) {
     .select()
     .single()
   if (error) throw error
+  eventBus.emit('projects:changed')
   return data
 }
 
@@ -75,6 +77,7 @@ export async function updateProject(id, updates) {
     .select()
     .single()
   if (error) throw error
+  eventBus.emit('projects:changed')
   return data
 }
 
@@ -153,6 +156,7 @@ export async function scrapeProject(id) {
   // 7. Delete the project
   const { error } = await supabase.from('projects').delete().eq('id', id)
   if (error) throw error
+  eventBus.emit('projects:changed')
 }
 
 export async function highlightProject(id, highlightNote) {

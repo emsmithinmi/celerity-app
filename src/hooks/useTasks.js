@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getTasks, createTask } from '../lib/api/tasks'
+import { eventBus } from '../lib/eventBus'
 
 export function useTasks(filters = {}) {
   const [tasks, setTasks]   = useState([])
@@ -23,6 +24,8 @@ export function useTasks(filters = {}) {
   }, [filterKey])
 
   useEffect(() => { load() }, [load])
+
+  useEffect(() => eventBus.on('tasks:changed', load), [load])
 
   const handleCreate = async (title) => {
     const task = await createTask({ title })

@@ -1,4 +1,5 @@
 import { supabase } from '../supabase'
+import { eventBus } from '../eventBus'
 
 // ─── Fetch ────────────────────────────────────────────────────────────────────
 
@@ -63,6 +64,7 @@ export async function createPerson({ first_name, last_name, ...rest }) {
     .select()
     .single()
   if (error) throw error
+  eventBus.emit('people:changed')
   return data
 }
 
@@ -78,6 +80,7 @@ export async function updatePerson(id, updates) {
     .select()
     .single()
   if (error) throw error
+  eventBus.emit('people:changed')
   return data
 }
 

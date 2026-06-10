@@ -1,30 +1,69 @@
-import { useState } from 'react'
-import { RefreshCw } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { RefreshCw, Cloud, Sun, CloudRain, CloudSnow, Wind } from 'lucide-react'
 import Button from '../ui/Button'
 import { PencilBtn } from '../ui'
 
-// Section with label + bullet list
-function BriefSection({ label, items }) {
-  if (!items?.length) return null
+// ─── Weather ──────────────────────────────────────────────────────────────────
+
+const WMO_CODES = {
+  0: { label: 'Clear',         Icon: Sun },
+  1: { label: 'Mostly clear',  Icon: Sun },
+  2: { label: 'Partly cloudy', Icon: Cloud },
+  3: { label: 'Overcast',      Icon: Cloud },
+  45: { label: 'Foggy',        Icon: Cloud },
+  48: { label: 'Icy fog',      Icon: Cloud },
+  51: { label: 'Light drizzle',Icon: CloudRain },
+  61: { label: 'Light rain',   Icon: CloudRain },
+  63: { label: 'Rain',         Icon: CloudRain },
+  65: { label: 'Heavy rain',   Icon: CloudRain },
+  71: { label: 'Light snow',   Icon: CloudSnow },
+  73: { label: 'Snow',         Icon: CloudSnow },
+  75: { label: 'Heavy snow',   Icon: CloudSnow },
+  80: { label: 'Rain showers', Icon: CloudRain },
+  95: { label: 'Thunderstorm', Icon: CloudRain },
+}
+
+function getWeatherInfo(code) {
+  return WMO_CODES[code] ?? { label: 'Unknown', Icon: Wind }
+}
+
+function WeatherWidget() {
+  const [weather, setWeather] = useState(null)
+
+  useEffect(() => {
+    navigator.geolocation?.getCurrentPosition(
+      ({ coords }) => {
+        const { latitude: lat, longitude: lon } = coords
+        fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode&temperature_unit=fahrenheit&timezone=auto`
+        )
+          .then(r => r.json())
+          .then(d => {
+            const temp = Math.round(d.current?.temperature_2m)
+            const code = d.current?.weathercode
+            setWeather({ temp, ...getWeatherInfo(code) })
+          })
+          .catch(() => {})
+      },
+      () => {} // silently skip if location denied
+    )
+  }, [])
+
+  if (!weather) return null
+
+  const { temp, label, Icon } = weather
   return (
-    <div>
-      <p className="text-xs font-semibold uppercase tracking-wide mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-        {label}
-      </p>
-      <ul className="space-y-1">
-        {items.map((item, i) => (
-          <li key={i} className="flex items-start gap-2 text-sm" style={{ color: 'var(--text-primary)' }}>
-            <span className="mt-0.5 shrink-0" style={{ color: 'var(--text-secondary)' }}>•</span>
-            {item}
-          </li>
-        ))}
-      </ul>
+    <div className="flex items-center gap-1.5 text-sm" style={{ color: 'var(--text-secondary)' }}>
+      <Icon size={14} />
+      <span>{temp}°F · {label}</span>
     </div>
   )
 }
 
+// ─── Component ────────────────────────────────────────────────────────────────
+
 export default function DailyBrief({ brief, topOfMind = [], noteId, onRefresh, onSaveTopOfMind }) {
-  const [loading,  setLoading]  = useState(false)
+  const [loading,    setLoading]    = useState(false)
   const [editingTom, setEditingTom] = useState(false)
   const [tomDraft,   setTomDraft]   = useState(topOfMind)
 
@@ -47,9 +86,12 @@ export default function DailyBrief({ brief, topOfMind = [], noteId, onRefresh, o
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
-          Daily Brief
-        </h3>
+        <div className="flex items-center gap-3">
+          <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
+            Daily Brief
+          </h3>
+          <WeatherWidget />
+        </div>
         <div className="flex items-center gap-2">
           <PencilBtn onClick={() => { setTomDraft([...topOfMind]); setEditingTom(true) }} title="Edit Top of Mind inputs" />
           <button
@@ -132,12 +174,20 @@ export default function DailyBrief({ brief, topOfMind = [], noteId, onRefresh, o
               </div>
             )}
 
-            {/* Three content sections */}
-            {(brief.top_of_mind?.length > 0 || brief.remember?.length > 0 || brief.to_do?.length > 0) && (
-              <div className="px-4 py-4 grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
-                <BriefSection label="🧠 Top of Mind" items={brief.top_of_mind} />
-                <BriefSection label="📌 Remember"    items={brief.remember} />
-                <BriefSection label="✅ To Do"       items={brief.to_do} />
+            {/* Top of Mind */}
+            {brief.top_of_mind?.length > 0 && (
+              <div className="px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: 'var(--text-secondary)' }}>
+                  🧠 Top of Mind
+                </p>
+                <ul className="space-y-1.5">
+                  {brief.top_of_mind.map((item, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm" style={{ color: 'var(--text-primary)' }}>
+                      <span className="mt-0.5 shrink-0" style={{ color: 'var(--text-secondary)' }}>•</span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
 

@@ -1,4 +1,5 @@
 import { supabase } from '../supabase'
+import { eventBus } from '../eventBus'
 
 // ─── Fetch ────────────────────────────────────────────────────────────────────
 
@@ -62,6 +63,7 @@ export async function createTask({ title, project_id = null, status = 'inbox', .
     .select()
     .single()
   if (error) throw error
+  eventBus.emit('tasks:changed')
   return data
 }
 
@@ -75,6 +77,7 @@ export async function updateTask(id, updates) {
     .select()
     .single()
   if (error) throw error
+  eventBus.emit('tasks:changed')
   return data
 }
 
@@ -173,6 +176,7 @@ export async function permanentDeleteTask(id) {
   // Hard delete — cascade handled by DB foreign keys
   const { error } = await supabase.from('tasks').delete().eq('id', id)
   if (error) throw error
+  eventBus.emit('tasks:changed')
 }
 
 export async function duplicateTask(id) {
@@ -218,6 +222,7 @@ export async function didIt(id) {
   // Hard delete — task was too small to be worth keeping
   const { error } = await supabase.from('tasks').delete().eq('id', id)
   if (error) throw error
+  eventBus.emit('tasks:changed')
 }
 
 // ─── Comments ─────────────────────────────────────────────────────────────────

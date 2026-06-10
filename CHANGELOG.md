@@ -6,6 +6,15 @@ All notable changes to Focus Flow are recorded here.
 
 ## 2026-06-09
 
+### Added
+- **Inbox stat card** — New first card in the Daily stat row shows total inbox items across tasks, projects, and people combined.
+- **Weather widget** — Live temperature and conditions (Open-Meteo, no API key) shown inline in the Daily Brief header. Uses browser geolocation; silently skipped if denied.
+- **Invalidation bus** — Mutations (create/update/delete) now emit events that cause hooks to refetch automatically. No more manual refresh after making changes within the same tab.
+
+### Changed
+- **Daily Brief** — Removed the Remember and To Do sections (redundant with the Daily page). Brief now shows greeting, Top of Mind bullets, and Words for the Day.
+- **Agenda deduplication** — Scheduled tasks are no longer shown as all-day items since they already appear as Focus Flow calendar events.
+
 ### Fixed
 - **AI Review interview no longer calls project end dates "deadlines"** — Added explicit rule to the interview system prompt: project end_date is a timeframe ("runs through"), not a hard deadline. Tasks have due dates; projects have timeframes.
 

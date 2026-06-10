@@ -1,4 +1,5 @@
 const CARDS = [
+  { key: 'inbox',          label: 'Inbox'           },
   { key: 'activeProjects', label: 'Projects'        },
   { key: 'activeTasks',    label: 'Tasks'            },
   { key: 'inProgress',     label: 'In Progress'     },

@@ -48,9 +48,10 @@ export default function AgendaSection({ calendarEvents = [], dueTasks = [], endi
     .filter(e => e.start < windowEnd && (!e.end || e.end > windowStart))
     .sort((a, b) => a.start - b.start)
 
+  // Exclude scheduled tasks — they already appear as Focus Flow calendar events
   const allDayItems = [
     ...calendarEvents.filter(e => e.all_day),
-    ...dueTasks.map(t => ({ summary: t.title, _subtitle: t.projects?.title ?? 'Task due today', _dim: true, _href: `/tasks/${t.id}` })),
+    ...dueTasks.filter(t => t.status !== 'scheduled').map(t => ({ summary: t.title, _subtitle: t.projects?.title ?? 'Task due today', _dim: true, _href: `/tasks/${t.id}` })),
     ...endingProjects.map(p => ({ summary: p.title, _subtitle: 'Project deadline', _dim: true, _href: `/projects/${p.id}` })),
   ]
 

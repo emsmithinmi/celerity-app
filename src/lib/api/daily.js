@@ -206,6 +206,7 @@ export async function getDailyStats(date) {
     activeProjects, activeTasks,
     inProgress, nextActions, waiting, stalled,
     dueTodayTasks,
+    inboxTasks, inboxProjects, inboxPeople,
   ] = await Promise.all([
     // All projects with active intent (planning, in_progress, waiting, stalled)
     supabase.from('projects').select('id', { count: 'exact', head: true })
@@ -238,9 +239,18 @@ export async function getDailyStats(date) {
       .or(`due_date.eq.${d},status.eq.scheduled`)
       .not('status', 'in', '("done","archived")')
       .is('archived_at', null),
+
+    // Inbox counts across all types
+    supabase.from('tasks').select('id', { count: 'exact', head: true })
+      .eq('status', 'inbox').is('archived_at', null),
+    supabase.from('projects').select('id', { count: 'exact', head: true })
+      .eq('status', 'inbox').is('archived_at', null),
+    supabase.from('people').select('id', { count: 'exact', head: true })
+      .eq('status', 'inbox'),
   ])
 
   return {
+    inbox:          (inboxTasks.count ?? 0) + (inboxProjects.count ?? 0) + (inboxPeople.count ?? 0),
     activeProjects: activeProjects.count ?? 0,
     activeTasks:    activeTasks.count    ?? 0,
     inProgress:     inProgress.count     ?? 0,

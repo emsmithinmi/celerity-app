@@ -8,6 +8,7 @@ import {
   updateNotesArray,
   updateTopOfMind,
 } from '../lib/api/daily'
+import { eventBus } from '../lib/eventBus'
 
 export function useDaily(date) {
   const [note, setNote]                 = useState(null)
@@ -41,6 +42,21 @@ export function useDaily(date) {
   }, [date])
 
   useEffect(() => { load() }, [load])
+
+  const refreshStats = useCallback(async () => {
+    const dailyStats = await getDailyStats(date)
+    setStats(dailyStats)
+  }, [date])
+
+  // Refresh stats whenever tasks, projects, or people change elsewhere in the app
+  useEffect(() => {
+    const unsub = [
+      eventBus.on('tasks:changed',    refreshStats),
+      eventBus.on('projects:changed', refreshStats),
+      eventBus.on('people:changed',   refreshStats),
+    ]
+    return () => unsub.forEach(fn => fn())
+  }, [refreshStats])
 
   const handleToggleHabit = async (habitKey, value) => {
     if (!note) return
@@ -88,11 +104,6 @@ export function useDaily(date) {
     if (!note) return
     const updated = await updateTopOfMind(note.id, items)
     setNote(updated)
-  }
-
-  const refreshStats = async () => {
-    const dailyStats = await getDailyStats(date)
-    setStats(dailyStats)
   }
 
   return {

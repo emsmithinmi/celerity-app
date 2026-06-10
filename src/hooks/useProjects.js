@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getProjects, createProject } from '../lib/api/projects'
+import { eventBus } from '../lib/eventBus'
 
 export function useProjects(filters = {}) {
   const [projects, setProjects] = useState([])
@@ -23,6 +24,8 @@ export function useProjects(filters = {}) {
   }, [filterKey])
 
   useEffect(() => { load() }, [load])
+
+  useEffect(() => eventBus.on('projects:changed', load), [load])
 
   const handleCreate = async (title) => {
     const project = await createProject({ title })
