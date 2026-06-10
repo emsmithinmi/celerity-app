@@ -10,6 +10,7 @@ import ReloadPrompt from './components/ui/ReloadPrompt'
 import Login from './pages/Login'
 import AuthCallback from './pages/AuthCallback'
 import GoogleCallback from './pages/GoogleCallback'
+import ResetPassword from './pages/ResetPassword'
 import Daily from './pages/Daily'
 import Tasks from './pages/Tasks'
 import TaskPage from './pages/TaskPage'
@@ -31,9 +32,10 @@ export default function App() {
       <AreasProvider>
         <BrowserRouter>
           <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/auth/callback"         element={<AuthCallback />} />
-            <Route path="/auth/google-callback"  element={<GoogleCallback />} />
+            <Route path="/login"                  element={<Login />} />
+            <Route path="/reset-password"         element={<ResetPassword />} />
+            <Route path="/auth/callback"          element={<AuthCallback />} />
+            <Route path="/auth/google-callback"   element={<GoogleCallback />} />
             <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route index element={<Navigate to="/daily" replace />} />
               <Route path="daily"         element={<Daily />} />

@@ -1,5 +1,7 @@
-﻿import { useState } from 'react'
+﻿import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../contexts/AuthContext'
 
 function GoogleIcon() {
   return (
@@ -13,8 +15,14 @@ function GoogleIcon() {
 }
 
 export default function Login() {
+  const { session } = useAuth()
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (session) navigate('/daily', { replace: true })
+  }, [session, navigate])
   const [googleLoading, setGoogleLoading] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState(null)

@@ -14,9 +14,12 @@ export function AuthProvider({ children }) {
     })
 
     // Listen for auth changes (magic link clicks, logouts, Google OAuth callbacks, etc.)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session)
       if (session) saveGoogleTokens(session)
+      if (event === 'PASSWORD_RECOVERY') {
+        window.location.href = '/reset-password'
+      }
     })
 
     return () => subscription.unsubscribe()

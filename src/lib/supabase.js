@@ -7,14 +7,17 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables. Check your .env file.')
 }
 
-// Dev-only: seed a saved session so the preview auto-logs in without hitting OAuth.
-// Set VITE_DEV_SESSION in .env.local (gitignored) — copy the value from
-// DevTools → Application → Local Storage → sb-egxbhglczkslnskxorlf-auth-token
-if (import.meta.env.DEV && import.meta.env.VITE_DEV_SESSION) {
-  const key = 'sb-egxbhglczkslnskxorlf-auth-token'
-  try {
-    localStorage.setItem(key, import.meta.env.VITE_DEV_SESSION)
-  } catch {}
-}
-
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+// Dev-only: auto sign-in so the preview bypasses OAuth.
+// Set VITE_DEV_EMAIL + VITE_DEV_PASSWORD in .env.local (gitignored).
+if (import.meta.env.DEV && import.meta.env.VITE_DEV_EMAIL && import.meta.env.VITE_DEV_PASSWORD) {
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (!session) {
+      supabase.auth.signInWithPassword({
+        email: import.meta.env.VITE_DEV_EMAIL,
+        password: import.meta.env.VITE_DEV_PASSWORD,
+      })
+    }
+  })
+}

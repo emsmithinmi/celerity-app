@@ -4,6 +4,22 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-10
+
+### Added
+- **ResetPassword page** — `/reset-password` route handles Supabase PASSWORD_RECOVERY flow. Shows password + confirm fields, validates, calls `updateUser`, redirects to `/daily` on success.
+- **Dev auto-login** — `supabase.js` calls `signInWithPassword` on startup (dev mode only) using `VITE_DEV_EMAIL` / `VITE_DEV_PASSWORD` from `.env.local`. No more pasting JWT tokens each session.
+
+### Fixed
+- `supabase.js` was referencing `supabase` before the `createClient` export — caused a blank screen on fresh server start. Moved export above the dev sign-in block.
+- `Login.jsx` now watches for session changes and redirects to `/daily` when a session appears — so auto-login lands correctly instead of staying stuck on the login page.
+- `AuthContext.jsx` — added `PASSWORD_RECOVERY` event handler that redirects to `/reset-password`.
+
+### Changed
+- **Reviews page** — "Start Review" landing screen added. Email feed, calendar strip, and all data hooks only fire after the user explicitly clicks "Start Review", ensuring fresh data on every review instead of showing stale data from the previous session load.
+
+---
+
 ## 2026-06-09 (continued again)
 
 ### Changed

@@ -886,6 +886,7 @@ export default function Reviews() {
   const navigate = useNavigate()
   const activeType = REVIEW_TYPES.find(r => r.key === type) ? type : 'daily'
 
+  const [started,  setStarted]  = useState(false) // false = landing, true = review in progress
   const [step,     setStep]     = useState(1)   // 1 = Get Current, 2 = Make a Plan
   const [review,   setReview]   = useState(null)
   const [done,     setDone]     = useState(false)
@@ -920,6 +921,7 @@ export default function Reviews() {
   }
 
   const handleNewReview = () => {
+    setStarted(false)
     setStep(1)
     setReview(null)
     setDone(false)
@@ -952,7 +954,7 @@ export default function Reviews() {
       <div className="flex gap-1 px-4 py-3 border-b shrink-0" style={{ borderColor: 'var(--border)' }}>
         {REVIEW_TYPES.map(rt => (
           <button key={rt.key}
-            onClick={() => { navigate(`/reviews/${rt.key}`); setStep(1); setReview(null); setDone(false) }}
+            onClick={() => { navigate(`/reviews/${rt.key}`); setStarted(false); setStep(1); setReview(null); setDone(false) }}
             className="px-4 py-2 text-sm font-medium rounded-lg transition-colors"
             style={{ backgroundColor: activeType === rt.key ? 'var(--border)' : 'transparent', color: activeType === rt.key ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
             {rt.label}
@@ -979,6 +981,19 @@ export default function Reviews() {
               <Button variant="primary" onClick={() => navigate(`/daily?date=${tomorrow}`)}>Go to Tomorrow →</Button>
               <Button variant="secondary" onClick={handleNewReview}>Run Another Review</Button>
             </div>
+          </div>
+        ) : !started ? (
+          <div className="flex flex-col items-center justify-center h-full gap-6 px-6 text-center py-24">
+            <p className="text-5xl">🔍</p>
+            <div>
+              <h2 className="text-2xl font-semibold mb-2" style={S.text}>Ready for your review?</h2>
+              <p className="text-sm max-w-sm mx-auto" style={S.muted}>
+                Clicking Start pulls a fresh snapshot of your email, calendar, and system — right now, not from whenever you last opened this page.
+              </p>
+            </div>
+            <Button variant="primary" onClick={() => setStarted(true)} style={{ padding: '0.625rem 3rem', fontSize: '1rem' }}>
+              Start Review
+            </Button>
           </div>
         ) : step === 1 ? (
           <div className="max-w-2xl mx-auto">
