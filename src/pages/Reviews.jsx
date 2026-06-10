@@ -1399,16 +1399,7 @@ export default function Reviews() {
       activeType === 'daily'
         ? supabase.from('reviews').select('date').eq('type', 'daily').eq('status', 'completed').lt('date', today).order('date', { ascending: false }).limit(1).maybeSingle()
         : Promise.resolve({ data: null }),
-    ]).then(async ([r, noteRes, lastReviewRes]) => {
-      // If the loaded review is already completed, auto-reset so the user
-      // starts fresh without having to manually hit Reset.
-      if (r.status === 'completed') {
-        await supabase.from('reviews')
-          .update({ content: {}, status: 'draft', suggestions: [] })
-          .eq('id', r.id)
-        r = { ...r, status: 'draft', content: {}, suggestions: [] }
-      }
-
+    ]).then(([r, noteRes, lastReviewRes]) => {
       reviewRef.current = r
       const content = r.content ?? {}
       contentRef.current = content
@@ -1521,6 +1512,32 @@ export default function Reviews() {
             <p className="text-sm font-medium" style={S.red}>Failed to start review session.</p>
             <p className="text-xs" style={S.muted}>{loadError}</p>
             <button className="text-xs mt-2 underline" style={S.blue} onClick={() => setRetryCount(c => c + 1)}>Retry</button>
+          </div>
+        ) : review?.status === 'completed' ? (
+          <div className="flex flex-col items-center justify-center h-full gap-6 px-6 text-center py-24">
+            <p className="text-5xl">✅</p>
+            <div>
+              <h2 className="text-2xl font-semibold mb-2" style={S.text}>Today's review is done.</h2>
+              <p className="text-sm max-w-sm mx-auto" style={S.muted}>
+                Your plan for {new Date(targetDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })} is locked in.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Button variant="primary" onClick={() => navigate(`/daily?date=${targetDate}`)}>
+                Go to Tomorrow →
+              </Button>
+              <Button variant="ghost" onClick={handleDownload}>
+                <Download size={14} className="mr-1.5" /> Export JSON
+              </Button>
+            </div>
+            <button
+              className="text-xs underline mt-2"
+              style={S.muted}
+              onClick={resetReview}
+              disabled={resetting}
+            >
+              {resetting ? 'Resetting…' : 'Redo review'}
+            </button>
           </div>
         ) : activeType === 'daily' ? (
           <div className="max-w-2xl mx-auto px-6 py-6">
