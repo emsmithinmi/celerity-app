@@ -1,4 +1,5 @@
-﻿import { StatusPill, PriorityBadge } from '../ui'
+import { StatusPill, PriorityBadge, ProgressBar } from '../ui'
+import { computeProgress, projectTasksToProgressItems } from '../../lib/progress'
 
 function somedayReviewAge(project) {
   if (project.status !== 'someday') return null
@@ -7,7 +8,7 @@ function somedayReviewAge(project) {
   return Math.floor((Date.now() - new Date(ref).getTime()) / 86_400_000)
 }
 
-export default function ProjectRow({ project, onClick }) {
+export default function ProjectRow({ project, onClick, selectable = false, selected = false, onToggle }) {
   const isArchived  = !!project.archived_at
   const today       = new Date().toLocaleDateString('en-CA')
   const overdue     = project.end_date && project.end_date < today
@@ -16,12 +17,21 @@ export default function ProjectRow({ project, onClick }) {
 
   return (
     <div
-      onClick={onClick}
+      onClick={selectable ? onToggle : onClick}
       className="flex items-center gap-3 px-4 py-3 border-b last:border-b-0 cursor-pointer transition-opacity hover:opacity-90"
-      style={{ borderColor: 'var(--border)' }}
+      style={{ borderColor: 'var(--border)', backgroundColor: selected ? 'var(--state-info-bg)' : 'transparent' }}
     >
-      {/* Status */}
-      <StatusPill status={project.status} type="project" />
+      {/* Checkbox (select mode) or status pill */}
+      {selectable ? (
+        <div
+          className="flex items-center justify-center rounded border shrink-0"
+          style={{ width: 16, height: 16, borderColor: selected ? 'var(--accent)' : 'var(--border)', backgroundColor: selected ? 'var(--accent)' : 'transparent' }}
+        >
+          {selected && <span style={{ color: 'var(--pane-bg)', fontSize: 10, lineHeight: 1, fontWeight: 700 }}>✓</span>}
+        </div>
+      ) : (
+        <StatusPill status={project.status} type="project" />
+      )}
 
       {/* Title + area */}
       <div className="flex-1 min-w-0">
@@ -39,6 +49,12 @@ export default function ProjectRow({ project, onClick }) {
           <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-secondary)' }}>
             📂 {project.area}
           </p>
+        )}
+        {project.tasks?.length > 0 && (
+          <ProgressBar
+            fraction={computeProgress(projectTasksToProgressItems(project.tasks)).fraction}
+            className="mt-1.5 max-w-[160px]"
+          />
         )}
       </div>
 

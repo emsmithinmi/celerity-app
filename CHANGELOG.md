@@ -4,6 +4,20 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-12
+
+### Added
+- **Duplicate in batch select** — "⧉ Duplicate" action in the Tasks bulk bar, plus full select mode on the Projects page (move to status, duplicate, archive, delete). Duplicating a project full-clones it: every task comes along (statuses preserved), people links copied, fresh slug; highlight/archive/review history reset, and a completed project clones back into Planning.
+- **Progress bars** — slim time-weighted bars on task rows (when subtasks exist) and project rows; fuller bars with done/total, %, and time on the task subtask header and the project Tasks section.
+- **Subtask durations** — each subtask can carry an hh:mm estimate (edit via the checklist pencil). Read view shows per-step times plus "Total estimated" as a guide for setting the task duration; progress is weighted by time when estimates exist (unestimated steps count as the average of estimated ones), falling back to plain counting otherwise.
+- **Project work-remaining** — project pages show "~H:MM of work left · H:MM total estimated" from the tasks' durations.
+- **Area on task rows** — tasks without a project now show their Area (📂) under the title, where project tasks show 📁.
+
+### Changed
+- `getProjects` now nests `tasks(id, status, duration)` so project lists can render progress without extra queries.
+
+---
+
 ## 2026-06-10 (session close)
 
 ### Removed

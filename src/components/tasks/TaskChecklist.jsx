@@ -1,8 +1,10 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { Plus, X } from 'lucide-react'
 import { updateTask } from '../../lib/api/tasks'
 import Button from '../ui/Button'
-import { PencilBtn } from '../ui'
+import { PencilBtn, ProgressBar, formatDuration } from '../ui'
+import DurationInput from './DurationInput'
+import { computeProgress, formatSeconds } from '../../lib/progress'
 
 function genId() {
   return Math.random().toString(36).slice(2, 10)
@@ -32,7 +34,7 @@ export default function TaskChecklist({ taskId, subtasks = [], onSubtasksChange 
     setSaving(true)
     try {
       const finalDraft = newText.trim()
-        ? [...draft, { id: genId(), text: newText.trim(), done: false }]
+        ? [...draft, { id: genId(), text: newText.trim(), done: false, duration: null }]
         : draft
       await updateTask(taskId, { subtasks: finalDraft })
       onSubtasksChange(finalDraft)
@@ -51,7 +53,7 @@ export default function TaskChecklist({ taskId, subtasks = [], onSubtasksChange 
 
   const addItem = () => {
     if (!newText.trim()) return
-    setDraft(prev => [...prev, { id: genId(), text: newText.trim(), done: false }])
+    setDraft(prev => [...prev, { id: genId(), text: newText.trim(), done: false, duration: null }])
     setNewText('')
   }
 
@@ -60,17 +62,27 @@ export default function TaskChecklist({ taskId, subtasks = [], onSubtasksChange 
   const changeText = (itemId, text) =>
     setDraft(prev => prev.map(s => s.id === itemId ? { ...s, text } : s))
 
-  const doneCount = subtasks.filter(s => s.done).length
+  const changeDuration = (itemId, duration) =>
+    setDraft(prev => prev.map(s => s.id === itemId ? { ...s, duration } : s))
+
+  const progress = computeProgress(subtasks)
+  const draftProgress = computeProgress(draft)
 
   return (
     <section>
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Subtasks</h2>
-          {subtasks.length > 0 && (
-            <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-              {doneCount}/{subtasks.length}
-            </span>
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <h2 className="text-base font-semibold shrink-0" style={{ color: 'var(--text-primary)' }}>Subtasks</h2>
+          {subtasks.length > 0 && !editing && (
+            <>
+              <ProgressBar fraction={progress.fraction} size="md" className="w-32 shrink-0" />
+              <span className="text-xs truncate" style={{ color: 'var(--text-secondary)' }}>
+                {progress.doneCount}/{progress.totalCount} · {progress.percent}%
+                {progress.hasEstimates && (
+                  <> · {formatSeconds(progress.doneSeconds)} of {formatSeconds(progress.totalSeconds)}</>
+                )}
+              </span>
+            </>
           )}
         </div>
         {!editing ? (
@@ -95,28 +107,46 @@ export default function TaskChecklist({ taskId, subtasks = [], onSubtasksChange 
               No steps yet — click the pencil to add subtasks.
             </p>
           ) : (
-            <div className="space-y-2.5">
-              {subtasks.map(item => (
-                <label key={item.id} className="flex items-center gap-2.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={item.done}
-                    onChange={() => toggle(item.id)}
-                    className="w-4 h-4 cursor-pointer rounded"
-                    style={{ accentColor: 'var(--accent)' }}
-                  />
-                  <span
-                    className="text-sm"
-                    style={{
-                      color: item.done ? 'var(--text-dim)' : 'var(--text-primary)',
-                      textDecoration: item.done ? 'line-through' : 'none',
-                    }}
-                  >
-                    {item.text}
-                  </span>
-                </label>
-              ))}
-            </div>
+            <>
+              <div className="space-y-2.5">
+                {subtasks.map(item => (
+                  <label key={item.id} className="flex items-center gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={item.done}
+                      onChange={() => toggle(item.id)}
+                      className="w-4 h-4 cursor-pointer rounded"
+                      style={{ accentColor: 'var(--accent)' }}
+                    />
+                    <span
+                      className="text-sm flex-1"
+                      style={{
+                        color: item.done ? 'var(--text-dim)' : 'var(--text-primary)',
+                        textDecoration: item.done ? 'line-through' : 'none',
+                      }}
+                    >
+                      {item.text}
+                    </span>
+                    {item.duration && (
+                      <span
+                        className="font-mono text-xs shrink-0"
+                        style={{ color: item.done ? 'var(--text-dim)' : 'var(--text-secondary)' }}
+                      >
+                        {formatDuration(item.duration)}
+                      </span>
+                    )}
+                  </label>
+                ))}
+              </div>
+              {progress.hasEstimates && (
+                <p className="text-xs mt-3 pt-3 border-t font-mono" style={{ color: 'var(--text-secondary)', borderColor: 'var(--border)' }}>
+                  Total estimated: {formatSeconds(progress.totalSeconds)}
+                  {progress.remainingSeconds > 0 && progress.doneCount > 0 && (
+                    <> · {formatSeconds(progress.remainingSeconds)} left</>
+                  )}
+                </p>
+              )}
+            </>
           )
         ) : (
           <div className="space-y-2">
@@ -129,6 +159,11 @@ export default function TaskChecklist({ taskId, subtasks = [], onSubtasksChange 
                   onKeyDown={e => e.key === 'Enter' && addItem()}
                   className={inputCls}
                   style={inputStyle}
+                />
+                <DurationInput
+                  value={item.duration ?? null}
+                  onChange={v => changeDuration(item.id, v)}
+                  className="shrink-0"
                 />
                 <button
                   onClick={() => removeItem(item.id)}
@@ -164,6 +199,12 @@ export default function TaskChecklist({ taskId, subtasks = [], onSubtasksChange 
                 <Plus size={13} />
               </button>
             </div>
+
+            {draftProgress.hasEstimates && (
+              <p className="text-xs pt-2 font-mono" style={{ color: 'var(--text-secondary)' }}>
+                Total estimated: {formatSeconds(draftProgress.totalSeconds)} — a guide for setting the task duration
+              </p>
+            )}
           </div>
         )}
       </div>

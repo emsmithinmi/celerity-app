@@ -9,7 +9,8 @@ import { supabase } from '../lib/supabase'
 import { useTasks } from '../hooks/useTasks'
 import Button from '../components/ui/Button'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
-import { StatusPill, PriorityBadge, PencilBtn, TrashBtn } from '../components/ui'
+import { StatusPill, PriorityBadge, PencilBtn, TrashBtn, ProgressBar } from '../components/ui'
+import { computeProgress, projectTasksToProgressItems, formatSeconds } from '../lib/progress'
 import HighlightModal from '../components/tasks/HighlightModal'
 import ProjectComments from '../components/projects/ProjectComments'
 import ProjectTaskList from '../components/projects/ProjectTaskList'
@@ -374,6 +375,20 @@ export default function ProjectPage() {
             <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
               Tasks {taskCount > 0 && <span className="text-sm font-normal" style={{ color: 'var(--text-secondary)' }}>({taskCount})</span>}
             </h2>
+            {taskCount > 0 && (() => {
+              const progress = computeProgress(projectTasksToProgressItems(tasks))
+              return (
+                <div className="mb-3">
+                  <ProgressBar fraction={progress.fraction} size="md" />
+                  <p className="text-xs mt-1.5" style={{ color: 'var(--text-secondary)' }}>
+                    {progress.doneCount}/{progress.totalCount} tasks · {progress.percent}%
+                    {progress.hasEstimates && (
+                      <> · ~{formatSeconds(progress.remainingSeconds)} of work left · {formatSeconds(progress.totalSeconds)} total estimated</>
+                    )}
+                  </p>
+                </div>
+              )
+            })()}
             <div className="rounded-xl border p-4" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
               <ProjectTaskList projectId={project.id} onTaskCountChange={() => {}} />
             </div>

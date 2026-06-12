@@ -5,7 +5,7 @@ import TaskRow from '../components/tasks/TaskRow'
 import Button from '../components/ui/Button'
 import { EmptyState } from '../components/ui'
 import { CaptureTaskModal } from '../components/daily/QuickCaptureModals'
-import { updateTask, archiveTask, permanentDeleteTask } from '../lib/api/tasks'
+import { updateTask, archiveTask, permanentDeleteTask, duplicateTask } from '../lib/api/tasks'
 
 const TABS = [
   { key: 'inbox',       label: 'Inbox'        },
@@ -99,6 +99,16 @@ export default function Tasks() {
     setBulkWorking(true)
     try {
       await Promise.all([...selectedIds].map(id => archiveTask(id)))
+      await refresh()
+      exitSelectMode()
+    } finally { setBulkWorking(false) }
+  }
+
+  const handleBulkDuplicate = async () => {
+    if (selectedIds.size === 0) return
+    setBulkWorking(true)
+    try {
+      await Promise.all([...selectedIds].map(id => duplicateTask(id)))
       await refresh()
       exitSelectMode()
     } finally { setBulkWorking(false) }
@@ -238,6 +248,9 @@ export default function Tasks() {
               {bulkWorking ? '…' : 'Move'}
             </Button>
           </div>
+          <Button size="sm" variant="secondary" onClick={handleBulkDuplicate} disabled={selectedIds.size === 0 || bulkWorking}>
+            ⧉ Duplicate
+          </Button>
           <Button size="sm" variant="secondary" onClick={handleBulkArchive} disabled={selectedIds.size === 0 || bulkWorking}>
             Archive
           </Button>

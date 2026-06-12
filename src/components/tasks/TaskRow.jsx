@@ -1,4 +1,5 @@
-﻿import { StatusPill, PriorityBadge, EnergyBadge, DurationDisplay, ContextTag } from '../ui'
+﻿import { StatusPill, PriorityBadge, EnergyBadge, DurationDisplay, ContextTag, ProgressBar } from '../ui'
+import { computeProgress } from '../../lib/progress'
 
 export default function TaskRow({ task, onClick, selectable = false, selected = false, onToggle }) {
   const isDone          = task.status === 'done'
@@ -41,6 +42,14 @@ export default function TaskRow({ task, onClick, selectable = false, selected = 
           <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-secondary)' }}>
             📁 {task.projects.title}
           </p>
+        )}
+        {!task.projects?.title && task.area && (
+          <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+            📂 {task.area}
+          </p>
+        )}
+        {task.subtasks?.length > 0 && (
+          <ProgressBar fraction={computeProgress(task.subtasks).fraction} className="mt-1.5 max-w-[160px]" />
         )}
         {task.context?.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-1">

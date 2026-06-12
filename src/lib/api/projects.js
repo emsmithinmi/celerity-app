@@ -7,7 +7,7 @@ import { eventBus } from '../eventBus'
 export async function getProjects(filters = {}) {
   let query = supabase
     .from('projects')
-    .select('*, project_people(person_id, people(id, first_name, last_name))')
+    .select('*, project_people(person_id, people(id, first_name, last_name)), tasks(id, status, duration)')
     .order('created_at', { ascending: false })
 
   if (filters.statuses) query = query.in('status', filters.statuses)
@@ -65,6 +65,69 @@ export async function createProject({ title }) {
   if (error) throw error
   eventBus.emit('projects:changed')
   return data
+}
+
+export async function duplicateProject(id) {
+  // Full clone: project fields + fresh copies of all its tasks + people links.
+  // Identity/history fields (highlight, archive, review, waiting) are reset.
+  const original = await getProject(id)
+  const projectTasks = await getProjectTasks(id)
+
+  const newTitle = `${original.title} (copy)`
+  const slug = newTitle.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+    + '-' + Date.now().toString(36)
+
+  const { data: newProject, error } = await supabase
+    .from('projects')
+    .insert({
+      title:       newTitle,
+      slug,
+      status:      original.status === 'completed' ? 'planning' : original.status,
+      area:        original.area,
+      description: original.description,
+      priority:    original.priority,
+      start_date:  original.start_date,
+      end_date:    original.end_date,
+    })
+    .select()
+    .single()
+  if (error) throw error
+
+  if (projectTasks?.length) {
+    const taskClones = projectTasks.map(t => ({
+      title:        t.title,
+      status:       t.status,
+      project_id:   newProject.id,
+      description:  t.description,
+      priority:     t.priority,
+      duration:     t.duration,
+      energy_level: t.energy_level,
+      area:         t.area,
+      context:      t.context,
+      subtasks:     t.subtasks,
+      notes:        t.notes,
+      waiting_for:  t.waiting_for,
+      due_date:     t.due_date,
+      deadline:     t.deadline,
+      // restart the 30-day done-cleanup window on clones of finished tasks
+      completed_at: ['done', 'archived'].includes(t.status) ? new Date().toISOString() : null,
+    }))
+    const { error: taskError } = await supabase.from('tasks').insert(taskClones)
+    if (taskError) throw taskError
+  }
+
+  const peopleLinks = (original.project_people ?? []).map(pp => ({
+    project_id: newProject.id,
+    person_id:  pp.person_id,
+  }))
+  if (peopleLinks.length) {
+    const { error: linkError } = await supabase.from('project_people').insert(peopleLinks)
+    if (linkError) throw linkError
+  }
+
+  eventBus.emit('projects:changed')
+  eventBus.emit('tasks:changed')
+  return newProject
 }
 
 // ─── Update ───────────────────────────────────────────────────────────────────
