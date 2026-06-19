@@ -8,6 +8,7 @@ All notable changes to Focus Flow are recorded here.
 
 ### Removed
 - **All in-app AI** — Daily Brief generator, Reflect Review chat (opening, conversation, plan, tool use), Refresh Challenge, "I'm Stuck" helper, AI Settings panel, ai-proxy Edge Function, and the entire `src/lib/ai/` tree. The app is now a pure deterministic GTD tool; the brain moves outside.
+- **Daily Brief section on the Daily page** — the whole block (greeting, Top of Mind list, Words for the Day) was AI-generated content. Component deleted; weather widget that lived inside it went with it. `daily_brief` and `top_of_mind` DB columns kept as future agent write targets.
 - **Daily Review button** on the Daily page and all review-chat surfaces.
 - **AI Refresh / Generate Brief / "↺ different one"** buttons.
 

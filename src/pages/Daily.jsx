@@ -9,7 +9,6 @@ import { updateChallenge } from '../lib/api/daily'
 
 import DailyQuote     from '../components/daily/DailyQuote'
 import StatCards      from '../components/daily/StatCards'
-import DailyBrief     from '../components/daily/DailyBrief'
 import AgendaSection  from '../components/daily/AgendaSection'
 import ProjectsSection from '../components/daily/ProjectsSection'
 import TasksSection   from '../components/daily/TasksSection'
@@ -144,7 +143,7 @@ export default function Daily() {
   const goToday   = () => setSelectedDate(todayStr())
 
   // ── Data for selected date ──
-  const { note, habitHistory, stats, loading, error, toggleHabit, addNote, editNote, deleteNote, updateTopOfMind, refreshStats } = useDaily(selectedDate)
+  const { note, habitHistory, stats, loading, error, toggleHabit, addNote, editNote, deleteNote, refreshStats } = useDaily(selectedDate)
 
   // Quick capture hooks (separate so modals don't re-render sections)
   const { createTask }    = useTasksCapture({})
@@ -218,15 +217,7 @@ export default function Daily() {
           ))}
         </div>
 
-        {/* Daily Brief */}
-        <DailyBrief
-          brief={note?.daily_brief ?? null}
-          topOfMind={note?.top_of_mind ?? []}
-          noteId={note?.id}
-          onSaveTopOfMind={updateTopOfMind}
-        />
-
-        {/* Stat cards — sit under Top of Mind */}
+        {/* Stat cards */}
         <StatCards stats={stats} />
 
 
