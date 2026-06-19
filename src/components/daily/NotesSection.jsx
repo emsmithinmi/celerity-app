@@ -134,34 +134,38 @@ export default function NotesSection({ notes = [], onAdd, onEdit, onDelete }) {
         Notes
       </h3>
 
-      <div className="space-y-2">
-        {/* Existing entries — newest first */}
-        {notes.length === 0 && (
-          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>No notes yet.</p>
-        )}
-        {[...notes].reverse().map(entry => (
-          <NoteEntry key={entry.timestamp} entry={entry} onEdit={onEdit} onDelete={onDelete} />
-        ))}
-
-        {/* Add note */}
-        <form onSubmit={handleSubmit} className="space-y-2">
-          <textarea
-            value={body}
-            onChange={e => setBody(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSubmit(e) }}
-            placeholder="Add a note… (Ctrl+Enter)"
-            rows={2}
-            className="w-full px-3 py-2 rounded-lg text-sm border outline-none resize-none"
-            style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
-            onFocus={e => e.target.style.borderColor = 'var(--accent)'}
-            onBlur={e => e.target.style.borderColor = 'var(--border)'}
-          />
-          <div className="flex justify-end">
+      <div
+        className="rounded-xl border p-4 space-y-3"
+        style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
+      >
+        <form onSubmit={handleSubmit}>
+          <div className="flex gap-2 items-start">
+            <textarea
+              value={body}
+              onChange={e => setBody(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSubmit(e) }}
+              placeholder="Add a note… (Ctrl+Enter)"
+              rows={2}
+              className="flex-1 px-3 py-2 rounded-lg text-sm border outline-none resize-none"
+              style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+              onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+              onBlur={e => e.target.style.borderColor = 'var(--border)'}
+            />
             <Button type="submit" size="sm" variant="secondary" disabled={!body.trim() || saving}>
-              {saving ? 'Saving…' : 'Add Note'}
+              {saving ? 'Saving…' : 'Add'}
             </Button>
           </div>
         </form>
+
+        {notes.length === 0 ? (
+          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>No notes yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {[...notes].reverse().map(entry => (
+              <NoteEntry key={entry.timestamp} entry={entry} onEdit={onEdit} onDelete={onDelete} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Plus, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import {
   getPerson, updatePerson, activatePerson, deletePerson,
   getPersonTasks, getPersonProjects, uploadPersonAvatar,
@@ -68,10 +68,13 @@ export default function PersonPage() {
   const [deleting,        setDeleting]        = useState(false)
   const [avatarUploading, setAvatarUploading] = useState(false)
 
-  const [showTaskPicker, setShowTaskPicker] = useState(false)
-  const [allTasks,       setAllTasks]       = useState([])
-  const [taskSearch,     setTaskSearch]     = useState('')
-  const [taskPickerLoading, setTaskPickerLoading] = useState(false)
+  const [allTasks,    setAllTasks]    = useState([])
+  const [taskSearch,  setTaskSearch]  = useState('')
+  const [tasksOpen,   setTasksOpen]   = useState(false)
+
+  const [socialPlatform, setSocialPlatform] = useState('')
+  const [socialHandle,   setSocialHandle]   = useState('')
+  const [socialSaving,   setSocialSaving]   = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -90,6 +93,7 @@ export default function PersonPage() {
   }
 
   useEffect(() => { load() }, [id])
+  useEffect(() => { getTasks().then(setAllTasks).catch(() => {}) }, [])
 
   if (loading) return (
     <div className="flex items-center justify-center h-full">
@@ -104,17 +108,31 @@ export default function PersonPage() {
   )
 
   // ── Edit helpers ──
-  const startEdit  = () => { setDraft({ ...person, social_media: person.social_media ?? [] }); setEditing(true) }
+  const startEdit  = () => { setDraft({ ...person }); setEditing(true) }
   const cancelEdit = () => { setDraft(null); setEditing(false); setSaveError(null) }
   const change     = (field, value) => setDraft(prev => ({ ...prev, [field]: value }))
 
-  // Social media array helpers
-  const addSocial    = () => setDraft(prev => ({ ...prev, social_media: [...(prev.social_media ?? []), { platform: '', handle: '' }] }))
-  const removeSocial = (idx) => setDraft(prev => ({ ...prev, social_media: (prev.social_media ?? []).filter((_, i) => i !== idx) }))
-  const changeSocial = (idx, field, val) => setDraft(prev => ({
-    ...prev,
-    social_media: (prev.social_media ?? []).map((item, i) => i === idx ? { ...item, [field]: val } : item),
-  }))
+  const addSocialEntry = async () => {
+    const platform = socialPlatform.trim()
+    const handle   = socialHandle.trim()
+    if (!platform || !handle || socialSaving) return
+    setSocialSaving(true)
+    try {
+      const next = [...(person.social_media ?? []), { platform, handle }]
+      const updated = await updatePerson(person.id, { social_media: next })
+      setPerson(prev => ({ ...prev, ...updated }))
+      setSocialPlatform('')
+      setSocialHandle('')
+    } finally {
+      setSocialSaving(false)
+    }
+  }
+
+  const removeSocialEntry = async (idx) => {
+    const next = (person.social_media ?? []).filter((_, i) => i !== idx)
+    const updated = await updatePerson(person.id, { social_media: next })
+    setPerson(prev => ({ ...prev, ...updated }))
+  }
 
   const handleSave = async () => {
     setSaving(true)
@@ -142,7 +160,6 @@ export default function PersonPage() {
         address_work_city:    draft.address_work_city    || null,
         address_work_state:   draft.address_work_state   || null,
         address_work_zip:     draft.address_work_zip     || null,
-        social_media:         draft.social_media         ?? [],
         notes:                draft.notes                || null,
         icon:                 draft.icon                 || null,
         color:                draft.color                || null,
@@ -199,17 +216,10 @@ export default function PersonPage() {
   const homeAddressLine = [person.address_street, person.address_city, person.address_state, person.address_zip].filter(Boolean).join(', ')
   const workAddressLine = [person.address_work_street, person.address_work_city, person.address_work_state, person.address_work_zip].filter(Boolean).join(', ')
 
-  const openTaskPicker = async () => {
-    setShowTaskPicker(true)
-    setTaskSearch('')
-    setTaskPickerLoading(true)
-    const all = await getTasks()
-    setAllTasks(all)
-    setTaskPickerLoading(false)
-  }
-
   const handleLinkTask = async (taskId) => {
     await linkPersonToTask(taskId, id)
+    setTaskSearch('')
+    setTasksOpen(false)
     const updated = await getPersonTasks(id)
     setTasks(updated)
   }
@@ -221,9 +231,14 @@ export default function PersonPage() {
   }
 
   const linkedTaskIds = new Set(tasks.map(t => t.id))
-  const filteredTasks = allTasks.filter(t => {
-    return t.title.toLowerCase().includes(taskSearch.toLowerCase())
-  })
+  const filteredTasks = allTasks
+    .filter(t => !linkedTaskIds.has(t.id))
+    .filter(t => {
+      const q = taskSearch.trim().toLowerCase()
+      if (!q) return true
+      return t.title.toLowerCase().includes(q)
+    })
+    .slice(0, 8)
 
   return (
     <div className="h-full flex flex-col">
@@ -504,57 +519,59 @@ export default function PersonPage() {
         <section>
           <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Social Media</h2>
           <SectionCard>
-            {editing ? (
-              <div className="space-y-2">
-                <datalist id="social-platforms-list">
-                  {SOCIAL_PLATFORMS.map(p => <option key={p} value={p} />)}
-                </datalist>
-                {(draft.social_media ?? []).map((entry, idx) => (
-                  <div key={idx} className="flex gap-2 items-center">
-                    <input
-                      type="text"
-                      list="social-platforms-list"
-                      value={entry.platform}
-                      onChange={e => changeSocial(idx, 'platform', e.target.value)}
-                      className={inputCls}
-                      style={{ ...inputStyle, flex: '0 0 160px' }}
-                      placeholder="Platform"
-                    />
-                    <input
-                      type="text"
-                      value={entry.handle}
-                      onChange={e => changeSocial(idx, 'handle', e.target.value)}
-                      className={`${inputCls} flex-1`}
-                      style={inputStyle}
-                      placeholder="@handle or URL"
-                    />
-                    <button
-                      onClick={() => removeSocial(idx)}
-                      className="flex items-center justify-center rounded-md shrink-0 transition-colors"
-                      style={{ width: 30, height: 30, backgroundColor: 'transparent', color: 'var(--text-secondary)' }}
-                      onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--danger)'; e.currentTarget.style.color = '#fff' }}
-                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                ))}
-                <button
-                  onClick={addSocial}
-                  className="flex items-center gap-1.5 text-xs transition-opacity hover:opacity-80"
-                  style={{ color: 'var(--accent)' }}
-                >
-                  <Plus size={12} /> Add account
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {(person.social_media ?? []).length === 0 ? (
-                  <p className="text-sm" style={{ color: 'var(--text-dim)' }}>—</p>
-                ) : (person.social_media ?? []).map((entry, idx) => (
-                  <div key={idx} className="flex items-center gap-3">
+            <datalist id="social-platforms-list">
+              {SOCIAL_PLATFORMS.map(p => <option key={p} value={p} />)}
+            </datalist>
+            <div className="flex gap-2 items-center">
+              <input
+                type="text"
+                list="social-platforms-list"
+                value={socialPlatform}
+                onChange={e => setSocialPlatform(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addSocialEntry()}
+                className={inputCls}
+                style={{ ...inputStyle, flex: '0 0 160px' }}
+                placeholder="Platform"
+              />
+              <input
+                type="text"
+                value={socialHandle}
+                onChange={e => setSocialHandle(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addSocialEntry()}
+                className={`${inputCls} flex-1`}
+                style={inputStyle}
+                placeholder="@handle or URL"
+              />
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={addSocialEntry}
+                disabled={!socialPlatform.trim() || !socialHandle.trim() || socialSaving}
+              >
+                {socialSaving ? 'Adding…' : 'Add'}
+              </Button>
+            </div>
+
+            {(person.social_media ?? []).length > 0 && (
+              <div className="space-y-1.5">
+                {(person.social_media ?? []).map((entry, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg border"
+                    style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)' }}
+                  >
                     <span className="text-xs font-medium w-28 shrink-0" style={{ color: 'var(--text-secondary)' }}>{entry.platform}</span>
-                    <span className="text-sm" style={{ color: 'var(--text-primary)' }}>{entry.handle}</span>
+                    <span className="text-sm flex-1 truncate" style={{ color: 'var(--text-primary)' }}>{entry.handle}</span>
+                    <button
+                      onClick={() => removeSocialEntry(idx)}
+                      title="Remove"
+                      className="flex items-center justify-center rounded-md shrink-0 transition-colors"
+                      style={{ width: 26, height: 26, backgroundColor: 'transparent', color: 'var(--text-secondary)' }}
+                      onMouseEnter={e => { e.currentTarget.style.color = 'var(--danger)' }}
+                      onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-secondary)' }}
+                    >
+                      <X size={13} />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -585,42 +602,82 @@ export default function PersonPage() {
 
         {/* ── Tasks section ── */}
         <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
-              Tasks {tasks.length > 0 && <span className="text-sm font-normal" style={{ color: 'var(--text-secondary)' }}>({tasks.length})</span>}
-            </h2>
-            <button
-              onClick={openTaskPicker}
-              className="text-xs px-2 py-0.5 rounded-lg border hover:opacity-80 transition-opacity"
-              style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}
-            >+ Link Task</button>
-          </div>
-          {tasks.length > 0 ? (
-            <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
-              {tasks.map(task => task && (
-                <div
-                  key={task.id}
-                  className="flex items-center gap-3 px-4 py-3 border-b last:border-b-0"
-                  style={{ borderColor: 'var(--border)' }}
+          <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
+            Tasks {tasks.length > 0 && <span className="text-sm font-normal" style={{ color: 'var(--text-secondary)' }}>({tasks.length})</span>}
+          </h2>
+          <div className="rounded-xl border p-4 space-y-3" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
+            <div className="relative">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={taskSearch}
+                  onChange={e => { setTaskSearch(e.target.value); setTasksOpen(true) }}
+                  onFocus={() => setTasksOpen(true)}
+                  onBlur={() => setTimeout(() => setTasksOpen(false), 150)}
+                  placeholder="Search tasks…"
+                  className={`${inputCls} flex-1`}
+                  style={inputStyle}
+                />
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => navigate('/tasks')}
+                  title="Go to Tasks to add a new one"
                 >
-                  <span
-                    className="text-xs px-2 py-0.5 rounded-full cursor-pointer hover:opacity-80 flex-1 flex items-center gap-3"
-                    onClick={() => navigate(`/tasks/${task.id}`)}
-                  >
-                    <span className="px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--border)', color: 'var(--text-primary)' }}>{task.status}</span>
-                    <span className="text-sm truncate" style={{ color: 'var(--text-primary)' }}>{task.title}</span>
-                  </span>
-                  <button
-                    onClick={() => handleUnlinkTask(task.id)}
-                    className="text-xs hover:opacity-60 flex-shrink-0"
-                    style={{ color: 'var(--text-secondary)' }}
-                  >×</button>
+                  Add
+                </Button>
+              </div>
+              {tasksOpen && filteredTasks.length > 0 && (
+                <div
+                  className="absolute z-10 left-0 right-0 mt-1 rounded-lg border shadow-lg overflow-hidden"
+                  style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
+                >
+                  {filteredTasks.map(t => (
+                    <button
+                      key={t.id}
+                      onMouseDown={e => e.preventDefault()}
+                      onClick={() => handleLinkTask(t.id)}
+                      className="w-full text-left px-3 py-2 text-sm hover:opacity-80 border-t first:border-t-0 flex items-center justify-between gap-3"
+                      style={{ borderColor: 'var(--border)', color: 'var(--text-primary)', backgroundColor: 'transparent' }}
+                    >
+                      <span className="truncate">{t.title}</span>
+                      <span className="text-xs flex-shrink-0 px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--border)', color: 'var(--text-secondary)' }}>
+                        {t.status}
+                      </span>
+                    </button>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
-          ) : (
-            <p className="text-sm" style={{ color: 'var(--text-dim)' }}>No tasks linked yet</p>
-          )}
+
+            {tasks.length > 0 && (
+              <div className="space-y-1.5">
+                {tasks.map(task => task && (
+                  <div
+                    key={task.id}
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg border"
+                    style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)' }}
+                  >
+                    <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--border)', color: 'var(--text-primary)' }}>
+                      {task.status}
+                    </span>
+                    <span
+                      className="text-sm flex-1 truncate cursor-pointer hover:underline"
+                      style={{ color: 'var(--text-primary)' }}
+                      onClick={() => navigate(`/tasks/${task.id}`)}
+                    >
+                      {task.title}
+                    </span>
+                    <button
+                      onClick={() => handleUnlinkTask(task.id)}
+                      className="text-xs hover:opacity-60 flex-shrink-0"
+                      style={{ color: 'var(--text-secondary)' }}
+                    >×</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </section>
 
         {/* ── Projects section ── */}
@@ -691,59 +748,6 @@ export default function PersonPage() {
         loading={deleting}
       />
 
-      {/* Task picker modal */}
-      {showTaskPicker && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="w-full max-w-sm rounded-2xl shadow-xl overflow-hidden" style={{ backgroundColor: 'var(--pane-bg)', border: '1px solid var(--border)' }}>
-            <div className="flex items-center justify-between px-4 pt-4 pb-2">
-              <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Link Task</h3>
-              <button onClick={() => setShowTaskPicker(false)} className="hover:opacity-60" style={{ color: 'var(--text-secondary)' }}>✕</button>
-            </div>
-            <div className="px-4 pb-2">
-              <input
-                autoFocus
-                value={taskSearch}
-                onChange={e => setTaskSearch(e.target.value)}
-                placeholder="Search tasks…"
-                className={inputCls}
-                style={inputStyle}
-              />
-            </div>
-            <div className="overflow-y-auto max-h-64">
-              {taskPickerLoading ? (
-                <p className="text-xs text-center py-4" style={{ color: 'var(--text-secondary)' }}>Loading…</p>
-              ) : filteredTasks.length === 0 ? (
-                <p className="text-xs text-center py-4" style={{ color: 'var(--text-secondary)' }}>No tasks found</p>
-              ) : (
-                filteredTasks.map(t => {
-                  const linked = linkedTaskIds.has(t.id)
-                  return (
-                    <button
-                      key={t.id}
-                      disabled={linked}
-                      onClick={async () => { await handleLinkTask(t.id); setShowTaskPicker(false) }}
-                      className="w-full flex items-center justify-between gap-3 px-4 py-2.5 text-sm text-left hover:opacity-80 border-t"
-                      style={{ borderColor: 'var(--border)', color: linked ? 'var(--text-dim)' : 'var(--text-primary)', backgroundColor: 'transparent' }}
-                    >
-                      <span className="truncate">{t.title}</span>
-                      <span className="text-xs flex-shrink-0 px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--border)', color: linked ? 'var(--text-dim)' : 'var(--text-secondary)' }}>
-                        {linked ? 'linked' : t.status}
-                      </span>
-                    </button>
-                  )
-                })
-              )}
-              <button
-                onClick={() => { setShowTaskPicker(false); window.location.href = '/tasks' }}
-                className="w-full px-4 py-2.5 text-sm text-left border-t hover:opacity-80"
-                style={{ borderColor: 'var(--border)', color: 'var(--accent)', backgroundColor: 'transparent' }}
-              >
-                + Add New Task
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
