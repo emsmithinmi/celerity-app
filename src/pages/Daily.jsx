@@ -1,16 +1,11 @@
-﻿import { useState, useEffect, useRef } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useDaily } from '../hooks/useDaily'
 import { useTasks } from '../hooks/useTasks'
 import { useProjects } from '../hooks/useProjects'
 import { createPerson } from '../lib/api/people'
-import { updateChallenge, updateDailyBrief } from '../lib/api/daily'
-import { getLatestCompletedReview } from '../lib/api/reviews'
-import { generateDailyBrief } from '../lib/ai/skills/dailyBrief'
-import { refreshChallenge } from '../lib/ai/skills/refreshChallenge'
-import { getStuckSuggestions } from '../lib/ai/skills/stuckHelper'
-import { useAIConfig } from '../hooks/useAI'
+import { updateChallenge } from '../lib/api/daily'
 
 import DailyQuote     from '../components/daily/DailyQuote'
 import StatCards      from '../components/daily/StatCards'
@@ -139,8 +134,6 @@ function DateHeader({ dateStr, isToday, onPrev, onNext, onToday }) {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Daily() {
-  const navigate = useNavigate()
-
   // ── Date navigation ──
   const [searchParams] = useSearchParams()
   const initialDate = searchParams.get('date') ?? todayStr()
@@ -151,7 +144,7 @@ export default function Daily() {
   const goToday   = () => setSelectedDate(todayStr())
 
   // ── Data for selected date ──
-  const { note, habitHistory, stats, loading, error, toggleHabit, addNote, editNote, deleteNote, updateTopOfMind, refreshStats, refresh: reloadNote } = useDaily(selectedDate)
+  const { note, habitHistory, stats, loading, error, toggleHabit, addNote, editNote, deleteNote, updateTopOfMind, refreshStats } = useDaily(selectedDate)
 
   // Quick capture hooks (separate so modals don't re-render sections)
   const { createTask }    = useTasksCapture({})
@@ -165,84 +158,12 @@ export default function Daily() {
     fetchCalendarEventsForDate(selectedDate).then(setCalendarEvents).catch(() => {})
   }, [selectedDate])
 
-  // Lazy Daily Brief: generated at READ time so the greeting always matches the
-  // moment it's seen. For today, regenerate when the brief is missing, was
-  // generated on a previous day, or a newer review has superseded it.
-  // Past dates keep their archived brief untouched.
-  const { configured: aiReady } = useAIConfig()
-  const [briefGenerating, setBriefGenerating] = useState(false)
-  const briefAttemptRef = useRef(null)
-  useEffect(() => {
-    if (!note || !isToday || !aiReady) return
-    const brief = note.daily_brief
-    ;(async () => {
-      try {
-        const review = await getLatestCompletedReview('daily')
-        const reviewAt    = review?.completed_at ?? null
-        const generatedAt = brief?.generated_at ?? null
-        const generatedDay = generatedAt ? new Date(generatedAt).toLocaleDateString('en-CA') : null
-        const stale =
-          !brief ||
-          !generatedAt ||
-          generatedDay !== selectedDate ||
-          (reviewAt && new Date(generatedAt) < new Date(reviewAt))
-        if (!stale) return
-        // One attempt per (note, review, brief) state — don't loop on AI failures
-        const attemptKey = `${note.id}:${reviewAt ?? 'none'}:${generatedAt ?? 'none'}`
-        if (briefAttemptRef.current === attemptKey) return
-        briefAttemptRef.current = attemptKey
-        setBriefGenerating(true)
-        const fresh = await generateDailyBrief(selectedDate, !!brief, review)
-        await updateDailyBrief(note.id, fresh)
-        await reloadNote()
-      } catch { /* AI call failed — keep whatever brief we have */ }
-      finally { setBriefGenerating(false) }
-    })()
-  }, [note, isToday, selectedDate, aiReady])
-
-
-
   // Modal state
   const [modal, setModal] = useState(null)
-
-  // "I'm Stuck" panel
-  const { configured: aiConfigured } = useAIConfig()
-  const [stuckOpen,       setStuckOpen]       = useState(false)
-  const [stuckLoading,    setStuckLoading]    = useState(false)
-  const [stuckResult,     setStuckResult]     = useState(null)
-
-  const handleStuck = async () => {
-    setStuckOpen(true)
-    if (stuckResult) return   // already loaded this session
-    setStuckLoading(true)
-    try {
-      const result = await getStuckSuggestions(aiConfigured)
-      setStuckResult(result)
-    } catch {
-      setStuckResult({ opening: "Couldn't load suggestions — try again in a moment.", suggestions: [] })
-    } finally {
-      setStuckLoading(false)
-    }
-  }
 
   const handleChallengeUpdate = async (updated) => {
     if (!note) return
     await updateChallenge(note.id, updated)
-  }
-
-  const handleChallengeRefresh = async () => {
-    if (!note) return
-    await refreshChallenge(note.id)
-    reloadNote()
-  }
-
-  const handleBriefRefresh = async () => {
-    if (!note) return
-    const isRefresh = !!note.daily_brief  // already has one → mid-day refresh
-    const review = await getLatestCompletedReview('daily').catch(() => null)
-    const brief = await generateDailyBrief(selectedDate, isRefresh, review)
-    await updateDailyBrief(note.id, brief)
-    await reloadNote()
   }
 
   if (loading) {
@@ -295,81 +216,13 @@ export default function Daily() {
               {label}
             </Button>
           ))}
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleStuck}
-          >
-            🤷 I'm Stuck
-          </Button>
         </div>
-
-        {/* "I'm Stuck" panel */}
-        {stuckOpen && (
-          <div
-            className="rounded-2xl border p-5 space-y-4"
-            style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--accent)' }}
-          >
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold" style={{ color: 'var(--accent)' }}>
-                🤷 Easy wins to get you moving
-              </h3>
-              <button
-                onClick={() => setStuckOpen(false)}
-                className="text-xs px-2 py-0.5 rounded hover:opacity-70 transition-opacity"
-                style={{ color: 'var(--text-secondary)' }}
-              >
-                ✕ dismiss
-              </button>
-            </div>
-
-            {stuckLoading ? (
-              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Finding your easiest wins…</p>
-            ) : stuckResult ? (
-              <>
-                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{stuckResult.opening}</p>
-                {stuckResult.suggestions.length > 0 ? (
-                  <div className="space-y-2">
-                    {stuckResult.suggestions.map(s => (
-                      <a
-                        key={s.task_id}
-                        href={`/tasks/${s.task_id}`}
-                        className="flex items-start gap-3 px-3 py-2.5 rounded-xl border transition-opacity hover:opacity-80"
-                        style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)', textDecoration: 'none' }}
-                      >
-                        <span className="text-base mt-0.5">⚡</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{s.title}</p>
-                          {s.reason && (
-                            <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{s.reason}</p>
-                          )}
-                        </div>
-                      </a>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm" style={{ color: 'var(--text-dim)' }}>No next actions found — add some tasks first.</p>
-                )}
-                <button
-                  onClick={() => { setStuckResult(null); handleStuck() }}
-                  className="flex items-center justify-center rounded-md transition-opacity hover:opacity-80"
-                  style={{ width: 26, height: 26, color: 'var(--text-dim)', backgroundColor: 'transparent' }}
-                  title="Refresh suggestions"
-                >
-                  <RefreshCw size={13} />
-                </button>
-              </>
-            ) : null}
-          </div>
-        )}
 
         {/* Daily Brief */}
         <DailyBrief
           brief={note?.daily_brief ?? null}
-          generating={briefGenerating}
           topOfMind={note?.top_of_mind ?? []}
           noteId={note?.id}
-          onRefresh={handleBriefRefresh}
           onSaveTopOfMind={updateTopOfMind}
         />
 
@@ -416,20 +269,7 @@ export default function Daily() {
           challenge={note?.code_challenge}
           onUpdate={handleChallengeUpdate}
           onComplete={() => toggleHabit('habit_code_challenge', true)}
-          onRefresh={handleChallengeRefresh}
         />
-
-
-        {/* Review button */}
-        <div className="flex justify-center pb-4">
-          <Button
-            variant="action"
-            onClick={() => navigate('/reviews/daily')}
-            style={{ padding: '0.625rem 2.5rem', fontSize: '1rem' }}
-          >
-            📋 Daily Review
-          </Button>
-        </div>
       </div>
 
       {/* ── Quick Capture Modals ── */}

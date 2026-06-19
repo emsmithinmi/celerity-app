@@ -14,11 +14,10 @@ const DIFFICULTY_COLORS = {
   advanced:     { text: 'var(--danger)' },
 }
 
-export default function ChallengeSection({ challenge, onUpdate, onComplete, onRefresh }) {
-  const [response,    setResponse]    = useState(challenge?.user_response ?? '')
-  const [saving,      setSaving]      = useState(false)
-  const [submitted,   setSubmitted]   = useState(!!challenge?.completed)
-  const [refreshing,  setRefreshing]  = useState(false)
+export default function ChallengeSection({ challenge, onUpdate, onComplete }) {
+  const [response,  setResponse]  = useState(challenge?.user_response ?? '')
+  const [saving,    setSaving]    = useState(false)
+  const [submitted, setSubmitted] = useState(!!challenge?.completed)
 
   const topic      = challenge ? (TOPIC_COLORS[challenge.topic] ?? TOPIC_COLORS.general) : null
   const difficulty = challenge ? (DIFFICULTY_COLORS[challenge.difficulty] ?? DIFFICULTY_COLORS.beginner) : null
@@ -35,12 +34,6 @@ export default function ChallengeSection({ challenge, onUpdate, onComplete, onRe
   const handleSkip = async () => {
     await onUpdate({ ...challenge, skipped: true })
     setSubmitted(true)
-  }
-
-  const handleRefresh = async () => {
-    setRefreshing(true)
-    await onRefresh?.()
-    setRefreshing(false)
   }
 
   return (
@@ -67,17 +60,6 @@ export default function ChallengeSection({ challenge, onUpdate, onComplete, onRe
         {!challenge && (
           <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>none yet</span>
         )}
-        {challenge && !submitted && onRefresh && (
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="ml-auto text-xs"
-            style={{ color: 'var(--text-secondary)' }}
-            title="Not feeling it? Get a different challenge"
-          >
-            {refreshing ? 'Refreshing…' : '↺ different one'}
-          </button>
-        )}
       </div>
 
       {/* Body — always visible */}
@@ -87,7 +69,7 @@ export default function ChallengeSection({ challenge, onUpdate, onComplete, onRe
       >
         {!challenge ? (
           <p className="px-4 py-4 text-sm" style={{ color: 'var(--text-secondary)' }}>
-            No challenge yet — run the Daily Review to generate one.
+            No challenge yet.
           </p>
         ) : (
           <>
@@ -121,11 +103,6 @@ export default function ChallengeSection({ challenge, onUpdate, onComplete, onRe
                       {challenge.user_response}
                     </pre>
                   </>
-                )}
-                {!challenge.ai_feedback && (
-                  <p className="text-xs mt-3" style={{ color: 'var(--text-secondary)' }}>
-                    Feedback will appear after your next Daily Review.
-                  </p>
                 )}
               </div>
             ) : (

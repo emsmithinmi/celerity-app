@@ -4,6 +4,27 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-19
+
+### Removed
+- **All in-app AI** — Daily Brief generator, Reflect Review chat (opening, conversation, plan, tool use), Refresh Challenge, "I'm Stuck" helper, AI Settings panel, ai-proxy Edge Function, and the entire `src/lib/ai/` tree. The app is now a pure deterministic GTD tool; the brain moves outside.
+- **Daily Review button** on the Daily page and all review-chat surfaces.
+- **AI Refresh / Generate Brief / "↺ different one"** buttons.
+
+### Changed
+- **Reviews page** is an "Under construction" shell — Daily / Weekly / Monthly tabs preserved for repurposing once the new flow is designed.
+- **Daily Brief** still renders any brief that's already in the DB (read-only). New ones come from outside the app.
+- **Quote system** now picks a fresh quote every Daily-page load and on skip, excluding anything shown in the last 30 days. New **"never"** hover-button on the quote permanently blocks it (stored on the user record, syncs across devices).
+
+### Kept on purpose
+- DB columns (`daily_notes.daily_brief`, `daily_notes.code_challenge`, `reviews.content/summary/suggestions`, `user_metadata` AI config) — these become write targets for the upcoming external agent.
+- API primitives (`updateDailyBrief`, `getResumableReview`, etc.) in `src/lib/api/*` — staying put so the future MCP/tool layer can wrap them.
+
+### Next direction
+The replacement is an external agent (Hermes on desktop, or any MCP-speaking model) that drives the app from outside via a tool layer to be added. Agent capability wishlist starting to grow — first entries: refresh/expand the quote pool, generate daily briefs, run reviews.
+
+---
+
 ## 2026-06-12
 
 ### Added

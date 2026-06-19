@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { RefreshCw, Cloud, Sun, CloudRain, CloudSnow, Wind } from 'lucide-react'
+import { Cloud, Sun, CloudRain, CloudSnow, Wind } from 'lucide-react'
 import Button from '../ui/Button'
 import { PencilBtn } from '../ui'
 
@@ -62,15 +62,9 @@ function WeatherWidget() {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function DailyBrief({ brief, generating = false, topOfMind = [], noteId, onRefresh, onSaveTopOfMind }) {
-  const [loading,    setLoading]    = useState(false)
+export default function DailyBrief({ brief, topOfMind = [], noteId, onSaveTopOfMind }) {
   const [editingTom, setEditingTom] = useState(false)
   const [tomDraft,   setTomDraft]   = useState(topOfMind)
-
-  const handleRefresh = async () => {
-    setLoading(true)
-    try { await onRefresh() } finally { setLoading(false) }
-  }
 
   const handleSaveTom = async () => {
     const cleaned = tomDraft.map(s => s.trim()).filter(Boolean)
@@ -94,15 +88,6 @@ export default function DailyBrief({ brief, generating = false, topOfMind = [], 
         </div>
         <div className="flex items-center gap-2">
           <PencilBtn onClick={() => { setTomDraft([...topOfMind]); setEditingTom(true) }} title="Edit Top of Mind inputs" />
-          <button
-            onClick={handleRefresh}
-            disabled={loading}
-            className="flex items-center justify-center rounded-md transition-opacity hover:opacity-80 disabled:opacity-40"
-            style={{ width: 26, height: 26, color: 'var(--accent)', backgroundColor: 'transparent' }}
-            title="Refresh brief with AI"
-          >
-            <RefreshCw size={13} style={{ animation: loading ? 'spin 0.7s linear infinite' : 'none' }} />
-          </button>
         </div>
       </div>
 
@@ -154,20 +139,11 @@ export default function DailyBrief({ brief, generating = false, topOfMind = [], 
         className="rounded-xl border overflow-hidden"
         style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
       >
-        {generating && !brief ? (
+        {!brief ? (
           <div className="px-4 py-6 text-center">
             <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              ⏳ Putting your brief together, man — one sec…
+              No brief yet.
             </p>
-          </div>
-        ) : !brief ? (
-          <div className="px-4 py-6 text-center space-y-3">
-            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              No brief yet — run your Daily Review to generate one, or hit Refresh to generate one now.
-            </p>
-            <Button size="sm" variant="action" onClick={handleRefresh} disabled={loading}>
-              {loading ? '⏳ Generating…' : '✨ Generate Brief'}
-            </Button>
           </div>
         ) : (
           <div className="divide-y" style={{ borderColor: 'var(--border)' }}>

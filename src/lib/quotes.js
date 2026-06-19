@@ -555,3 +555,18 @@ export function pickRandom(excludeText = '') {
   const available = QUOTE_POOL.filter(q => q.text !== excludeText)
   return available[Math.floor(Math.random() * available.length)]
 }
+
+// ─── Fresh random pick (excludes recent + current) ───────────────────────────
+// Picks a random quote not in `recentTexts` and not equal to `excludeText`.
+// Falls back to the full pool if filtering leaves nothing (shouldn't happen
+// with 400 quotes and a 30-day window).
+export function pickFresh(recentTexts = [], excludeText = '') {
+  const recentSet = new Set(recentTexts.filter(Boolean).map(t => t.toLowerCase()))
+  const excludeLower = (excludeText ?? '').toLowerCase()
+  const available = QUOTE_POOL.filter(q => {
+    const t = q.text.toLowerCase()
+    return t !== excludeLower && !recentSet.has(t)
+  })
+  const pool = available.length ? available : QUOTE_POOL
+  return pool[Math.floor(Math.random() * pool.length)]
+}

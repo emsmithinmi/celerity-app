@@ -147,6 +147,37 @@ export async function updateAgenda(noteId, agendaItems) {
 
 // ─── Quote ────────────────────────────────────────────────────────────────────
 
+// Quotes shown in the last `days` days (default 30) — used to keep rerolls fresh.
+export async function getRecentQuoteTexts(days = 30) {
+  const since = new Date()
+  since.setDate(since.getDate() - days)
+  const sinceStr = since.toLocaleDateString('en-CA')
+  const { data, error } = await supabase
+    .from('daily_notes')
+    .select('quote')
+    .gte('date', sinceStr)
+    .not('quote', 'is', null)
+  if (error) throw error
+  return (data ?? []).map(r => r.quote).filter(Boolean)
+}
+
+// Quotes the user has permanently blocked — stored on the user record so it
+// syncs across devices and isn't tied to any single daily_note.
+export async function getBlockedQuoteTexts() {
+  const { data: { user } } = await supabase.auth.getUser()
+  return user?.user_metadata?.blocked_quotes ?? []
+}
+
+export async function blockQuoteText(text) {
+  const { data: { user } } = await supabase.auth.getUser()
+  const current = user?.user_metadata?.blocked_quotes ?? []
+  if (current.includes(text)) return current
+  const next = [...current, text]
+  const { error } = await supabase.auth.updateUser({ data: { blocked_quotes: next } })
+  if (error) throw error
+  return next
+}
+
 export async function updateQuote(noteId, text, author) {
   const { data, error } = await supabase
     .from('daily_notes')
