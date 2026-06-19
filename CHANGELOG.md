@@ -16,6 +16,8 @@ All notable changes to Focus Flow are recorded here.
 - **Reviews page** is an "Under construction" shell — Daily / Weekly / Monthly tabs preserved for repurposing once the new flow is designed.
 - **Daily page** flow is now: date → quote → quick capture → stats → agenda → projects → tasks → notes → habits → challenge. No brief, no AI buttons.
 - **Quote system** now picks a fresh quote every Daily-page load and on skip, excluding anything shown in the last 30 days. New **"never"** hover-button on the quote permanently blocks it (stored on the user record, syncs across devices).
+- **TaskPage sections unified** — People, Context Tags, Subtasks, and Notes all use the same pattern: input row + Add button at the top of the pane, existing items below. People replaced its modal picker with an inline typeahead dropdown; Context Tags dropped the "Your tags" reusable chip strip (datalist autocomplete still surfaces existing tags); Subtasks gained an always-on quick-add row (pencil edit still available for tweaking existing steps); Notes flipped — input at top instead of bottom.
+- **Projects on Daily** — project end_date label changed from "Due" to "Ends" and parses with T00:00:00 so the displayed date doesn't shift in non-UTC timezones.
 
 ### Kept on purpose
 - DB columns (`daily_notes.daily_brief`, `daily_notes.code_challenge`, `reviews.content/summary/suggestions`, `user_metadata` AI config) — these become write targets for the upcoming external agent.

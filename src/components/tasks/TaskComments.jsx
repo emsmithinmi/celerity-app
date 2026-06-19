@@ -39,6 +39,25 @@ export default function TaskComments({ taskId }) {
 
   return (
     <div className="space-y-3">
+      <form onSubmit={handleAdd}>
+        <div className="flex gap-2 items-start">
+          <textarea
+            value={body}
+            onChange={e => setBody(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleAdd(e) }}
+            placeholder="Add a note… (Ctrl+Enter)"
+            rows={2}
+            className="flex-1 px-3 py-2 rounded-lg text-sm border outline-none resize-none"
+            style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+            onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+            onBlur={e => e.target.style.borderColor = 'var(--border)'}
+          />
+          <Button type="submit" size="sm" variant="secondary" disabled={!body.trim() || saving}>
+            {saving ? 'Adding…' : 'Add'}
+          </Button>
+        </div>
+      </form>
+
       {loading ? (
         <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Loading…</p>
       ) : comments.length > 0 ? (
@@ -75,25 +94,6 @@ export default function TaskComments({ taskId }) {
       ) : (
         <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>No notes yet.</p>
       )}
-
-      <form onSubmit={handleAdd} className="space-y-2">
-        <textarea
-          value={body}
-          onChange={e => setBody(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleAdd(e) }}
-          placeholder="Add a note… (Ctrl+Enter)"
-          rows={2}
-          className="w-full px-3 py-2 rounded-lg text-sm border outline-none resize-none"
-          style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
-          onFocus={e => e.target.style.borderColor = 'var(--accent)'}
-          onBlur={e => e.target.style.borderColor = 'var(--border)'}
-        />
-        <div className="flex justify-end">
-          <Button type="submit" size="sm" variant="secondary" disabled={!body.trim() || saving}>
-            {saving ? 'Adding…' : 'Add Note'}
-          </Button>
-        </div>
-      </form>
     </div>
   )
 }

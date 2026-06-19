@@ -17,7 +17,9 @@ export default function TaskChecklist({ taskId, subtasks = [], onSubtasksChange 
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState([])
   const [newText, setNewText] = useState('')
+  const [quickAddText, setQuickAddText] = useState('')
   const [saving, setSaving] = useState(false)
+  const [quickAdding, setQuickAdding] = useState(false)
 
   const startEdit = () => {
     setDraft(subtasks.map(s => ({ ...s })))
@@ -49,6 +51,20 @@ export default function TaskChecklist({ taskId, subtasks = [], onSubtasksChange 
     const updated = subtasks.map(s => s.id === itemId ? { ...s, done: !s.done } : s)
     await updateTask(taskId, { subtasks: updated })
     onSubtasksChange(updated)
+  }
+
+  const quickAdd = async () => {
+    const text = quickAddText.trim()
+    if (!text || quickAdding) return
+    setQuickAdding(true)
+    try {
+      const next = [...subtasks, { id: genId(), text, done: false, duration: null }]
+      await updateTask(taskId, { subtasks: next })
+      onSubtasksChange(next)
+      setQuickAddText('')
+    } finally {
+      setQuickAdding(false)
+    }
   }
 
   const addItem = () => {
@@ -98,13 +114,30 @@ export default function TaskChecklist({ taskId, subtasks = [], onSubtasksChange 
       </div>
 
       <div
-        className="rounded-xl border p-4"
+        className="rounded-xl border p-4 space-y-3"
         style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
       >
+        {!editing && (
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={quickAddText}
+              onChange={e => setQuickAddText(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && quickAdd()}
+              placeholder="Add a step…"
+              className={inputCls}
+              style={inputStyle}
+            />
+            <Button size="sm" variant="secondary" onClick={quickAdd} disabled={!quickAddText.trim() || quickAdding}>
+              {quickAdding ? 'Adding…' : 'Add'}
+            </Button>
+          </div>
+        )}
+
         {!editing ? (
           subtasks.length === 0 ? (
             <p className="text-sm" style={{ color: 'var(--text-dim)' }}>
-              No steps yet — click the pencil to add subtasks.
+              No steps yet.
             </p>
           ) : (
             <>

@@ -70,10 +70,9 @@ export default function TaskPage() {
 
   const [tagColors, setTagColors] = useState({})
 
-  const [showPeoplePicker, setShowPeoplePicker] = useState(false)
   const [allPeople,        setAllPeople]        = useState([])
   const [peopleSearch,     setPeopleSearch]     = useState('')
-  const [peopleLoading,    setPeopleLoading]    = useState(false)
+  const [peopleOpen,       setPeopleOpen]       = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -88,6 +87,7 @@ export default function TaskPage() {
   useEffect(() => { load() }, [id])
   useEffect(() => { getAllContextTags().then(setAllTags).catch(() => {}) }, [id])
   useEffect(() => { getTagColors().then(setTagColors).catch(() => {}) }, [])
+  useEffect(() => { getPeople().then(setAllPeople).catch(() => {}) }, [])
 
   const saveContext = async (context) => {
     setTask(prev => ({ ...prev, context }))
@@ -106,10 +106,6 @@ export default function TaskPage() {
   }
 
   const removeTag = (tag) => saveContext((task?.context ?? []).filter(t => t !== tag))
-  const toggleTag = (tag) => {
-    const current = task?.context ?? []
-    current.includes(tag) ? removeTag(tag) : saveContext([...current, tag])
-  }
 
   if (loading) return (
     <div className="flex items-center justify-center h-full">
@@ -252,17 +248,10 @@ export default function TaskPage() {
     setDraft(null)
   }
 
-  const openPeoplePicker = async () => {
-    setShowPeoplePicker(true)
-    setPeopleSearch('')
-    setPeopleLoading(true)
-    const all = await getPeople()
-    setAllPeople(all)
-    setPeopleLoading(false)
-  }
-
   const handleLinkPerson = async (personId) => {
     await linkPersonToTask(id, personId)
+    setPeopleSearch('')
+    setPeopleOpen(false)
     const updated = await getTask(id)
     setTask(updated)
   }
@@ -274,10 +263,15 @@ export default function TaskPage() {
   }
 
   const linkedPersonIds = new Set(task?.task_people?.map(tp => tp.person_id) ?? [])
-  const filteredPeople = allPeople.filter(p => {
-    const name = `${p.first_name} ${p.last_name} ${p.preferred_name ?? ''}`.toLowerCase()
-    return name.includes(peopleSearch.toLowerCase())
-  })
+  const filteredPeople = allPeople
+    .filter(p => !linkedPersonIds.has(p.id))
+    .filter(p => {
+      const q = peopleSearch.trim().toLowerCase()
+      if (!q) return true
+      const name = `${p.first_name} ${p.last_name} ${p.preferred_name ?? ''}`.toLowerCase()
+      return name.includes(q)
+    })
+    .slice(0, 8)
 
   const d = editing ? draft : task
 
@@ -496,16 +490,53 @@ export default function TaskPage() {
 
           {/* People section */}
           <section>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>People</h2>
-              <button
-                onClick={openPeoplePicker}
-                className="text-xs px-2 py-0.5 rounded-lg border hover:opacity-80 transition-opacity"
-                style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}
-              >+ Add Person</button>
-            </div>
-            <div className="rounded-xl border p-4" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
-              {task.task_people?.length > 0 ? (
+            <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>People</h2>
+            <div className="rounded-xl border p-4 space-y-3" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
+              <div className="relative">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={peopleSearch}
+                    onChange={e => { setPeopleSearch(e.target.value); setPeopleOpen(true) }}
+                    onFocus={() => setPeopleOpen(true)}
+                    onBlur={() => setTimeout(() => setPeopleOpen(false), 150)}
+                    placeholder="Search people…"
+                    className={`${inputCls} flex-1`}
+                    style={inputStyle}
+                  />
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => navigate('/people')}
+                    title="Go to People to add a new one"
+                  >
+                    Add
+                  </Button>
+                </div>
+                {peopleOpen && filteredPeople.length > 0 && (
+                  <div
+                    className="absolute z-10 left-0 right-0 mt-1 rounded-lg border shadow-lg overflow-hidden"
+                    style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
+                  >
+                    {filteredPeople.map(p => {
+                      const displayName = `${p.preferred_name ?? p.first_name} ${p.last_name}`
+                      return (
+                        <button
+                          key={p.id}
+                          onMouseDown={e => e.preventDefault()}
+                          onClick={() => handleLinkPerson(p.id)}
+                          className="w-full text-left px-3 py-2 text-sm hover:opacity-80 border-t first:border-t-0"
+                          style={{ borderColor: 'var(--border)', color: 'var(--text-primary)', backgroundColor: 'transparent' }}
+                        >
+                          👤 {displayName}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {task.task_people?.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {task.task_people.map(tp => tp.people && (
                     <span
@@ -522,8 +553,6 @@ export default function TaskPage() {
                     </span>
                   ))}
                 </div>
-              ) : (
-                <p className="text-sm" style={{ color: 'var(--text-dim)' }}>No people linked yet</p>
               )}
             </div>
           </section>
@@ -531,95 +560,61 @@ export default function TaskPage() {
           {/* Context Tags section */}
           <section>
             <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Context Tags</h2>
-            <div className="rounded-xl border p-4 space-y-4" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
-
-              {/* Existing tags across all tasks */}
-              {allTags.length > 0 && (
-                <div>
-                  <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Your tags</p>
-                  <div className="flex flex-wrap gap-2">
-                    {allTags.map(tag => {
-                      const active = task.context?.includes(tag)
-                      return (
-                        <button
-                          key={tag}
-                          onClick={() => toggleTag(tag)}
-                          className="px-2.5 py-1 rounded-lg text-xs font-medium transition-opacity hover:opacity-80"
-                          style={{
-                            backgroundColor: active ? 'var(--context-tag-active-bg)' : 'var(--border)',
-                            color: active ? 'var(--context-tag-active-text)' : 'var(--text-primary)',
-                          }}
-                        >
-                          @{tag}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Add new */}
-              <div>
-                <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Add new</p>
-                <div className="flex gap-2">
-                  <input
-                    list="tp-tag-suggestions"
-                    type="text"
-                    value={tagInput}
-                    onChange={e => setTagInput(e.target.value)}
-                    onKeyDown={addTag}
-                    placeholder="Type a tag and press Enter…"
-                    className={`${inputCls} flex-1`}
-                    style={inputStyle}
-                  />
-                  <datalist id="tp-tag-suggestions">
-                    {allTags.filter(t => !task.context?.includes(t)).map(t => (
-                      <option key={t} value={t} />
-                    ))}
-                  </datalist>
-                  <button
-                    onClick={() => {
-                      if (tagInput.trim()) {
-                        const tag = tagInput.trim().replace(/^@/, '')
-                        const current = task?.context ?? []
-                        if (!current.includes(tag)) saveContext([...current, tag])
-                        setTagInput('')
-                      }
-                    }}
-                    className="px-3 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-80"
-                    style={{ backgroundColor: 'var(--border)', color: 'var(--text-primary)' }}
-                  >
-                    Add
-                  </button>
-                </div>
+            <div className="rounded-xl border p-4 space-y-3" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
+              <div className="flex gap-2">
+                <input
+                  list="tp-tag-suggestions"
+                  type="text"
+                  value={tagInput}
+                  onChange={e => setTagInput(e.target.value)}
+                  onKeyDown={addTag}
+                  placeholder="Type a tag and press Enter…"
+                  className={`${inputCls} flex-1`}
+                  style={inputStyle}
+                />
+                <datalist id="tp-tag-suggestions">
+                  {allTags.filter(t => !task.context?.includes(t)).map(t => (
+                    <option key={t} value={t} />
+                  ))}
+                </datalist>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => {
+                    if (tagInput.trim()) {
+                      const tag = tagInput.trim().replace(/^@/, '')
+                      const current = task?.context ?? []
+                      if (!current.includes(tag)) saveContext([...current, tag])
+                      setTagInput('')
+                    }
+                  }}
+                  disabled={!tagInput.trim()}
+                >
+                  Add
+                </Button>
               </div>
 
-              {/* Active tags */}
               {task.context?.length > 0 && (
-                <div>
-                  <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>On this task</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {task.context.map(tag => {
-                      const c = tagColors[tag]
-                      return (
-                        <span
-                          key={tag}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
-                          style={{ backgroundColor: c?.bg ?? 'var(--context-tag-bg)', color: c?.text ?? 'var(--context-tag-text)' }}
-                        >
-                          @{tag}
-                          <button
-                            onClick={() => removeTag(tag)}
-                            className="ml-0.5 hover:opacity-70 leading-none"
-                            aria-label={`Remove ${tag}`}
-                          >×</button>
-                        </span>
-                      )
-                    })}
-                  </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {task.context.map(tag => {
+                    const c = tagColors[tag]
+                    return (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
+                        style={{ backgroundColor: c?.bg ?? 'var(--context-tag-bg)', color: c?.text ?? 'var(--context-tag-text)' }}
+                      >
+                        @{tag}
+                        <button
+                          onClick={() => removeTag(tag)}
+                          className="ml-0.5 hover:opacity-70 leading-none"
+                          aria-label={`Remove ${tag}`}
+                        >×</button>
+                      </span>
+                    )
+                  })}
                 </div>
               )}
-
             </div>
           </section>
 
@@ -756,59 +751,6 @@ export default function TaskPage() {
       />
       <HighlightModal open={showHighlight} onClose={() => setShowHighlight(false)} onConfirm={handleHighlight} />
       <RouteModal     open={showRoute}     onClose={() => setShowRoute(false)}     onAssign={handleAssignProject} />
-
-      {/* People picker modal */}
-      {showPeoplePicker && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-          <div className="w-full max-w-sm rounded-2xl shadow-xl overflow-hidden" style={{ backgroundColor: 'var(--pane-bg)', border: '1px solid var(--border)' }}>
-            <div className="flex items-center justify-between px-4 pt-4 pb-2">
-              <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Add Person</h3>
-              <button onClick={() => setShowPeoplePicker(false)} className="hover:opacity-60" style={{ color: 'var(--text-secondary)' }}>✕</button>
-            </div>
-            <div className="px-4 pb-2">
-              <input
-                autoFocus
-                value={peopleSearch}
-                onChange={e => setPeopleSearch(e.target.value)}
-                placeholder="Search people…"
-                className={inputCls}
-                style={inputStyle}
-              />
-            </div>
-            <div className="overflow-y-auto max-h-64">
-              {peopleLoading ? (
-                <p className="text-xs text-center py-4" style={{ color: 'var(--text-secondary)' }}>Loading…</p>
-              ) : filteredPeople.length === 0 ? (
-                <p className="text-xs text-center py-4" style={{ color: 'var(--text-secondary)' }}>No people found</p>
-              ) : (
-                filteredPeople.map(p => {
-                  const linked = linkedPersonIds.has(p.id)
-                  const displayName = `${p.preferred_name ?? p.first_name} ${p.last_name}`
-                  return (
-                    <button
-                      key={p.id}
-                      disabled={linked}
-                      onClick={async () => { await handleLinkPerson(p.id); setShowPeoplePicker(false) }}
-                      className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-left hover:opacity-80 border-t"
-                      style={{ borderColor: 'var(--border)', color: linked ? 'var(--text-dim)' : 'var(--text-primary)', backgroundColor: 'transparent' }}
-                    >
-                      <span>👤 {displayName}</span>
-                      {linked && <span className="text-xs" style={{ color: 'var(--text-dim)' }}>linked</span>}
-                    </button>
-                  )
-                })
-              )}
-              <button
-                onClick={() => { setShowPeoplePicker(false); window.location.href = '/people' }}
-                className="w-full px-4 py-2.5 text-sm text-left border-t hover:opacity-80"
-                style={{ borderColor: 'var(--border)', color: 'var(--accent)', backgroundColor: 'transparent' }}
-              >
-                + Add New Person
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   )
 }
