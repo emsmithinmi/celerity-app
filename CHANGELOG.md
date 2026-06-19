@@ -14,7 +14,7 @@ All notable changes to Focus Flow are recorded here.
 
 ### Changed
 - **Reviews page** is an "Under construction" shell — Daily / Weekly / Monthly tabs preserved for repurposing once the new flow is designed.
-- **Daily Brief** still renders any brief that's already in the DB (read-only). New ones come from outside the app.
+- **Daily page** flow is now: date → quote → quick capture → stats → agenda → projects → tasks → notes → habits → challenge. No brief, no AI buttons.
 - **Quote system** now picks a fresh quote every Daily-page load and on skip, excluding anything shown in the last 30 days. New **"never"** hover-button on the quote permanently blocks it (stored on the user record, syncs across devices).
 
 ### Kept on purpose
