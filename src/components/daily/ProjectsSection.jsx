@@ -36,7 +36,7 @@ function ProjectRow({ project }) {
       <div className="flex items-center gap-2 shrink-0">
         {project.end_date && (
           <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-            Due {new Date(project.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            Ends {new Date(project.end_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
           </span>
         )}
         <PriorityBadge priority={project.priority} />
