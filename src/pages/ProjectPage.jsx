@@ -8,6 +8,7 @@ import {
 import { supabase } from '../lib/supabase'
 import { useTasks } from '../hooks/useTasks'
 import Button from '../components/ui/Button'
+import Modal from '../components/ui/Modal'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import { StatusPill, PriorityBadge, PencilBtn, TrashBtn, ProgressBar } from '../components/ui'
 import { computeProgress, projectTasksToProgressItems, formatSeconds } from '../lib/progress'
@@ -182,8 +183,6 @@ export default function ProjectPage() {
     }
   }
 
-  const d = editing ? draft : project
-
   return (
     <>
       <div className="h-full flex flex-col">
@@ -254,113 +253,29 @@ export default function ProjectPage() {
           <section>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Details</h2>
-              {!editing ? (
-                <PencilBtn onClick={startEdit} />
-              ) : (
-                <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" onClick={cancelEdit}>Cancel</Button>
-                  <Button variant="primary" size="sm" onClick={handleSave} disabled={saving}>
-                    {saving ? 'Saving…' : 'Save'}
-                  </Button>
-                </div>
-              )}
+              <PencilBtn onClick={startEdit} />
             </div>
 
-            {saveError && (
-              <div className="rounded-lg px-3 py-2 mb-3 text-sm" style={{ backgroundColor: 'var(--state-error-bg)', border: '1px solid var(--danger)', color: 'var(--state-error-text)' }}>
-                ⚠ {saveError}
-              </div>
-            )}
-
             <div className="rounded-xl border p-4 space-y-4" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
-              {/* Title */}
-              {editing ? (
-                <input
-                  type="text"
-                  value={d.title}
-                  onChange={e => change('title', e.target.value)}
-                  className={`${inputCls} text-base font-semibold`}
-                  style={inputStyle}
-                />
-              ) : (
-                <p className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>{project.title}</p>
-              )}
+              <p className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>{project.title}</p>
 
               <div className="grid grid-cols-2 gap-4">
-                {/* Priority */}
-                {editing ? (
-                  <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Priority</label>
-                    <select value={d.priority ?? ''} onChange={e => change('priority', e.target.value)} className={inputCls} style={inputStyle}>
-                      <option value="">Select…</option>
-                      {priorities.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
-                    </select>
-                  </div>
-                ) : (
-                  <div>
-                    <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Priority</p>
-                    {project.priority ? <PriorityBadge priority={project.priority} /> : <span className="text-sm" style={{ color: 'var(--text-dim)' }}>—</span>}
-                  </div>
-                )}
-
-                {/* Area */}
-                {editing ? (
-                  <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Area</label>
-                    <select value={d.area ?? ''} onChange={e => change('area', e.target.value)} className={inputCls} style={inputStyle}>
-                      <option value="">Select…</option>
-                      {areas.map(a => <option key={a.id} value={a.label}>{a.label}</option>)}
-                      {d.area && !areas.find(a => a.label === d.area) && <option value={d.area}>{d.area}</option>}
-                    </select>
-                  </div>
-                ) : (
-                  <ReadField label="Area" value={project.area} />
-                )}
+                <div>
+                  <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Priority</p>
+                  {project.priority ? <PriorityBadge priority={project.priority} /> : <span className="text-sm" style={{ color: 'var(--text-dim)' }}>—</span>}
+                </div>
+                <ReadField label="Area" value={project.area} />
               </div>
 
-              {/* Description */}
-              {editing ? (
-                <div>
-                  <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Description</label>
-                  <textarea value={d.description ?? ''} onChange={e => change('description', e.target.value)} rows={3} className={`${inputCls} resize-none`} style={inputStyle} placeholder="What is this project and what does done look like?" />
-                </div>
-              ) : (
-                <ReadField label="Description" value={project.description} />
-              )}
+              <ReadField label="Description" value={project.description} />
 
               <div className="grid grid-cols-2 gap-4">
-                {/* Start date */}
-                {editing ? (
-                  <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Start Date</label>
-                    <input type="date" value={d.start_date ?? ''} onChange={e => change('start_date', e.target.value)} className={inputCls} style={inputStyle} />
-                  </div>
-                ) : (
-                  <ReadField label="Start Date" value={project.start_date ? new Date(project.start_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : null} />
-                )}
-
-                {/* End date */}
-                {editing ? (
-                  <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>End Date</label>
-                    <input type="date" value={d.end_date ?? ''} onChange={e => change('end_date', e.target.value)} className={inputCls} style={inputStyle} />
-                  </div>
-                ) : (
-                  <ReadField label="End Date" value={project.end_date ? new Date(project.end_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : null} />
-                )}
+                <ReadField label="Start Date" value={project.start_date ? new Date(project.start_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : null} />
+                <ReadField label="End Date" value={project.end_date ? new Date(project.end_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : null} />
               </div>
 
-              {/* Waiting for */}
-              {editing ? (
-                <div>
-                  <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Waiting For</label>
-                  <input type="text" value={d.waiting_for ?? ''} onChange={e => change('waiting_for', e.target.value)} className={inputCls} style={inputStyle} placeholder="What are you waiting on?" />
-                </div>
-              ) : project.waiting_for ? (
-                <ReadField label="Waiting For" value={project.waiting_for} />
-              ) : null}
+              {project.waiting_for && <ReadField label="Waiting For" value={project.waiting_for} />}
 
-              {/* Highlight note */}
               {project.is_highlight && project.highlight_note && (
                 <div className="flex items-start gap-2 px-3 py-2 rounded-lg" style={{ backgroundColor: 'var(--highlight-note-bg)' }}>
                   <span>⭐</span>
@@ -499,6 +414,81 @@ export default function ProjectPage() {
         variant="danger"
         loading={scrapping}
       />
+
+      {/* Details edit modal */}
+      <Modal
+        open={editing}
+        onClose={cancelEdit}
+        title="Edit Details"
+        size="lg"
+        footer={
+          <>
+            <Button variant="ghost" size="sm" onClick={cancelEdit}>Cancel</Button>
+            <Button variant="primary" size="sm" onClick={handleSave} disabled={saving}>
+              {saving ? 'Saving…' : 'Save'}
+            </Button>
+          </>
+        }
+      >
+        {saveError && (
+          <div className="rounded-lg px-3 py-2 mb-3 text-sm" style={{ backgroundColor: 'var(--state-error-bg)', border: '1px solid var(--danger)', color: 'var(--state-error-text)' }}>
+            ⚠ {saveError}
+          </div>
+        )}
+        {editing && draft && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Title</label>
+              <input
+                type="text"
+                value={draft.title}
+                onChange={e => change('title', e.target.value)}
+                className={`${inputCls} text-base font-semibold`}
+                style={inputStyle}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Priority</label>
+                <select value={draft.priority ?? ''} onChange={e => change('priority', e.target.value)} className={inputCls} style={inputStyle}>
+                  <option value="">Select…</option>
+                  {priorities.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Area</label>
+                <select value={draft.area ?? ''} onChange={e => change('area', e.target.value)} className={inputCls} style={inputStyle}>
+                  <option value="">Select…</option>
+                  {areas.map(a => <option key={a.id} value={a.label}>{a.label}</option>)}
+                  {draft.area && !areas.find(a => a.label === draft.area) && <option value={draft.area}>{draft.area}</option>}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Description</label>
+              <textarea value={draft.description ?? ''} onChange={e => change('description', e.target.value)} rows={3} className={`${inputCls} resize-none`} style={inputStyle} placeholder="What is this project and what does done look like?" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Start Date</label>
+                <input type="date" value={draft.start_date ?? ''} onChange={e => change('start_date', e.target.value)} className={inputCls} style={inputStyle} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>End Date</label>
+                <input type="date" value={draft.end_date ?? ''} onChange={e => change('end_date', e.target.value)} className={inputCls} style={inputStyle} />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Waiting For</label>
+              <input type="text" value={draft.waiting_for ?? ''} onChange={e => change('waiting_for', e.target.value)} className={inputCls} style={inputStyle} placeholder="What are you waiting on?" />
+            </div>
+          </div>
+        )}
+      </Modal>
     </>
   )
 }

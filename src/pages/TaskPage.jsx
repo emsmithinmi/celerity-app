@@ -11,6 +11,7 @@ import { getTagColors } from '../lib/api/tagColors'
 import { scheduleTaskOnCalendar, deleteTaskCalendarEvent } from '../lib/api/googleActions'
 import { checkProjectStalled } from '../lib/api/projects'
 import Button from '../components/ui/Button'
+import Modal from '../components/ui/Modal'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import { StatusPill, PriorityBadge, EnergyBadge, PencilBtn, TrashBtn } from '../components/ui'
 import DurationInput from '../components/tasks/DurationInput'
@@ -273,8 +274,6 @@ export default function TaskPage() {
     })
     .slice(0, 8)
 
-  const d = editing ? draft : task
-
   return (
     <>
       <div className="h-full flex flex-col">
@@ -314,177 +313,55 @@ export default function TaskPage() {
           <section>
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Details</h2>
-              {!editing ? (
-                <PencilBtn onClick={startEdit} />
-              ) : (
-                <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" onClick={cancelEdit}>Cancel</Button>
-                  <Button variant="primary" size="sm" onClick={handleSave} disabled={saving}>
-                    {saving ? 'Saving…' : 'Save'}
-                  </Button>
-                </div>
-              )}
+              <PencilBtn onClick={startEdit} />
             </div>
-
-            {saveError && (
-              <div className="rounded-lg px-3 py-2 mb-3 text-sm" style={{ backgroundColor: 'var(--state-error-bg)', borderColor: 'var(--danger)', border: '1px solid', color: 'var(--state-error-text)' }}>
-                ⚠ {saveError}
-              </div>
-            )}
 
             <div
               className="rounded-xl border p-4 space-y-4"
               style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
             >
-              {/* Title */}
-              {editing ? (
-                <input
-                  type="text"
-                  value={d.title}
-                  onChange={e => change('title', e.target.value)}
-                  className={`${inputCls} text-base font-semibold`}
-                  style={inputStyle}
-                />
-              ) : (
-                <p className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
-                  {task.is_highlight && <span className="mr-1">⭐</span>}
-                  {task.title}
-                </p>
-              )}
+              <p className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
+                {task.is_highlight && <span className="mr-1">⭐</span>}
+                {task.title}
+              </p>
 
               <div className="grid grid-cols-2 gap-4">
-                {/* Priority */}
-                {editing ? (
-                  <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Priority</label>
-                    <select value={d.priority ?? ''} onChange={e => change('priority', e.target.value)} className={inputCls} style={inputStyle}>
-                      <option value="">Select…</option>
-                      {priorities.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
-                    </select>
-                  </div>
-                ) : (
-                  <div>
-                    <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Priority</p>
-                    {task.priority ? <PriorityBadge priority={task.priority} /> : <span className="text-sm" style={{ color: 'var(--text-dim)' }}>—</span>}
-                  </div>
-                )}
-
-                {/* Energy */}
-                {editing ? (
-                  <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Energy Level</label>
-                    <select value={d.energy_level ?? ''} onChange={e => change('energy_level', e.target.value)} className={inputCls} style={inputStyle}>
-                      <option value="">Select…</option>
-                      {levels.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
-                    </select>
-                  </div>
-                ) : (
-                  <ReadField label="Energy Level" value={levelMap[task.energy_level]?.label} />
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                {/* Duration */}
-                {editing ? (
-                  <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Duration</label>
-                    <DurationInput value={d.duration} onChange={v => change('duration', v)} />
-                  </div>
-                ) : (
-                  <ReadField label="Duration" value={task.duration ? formatDuration(task.duration) : null} />
-                )}
-
-                {/* Area */}
-                {editing ? (
-                  <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Area</label>
-                    <select value={d.area ?? ''} onChange={e => change('area', e.target.value)} className={inputCls} style={inputStyle}>
-                      <option value="">Select…</option>
-                      {areas.map(a => <option key={a.id} value={a.label}>{a.label}</option>)}
-                      {d.area && !areas.find(a => a.label === d.area) && <option value={d.area}>{d.area}</option>}
-                    </select>
-                  </div>
-                ) : (
-                  <ReadField label="Area" value={task.area} />
-                )}
-              </div>
-
-              {/* Description */}
-              {editing ? (
                 <div>
-                  <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Description</label>
-                  <textarea
-                    value={d.description ?? ''}
-                    onChange={e => change('description', e.target.value)}
-                    rows={3}
-                    className={`${inputCls} resize-none`}
-                    style={inputStyle}
-                    placeholder="What does this task involve?"
-                  />
+                  <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Priority</p>
+                  {task.priority ? <PriorityBadge priority={task.priority} /> : <span className="text-sm" style={{ color: 'var(--text-dim)' }}>—</span>}
                 </div>
-              ) : (
-                <ReadField label="Description" value={task.description} />
-              )}
+                <ReadField label="Energy Level" value={levelMap[task.energy_level]?.label} />
+              </div>
 
               <div className="grid grid-cols-2 gap-4">
-                {/* Due date */}
-                {editing ? (
-                  <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                      Due Date
-                      <span className="ml-1 font-normal" style={{ color: 'var(--text-dim)' }}>— specific day to do it</span>
-                    </label>
-                    <input
-                      type="date"
-                      value={d.due_date ?? ''}
-                      onChange={e => change('due_date', e.target.value)}
-                      className={inputCls}
-                      style={inputStyle}
-                    />
-                  </div>
-                ) : (
-                  <ReadField
-                    label="Due Date"
-                    value={task.due_date
-                      ? new Date(task.due_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-                      : null}
-                  />
-                )}
+                <ReadField label="Duration" value={task.duration ? formatDuration(task.duration) : null} />
+                <ReadField label="Area" value={task.area} />
+              </div>
 
-                {/* Deadline */}
-                {editing ? (
-                  <div>
-                    <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                      Deadline
-                      <span className="ml-1 font-normal" style={{ color: 'var(--text-dim)' }}>— last possible day</span>
-                    </label>
-                    <input
-                      type="date"
-                      value={d.deadline ?? ''}
-                      onChange={e => change('deadline', e.target.value)}
-                      className={inputCls}
-                      style={{ ...inputStyle, borderColor: d.deadline ? 'var(--accent-red)' : inputStyle.borderColor }}
-                    />
-                  </div>
-                ) : (
-                  <div>
-                    <p className="text-xs font-medium mb-0.5" style={{ color: 'var(--text-secondary)' }}>Deadline</p>
-                    {task.deadline ? (
-                      <p className="text-sm font-medium" style={{ color: 'var(--accent-red)' }}>
-                        🔴 {new Date(task.deadline + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                      </p>
-                    ) : (
-                      <p className="text-sm" style={{ color: 'var(--text-dim)' }}>—</p>
-                    )}
-                  </div>
-                )}
+              <ReadField label="Description" value={task.description} />
+
+              <div className="grid grid-cols-2 gap-4">
+                <ReadField
+                  label="Due Date"
+                  value={task.due_date
+                    ? new Date(task.due_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+                    : null}
+                />
+                <div>
+                  <p className="text-xs font-medium mb-0.5" style={{ color: 'var(--text-secondary)' }}>Deadline</p>
+                  {task.deadline ? (
+                    <p className="text-sm font-medium" style={{ color: 'var(--accent-red)' }}>
+                      🔴 {new Date(task.deadline + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    </p>
+                  ) : (
+                    <p className="text-sm" style={{ color: 'var(--text-dim)' }}>—</p>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <ReadField label="Project" value={task.projects?.title} />
               </div>
-
-
             </div>
           </section>
 
@@ -751,6 +628,115 @@ export default function TaskPage() {
       />
       <HighlightModal open={showHighlight} onClose={() => setShowHighlight(false)} onConfirm={handleHighlight} />
       <RouteModal     open={showRoute}     onClose={() => setShowRoute(false)}     onAssign={handleAssignProject} />
+
+      {/* Details edit modal */}
+      <Modal
+        open={editing}
+        onClose={cancelEdit}
+        title="Edit Details"
+        size="lg"
+        footer={
+          <>
+            <Button variant="ghost" size="sm" onClick={cancelEdit}>Cancel</Button>
+            <Button variant="primary" size="sm" onClick={handleSave} disabled={saving}>
+              {saving ? 'Saving…' : 'Save'}
+            </Button>
+          </>
+        }
+      >
+        {saveError && (
+          <div className="rounded-lg px-3 py-2 mb-3 text-sm" style={{ backgroundColor: 'var(--state-error-bg)', borderColor: 'var(--danger)', border: '1px solid', color: 'var(--state-error-text)' }}>
+            ⚠ {saveError}
+          </div>
+        )}
+        {editing && draft && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Title</label>
+              <input
+                type="text"
+                value={draft.title}
+                onChange={e => change('title', e.target.value)}
+                className={`${inputCls} text-base font-semibold`}
+                style={inputStyle}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Priority</label>
+                <select value={draft.priority ?? ''} onChange={e => change('priority', e.target.value)} className={inputCls} style={inputStyle}>
+                  <option value="">Select…</option>
+                  {priorities.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Energy Level</label>
+                <select value={draft.energy_level ?? ''} onChange={e => change('energy_level', e.target.value)} className={inputCls} style={inputStyle}>
+                  <option value="">Select…</option>
+                  {levels.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Duration</label>
+                <DurationInput value={draft.duration} onChange={v => change('duration', v)} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Area</label>
+                <select value={draft.area ?? ''} onChange={e => change('area', e.target.value)} className={inputCls} style={inputStyle}>
+                  <option value="">Select…</option>
+                  {areas.map(a => <option key={a.id} value={a.label}>{a.label}</option>)}
+                  {draft.area && !areas.find(a => a.label === draft.area) && <option value={draft.area}>{draft.area}</option>}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Description</label>
+              <textarea
+                value={draft.description ?? ''}
+                onChange={e => change('description', e.target.value)}
+                rows={3}
+                className={`${inputCls} resize-none`}
+                style={inputStyle}
+                placeholder="What does this task involve?"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
+                  Due Date
+                  <span className="ml-1 font-normal" style={{ color: 'var(--text-dim)' }}>— specific day to do it</span>
+                </label>
+                <input
+                  type="date"
+                  value={draft.due_date ?? ''}
+                  onChange={e => change('due_date', e.target.value)}
+                  className={inputCls}
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
+                  Deadline
+                  <span className="ml-1 font-normal" style={{ color: 'var(--text-dim)' }}>— last possible day</span>
+                </label>
+                <input
+                  type="date"
+                  value={draft.deadline ?? ''}
+                  onChange={e => change('deadline', e.target.value)}
+                  className={inputCls}
+                  style={{ ...inputStyle, borderColor: draft.deadline ? 'var(--accent-red)' : inputStyle.borderColor }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+      </Modal>
     </>
   )
 }
