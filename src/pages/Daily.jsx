@@ -1,6 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useDaily } from '../hooks/useDaily'
 import { useTasks } from '../hooks/useTasks'
 import { useProjects } from '../hooks/useProjects'
@@ -61,101 +59,41 @@ function todayStr() {
   return new Date().toLocaleDateString('en-CA') // YYYY-MM-DD in local time
 }
 
-function shiftDate(dateStr, days) {
-  // Use noon local time to avoid daylight-saving edge cases
-  const d = new Date(dateStr + 'T12:00:00')
-  d.setDate(d.getDate() + days)
-  return d.toLocaleDateString('en-CA')
-}
-
-// ─── Date header with navigation ─────────────────────────────────────────────
-function DateHeader({ dateStr, isToday, onPrev, onNext, onToday }) {
+// ─── Date header (cosmetic, no navigation) ───────────────────────────────────
+function DateHeader({ dateStr }) {
   const d = new Date(dateStr + 'T12:00:00')
 
   return (
-    <div className="text-center py-4 relative">
-      {/* Navigation row */}
-      <div className="flex items-center justify-center gap-4 mb-4">
-        <button
-          onClick={onPrev}
-          className="flex items-center justify-center rounded-lg transition-colors"
-          style={{ width: 28, height: 28, color: 'var(--text-secondary)', backgroundColor: 'var(--border)' }}
-          onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--text-dim)'; e.currentTarget.style.color = 'var(--text-primary)' }}
-          onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
-          title="Previous day"
-        >
-          <ChevronLeft size={18} />
-        </button>
-
-        {/* Day name */}
-        <p className="text-4xl font-normal tracking-widest uppercase w-64 text-center" style={{ color: 'var(--highlight)' }}>
-          {DAYS[d.getDay()]}
-        </p>
-
-        <button
-          onClick={onNext}
-          disabled={isToday}
-          className="flex items-center justify-center rounded-lg transition-colors"
-          style={{ width: 28, height: 28, color: isToday ? 'var(--text-dim)' : 'var(--text-secondary)', backgroundColor: 'var(--border)', cursor: isToday ? 'default' : 'pointer', opacity: isToday ? 0.4 : 1 }}
-          onMouseEnter={e => { if (!isToday) { e.currentTarget.style.backgroundColor = 'var(--text-dim)'; e.currentTarget.style.color = 'var(--text-primary)' } }}
-          onMouseLeave={e => { if (!isToday) { e.currentTarget.style.backgroundColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)' } }}
-          title={isToday ? 'No future dates' : 'Next day'}
-        >
-          <ChevronRight size={18} />
-        </button>
-      </div>
-
-      {/* Divider line */}
+    <div className="text-center py-4">
+      <p className="text-4xl font-normal tracking-widest uppercase" style={{ color: 'var(--highlight)' }}>
+        {DAYS[d.getDay()]}
+      </p>
       <div className="my-2 h-px mx-auto w-20" style={{ backgroundColor: 'var(--border)' }} />
-
-      {/* Full date */}
       <h1 className="text-5xl font-bold" style={{ color: 'var(--text-primary)' }}>
         {MONTHS[d.getMonth()]} {d.getDate()}, {d.getFullYear()}
       </h1>
-
-      {/* "Today" pill — only visible when browsing another day */}
-      {!isToday && (
-        <div className="flex justify-center mt-4">
-          <button
-            onClick={onToday}
-            className="px-3 py-1 rounded-full text-xs font-medium transition-colors"
-            style={{ backgroundColor: 'var(--highlight)', color: 'var(--app-bg)' }}
-            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--highlight-hover)'}
-            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--highlight)'}
-          >
-            ↩ Back to Today
-          </button>
-        </div>
-      )}
     </div>
   )
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Daily() {
-  // ── Date navigation ──
-  const [searchParams] = useSearchParams()
-  const initialDate = searchParams.get('date') ?? todayStr()
-  const [selectedDate, setSelectedDate] = useState(initialDate)
-  const isToday = selectedDate === todayStr()
-  const goBack    = () => setSelectedDate(d => shiftDate(d, -1))
-  const goForward = () => setSelectedDate(d => shiftDate(d, +1))
-  const goToday   = () => setSelectedDate(todayStr())
+  const today = todayStr()
 
-  // ── Data for selected date ──
-  const { note, habitHistory, stats, loading, error, toggleHabit, addNote, editNote, deleteNote, refreshStats } = useDaily(selectedDate)
+  // ── Data for today ──
+  const { note, habitHistory, stats, loading, error, toggleHabit, addNote, editNote, deleteNote, refreshStats } = useDaily(today)
 
   // Quick capture hooks (separate so modals don't re-render sections)
   const { createTask }    = useTasksCapture({})
   const { createProject } = useProjectsCapture({})
 
   // Agenda data
-  const { tasks: dueTasks }         = useTasks({ due_date: selectedDate, not_status: 'done' })
-  const { projects: endingProjects } = useProjects({ end_date: selectedDate })
+  const { tasks: dueTasks }         = useTasks({ due_date: today, not_status: 'done' })
+  const { projects: endingProjects } = useProjects({ end_date: today })
   const [calendarEvents, setCalendarEvents] = useState([])
   useEffect(() => {
-    fetchCalendarEventsForDate(selectedDate).then(setCalendarEvents).catch(() => {})
-  }, [selectedDate])
+    fetchCalendarEventsForDate(today).then(setCalendarEvents).catch(() => {})
+  }, [today])
 
   // Modal state
   const [modal, setModal] = useState(null)
@@ -187,15 +125,8 @@ export default function Daily() {
       {/* ── Scrollable page content ── */}
       <div className="px-10 py-4 space-y-6 pb-24">
 
-        {/* Date + nav */}
-        <DateHeader
-          dateStr={selectedDate}
-          isToday={isToday}
-          onPrev={goBack}
-          onNext={goForward}
-          onToday={goToday}
-        />
-        <DailyQuote note={note} dateStr={selectedDate} />
+        <DateHeader dateStr={today} />
+        <DailyQuote note={note} dateStr={today} />
 
 
         {/* Quick action bar */}
@@ -226,7 +157,7 @@ export default function Daily() {
           calendarEvents={calendarEvents}
           dueTasks={dueTasks}
           endingProjects={endingProjects}
-          onRefresh={() => fetchCalendarEventsForDate(selectedDate).then(setCalendarEvents).catch(() => {})}
+          onRefresh={() => fetchCalendarEventsForDate(today).then(setCalendarEvents).catch(() => {})}
         />
 
 
