@@ -18,6 +18,7 @@ export default function TaskChecklist({ taskId, subtasks = [], onSubtasksChange 
   const [draft, setDraft] = useState([])
   const [newText, setNewText] = useState('')
   const [quickAddText, setQuickAddText] = useState('')
+  const [quickAddDuration, setQuickAddDuration] = useState(null)
   const [saving, setSaving] = useState(false)
   const [quickAdding, setQuickAdding] = useState(false)
 
@@ -58,10 +59,11 @@ export default function TaskChecklist({ taskId, subtasks = [], onSubtasksChange 
     if (!text || quickAdding) return
     setQuickAdding(true)
     try {
-      const next = [...subtasks, { id: genId(), text, done: false, duration: null }]
+      const next = [...subtasks, { id: genId(), text, done: false, duration: quickAddDuration }]
       await updateTask(taskId, { subtasks: next })
       onSubtasksChange(next)
       setQuickAddText('')
+      setQuickAddDuration(null)
     } finally {
       setQuickAdding(false)
     }
@@ -118,7 +120,7 @@ export default function TaskChecklist({ taskId, subtasks = [], onSubtasksChange 
         style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
       >
         {!editing && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
             <input
               type="text"
               value={quickAddText}
@@ -127,6 +129,11 @@ export default function TaskChecklist({ taskId, subtasks = [], onSubtasksChange 
               placeholder="Add a step…"
               className={inputCls}
               style={inputStyle}
+            />
+            <DurationInput
+              value={quickAddDuration}
+              onChange={setQuickAddDuration}
+              className="shrink-0"
             />
             <Button size="sm" variant="secondary" onClick={quickAdd} disabled={!quickAddText.trim() || quickAdding}>
               {quickAdding ? 'Adding…' : 'Add'}
