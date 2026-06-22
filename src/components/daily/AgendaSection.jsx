@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { RefreshCw } from 'lucide-react'
+import { supabase } from '../../lib/supabase'
 
 function fmt(date) {
   return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
@@ -10,10 +11,27 @@ function fmtHour(date) {
   return date.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true })
 }
 
-export default function AgendaSection({ calendarEvents = [], dueTasks = [], endingProjects = [], onRefresh }) {
+async function reconnectGoogle() {
+  await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `${window.location.origin}/auth/callback`,
+      scopes: 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/gmail.modify',
+      queryParams: { access_type: 'offline', prompt: 'consent' },
+    },
+  })
+}
+
+export default function AgendaSection({ calendarEvents = [], dueTasks = [], endingProjects = [], onRefresh, authRequired = false }) {
   const navigate = useNavigate()
   const [now, setNow] = useState(new Date())
   const [spinning, setSpinning] = useState(false)
+  const [reconnecting, setReconnecting] = useState(false)
+
+  const handleReconnect = async () => {
+    setReconnecting(true)
+    try { await reconnectGoogle() } finally { setReconnecting(false) }
+  }
 
   const handleRefresh = async () => {
     if (!onRefresh || spinning) return
@@ -80,6 +98,31 @@ export default function AgendaSection({ calendarEvents = [], dueTasks = [], endi
           </button>
         )}
       </div>
+
+      {/* Reconnect prompt when Google auth has been revoked */}
+      {authRequired && (
+        <div
+          className="rounded-xl border px-4 py-3 mb-3 flex items-center justify-between gap-3"
+          style={{
+            backgroundColor: 'var(--state-warning-bg)',
+            borderColor: 'var(--state-warning-text)',
+            color: 'var(--state-warning-text)',
+          }}
+        >
+          <div className="text-xs flex-1">
+            <p className="font-semibold">Google calendar disconnected</p>
+            <p className="opacity-90 mt-0.5">Your Google authorization has expired or been revoked. Reconnect to see Focus Flow calendar events here.</p>
+          </div>
+          <button
+            onClick={handleReconnect}
+            disabled={reconnecting}
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap disabled:opacity-50"
+            style={{ backgroundColor: 'var(--state-warning-text)', color: 'var(--state-warning-bg)' }}
+          >
+            {reconnecting ? 'Redirecting…' : 'Reconnect Google'}
+          </button>
+        </div>
+      )}
 
       {/* All-day / due items */}
       {allDayItems.length > 0 && (

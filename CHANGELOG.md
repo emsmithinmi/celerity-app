@@ -6,6 +6,9 @@ All notable changes to Focus Flow are recorded here.
 
 ## 2026-06-22
 
+### Fixed
+- **Daily Agenda silently showing zero calendar events when Google auth was revoked** — the `google-calendar` edge function was catching token-refresh failures and returning `{events: []}` with no error signal, so the Agenda just looked empty (with no way to tell whether the calendar was empty or the integration was broken). The function now returns `{events, integrations: [...], auth_required}` with a per-integration status (`error`, `auth_required`), and the Daily page surfaces a yellow **"Google calendar disconnected — Reconnect Google"** banner above the Agenda timeline when a refresh fails. Clicking Reconnect kicks off the full Google OAuth flow with `prompt=consent` + offline access so a fresh refresh token gets written. Root cause for the user hitting this today: the refresh token in `user_integrations` had been revoked (last successful refresh 2026-06-15), which the old code swallowed silently.
+
 ### Added
 - **Cobalt2 theme** — Wes Bos's iconic Cobalt2 (the VS Code theme) is now a third option in Settings → Appearance, alongside Catppuccin and GitHub Dark. Deep cobalt navy app background (#193549), signature electric yellow (#FFC600) for accents and active sidebar items, lime green (#3AD900) for Next Action / success states, hot pink (#FF628C) for Waiting / danger, neon cyan (#80FCFF) for Scheduled, and that warm orange (#FF9D00) for highlights. Looks straight out of Wes's editor.
 

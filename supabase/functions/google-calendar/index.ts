@@ -88,6 +88,15 @@ async function fetchCalendarEvents(
   })
 }
 
+interface IntegrationResult {
+  email: string
+  label: string
+  eventCount: number
+  error: string | null
+  auth_required: boolean
+  events: CalendarEvent[]
+}
+
 async function fetchEventsForIntegration(
   serviceClient: ReturnType<typeof createClient>,
   integration: { access_token: string; refresh_token: string | null; email: string; label: string; user_id: string },
@@ -95,22 +104,27 @@ async function fetchEventsForIntegration(
   endDateStr?: string,
   timeMinOverride?: string,
   timeMaxOverride?: string,
-): Promise<CalendarEvent[]> {
+): Promise<IntegrationResult> {
   // Personal account → Focus Flow calendar. All others → primary calendar.
   const calendarId   = integration.label === 'personal' ? FOCUS_FLOW_CALENDAR_ID : 'primary'
   const calendarName = integration.label === 'personal' ? 'Focus Flow' : integration.email
 
-  let accessToken = integration.access_token
+  const base = { email: integration.email, label: integration.label }
 
   try {
-    return await fetchCalendarEvents(accessToken, calendarId, dateStr, endDateStr, timeMinOverride, timeMaxOverride, calendarName)
+    const events = await fetchCalendarEvents(integration.access_token, calendarId, dateStr, endDateStr, timeMinOverride, timeMaxOverride, calendarName)
+    return { ...base, events, eventCount: events.length, error: null, auth_required: false }
   } catch (err) {
-    // Token expired — refresh and retry
-    if (String(err).includes('401') && integration.refresh_token) {
+    const errStr = String(err)
+    const isAuthError = errStr.includes('401') || errStr.includes('invalid_token')
+
+    // Token likely expired — try refresh
+    if (isAuthError && integration.refresh_token) {
       const newToken = await refreshAccessToken(integration.refresh_token)
       if (!newToken) {
-        console.warn(`Token refresh failed for ${integration.email}`)
-        return []
+        // Refresh failed — token was revoked. User must reconnect Google.
+        console.warn(`Token refresh failed for ${integration.email} — refresh token revoked or invalid`)
+        return { ...base, events: [], eventCount: 0, error: 'refresh_failed', auth_required: true }
       }
 
       await serviceClient
@@ -120,11 +134,17 @@ async function fetchEventsForIntegration(
         .eq('provider', 'google')
         .eq('email', integration.email)
 
-      return await fetchCalendarEvents(newToken, calendarId, dateStr, endDateStr, timeMinOverride, timeMaxOverride, calendarName)
+      try {
+        const events = await fetchCalendarEvents(newToken, calendarId, dateStr, endDateStr, timeMinOverride, timeMaxOverride, calendarName)
+        return { ...base, events, eventCount: events.length, error: null, auth_required: false }
+      } catch (retryErr) {
+        console.warn(`Calendar fetch failed after refresh for ${integration.email}:`, retryErr)
+        return { ...base, events: [], eventCount: 0, error: String(retryErr), auth_required: false }
+      }
     }
 
     console.warn(`Calendar fetch failed for ${integration.email}:`, err)
-    return []
+    return { ...base, events: [], eventCount: 0, error: errStr, auth_required: false }
   }
 }
 
@@ -182,7 +202,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // Fetch from all accounts in parallel
-    const allEventArrays = await Promise.all(
+    const results = await Promise.all(
       integrations.map(integration =>
         fetchEventsForIntegration(
           serviceClient,
@@ -196,15 +216,19 @@ Deno.serve(async (req: Request) => {
     )
 
     // Merge and sort by start time
-    const events = allEventArrays
-      .flat()
+    const events = results
+      .flatMap(r => r.events)
       .sort((a, b) => {
         const aTime = a.start_time ?? a.date
         const bTime = b.start_time ?? b.date
         return aTime.localeCompare(bTime)
       })
 
-    return new Response(JSON.stringify({ events }), {
+    // Per-integration status — UI uses `auth_required` to prompt reconnect
+    const integrationStatus = results.map(({ events: _events, ...rest }) => rest)
+    const auth_required = results.some(r => r.auth_required)
+
+    return new Response(JSON.stringify({ events, integrations: integrationStatus, auth_required }), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     })
 

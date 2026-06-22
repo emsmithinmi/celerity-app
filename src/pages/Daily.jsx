@@ -20,7 +20,7 @@ import { supabase } from '../lib/supabase'
 async function fetchCalendarEventsForDate(dateStr) {
   try {
     const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return []
+    if (!session) return { events: [], authRequired: false }
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
     // Compute local-midnight boundaries so the edge function queries the right UTC range
     const timeMin = new Date(dateStr + 'T00:00:00').toISOString()
@@ -33,11 +33,11 @@ async function fetchCalendarEventsForDate(dateStr) {
       },
       body: JSON.stringify({ date: dateStr, timeMin, timeMax }),
     })
-    if (!res.ok) return []
-    const { events } = await res.json()
-    return events ?? []
+    if (!res.ok) return { events: [], authRequired: false }
+    const body = await res.json()
+    return { events: body.events ?? [], authRequired: Boolean(body.auth_required) }
   } catch {
-    return []
+    return { events: [], authRequired: false }
   }
 }
 
@@ -91,8 +91,14 @@ export default function Daily() {
   const { tasks: dueTasks }         = useTasks({ due_date: today, not_status: 'done' })
   const { projects: endingProjects } = useProjects({ end_date: today })
   const [calendarEvents, setCalendarEvents] = useState([])
+  const [calendarAuthRequired, setCalendarAuthRequired] = useState(false)
   useEffect(() => {
-    fetchCalendarEventsForDate(today).then(setCalendarEvents).catch(() => {})
+    fetchCalendarEventsForDate(today)
+      .then(({ events, authRequired }) => {
+        setCalendarEvents(events)
+        setCalendarAuthRequired(authRequired)
+      })
+      .catch(() => {})
   }, [today])
 
   // Modal state
@@ -157,7 +163,13 @@ export default function Daily() {
           calendarEvents={calendarEvents}
           dueTasks={dueTasks}
           endingProjects={endingProjects}
-          onRefresh={() => fetchCalendarEventsForDate(today).then(setCalendarEvents).catch(() => {})}
+          authRequired={calendarAuthRequired}
+          onRefresh={() => fetchCalendarEventsForDate(today)
+            .then(({ events, authRequired }) => {
+              setCalendarEvents(events)
+              setCalendarAuthRequired(authRequired)
+            })
+            .catch(() => {})}
         />
 
 
