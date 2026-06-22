@@ -16,6 +16,7 @@ import ConfirmDialog from '../components/ui/ConfirmDialog'
 import { StatusPill, PriorityBadge, EnergyBadge, PencilBtn, TrashBtn } from '../components/ui'
 import DurationInput from '../components/tasks/DurationInput'
 import { formatDuration } from '../components/ui/DurationDisplay'
+import { computeProgress } from '../lib/progress'
 import WaitingModal from '../components/tasks/WaitingModal'
 import ScheduleModal from '../components/tasks/ScheduleModal'
 import HighlightModal from '../components/tasks/HighlightModal'
@@ -683,7 +684,18 @@ export default function TaskPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Duration</label>
-                <DurationInput value={draft.duration} onChange={v => change('duration', v)} />
+                {computeProgress(task.subtasks ?? []).hasEstimates ? (
+                  <div>
+                    <p className="text-sm font-mono py-2" style={{ color: 'var(--text-primary)' }}>
+                      {draft.duration ? formatDuration(draft.duration) : '0:00'}
+                    </p>
+                    <p className="text-xs" style={{ color: 'var(--text-dim)' }}>
+                      Driven by subtasks — remaining time updates as steps are checked off.
+                    </p>
+                  </div>
+                ) : (
+                  <DurationInput value={draft.duration} onChange={v => change('duration', v)} />
+                )}
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Area</label>
