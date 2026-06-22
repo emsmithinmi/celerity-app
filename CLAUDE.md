@@ -72,6 +72,7 @@ src/
       priorities.js      # CRUD for priorities table
       areas.js           # CRUD for areas table
       challenges.js      # code-challenge bank: getChallengeBank/Count, pickRandomChallenge, deleteChallenge
+      contextTags.js     # CRUD for context_tags table
       listPreferences.js # per-list sort + manual order: getListPreference, setListSortMode, setListManualOrder
       user.js            # uploadUserAvatar — uploads to avatars bucket, saves URL in auth user_metadata
   contexts/
@@ -79,12 +80,14 @@ src/
     EnergyLevelsContext.jsx   # provides levels[], levelMap{}, reload()
     PrioritiesContext.jsx     # provides priorities[], priorityMap{}, reload()
     AreasContext.jsx          # provides areas[], reload()
+    ContextTagsContext.jsx    # provides tags[], tagMap{}, reload()
   hooks/
     useTasks.js
     useProjects.js
     usePeople.js
     useDaily.js              # accepts date param; returns note, stats, habitHistory
     useListSort.js           # per-list sort mode + manual-order drag, synced via list_preferences
+    useSortableList.js       # generic drag-to-reorder for items with a `sort_order` field (used in Settings)
   components/
     layout/
       Layout.jsx             # collapsible sidebar, nav links, settings link
@@ -171,6 +174,7 @@ All tables have RLS enabled with `USING (true) WITH CHECK (true)` + `GRANT ALL T
 | `habit_history` | (per-date habit records) |
 | `code_challenges` | id (uuid), prompt, answer, difficulty, created_at — consumable bank of small Python challenges for the Daily Challenge section |
 | `list_preferences` | list_key (text PK), sort_mode (text), manual_order (jsonb array of task ids), updated_at — per-list sort + manual order for every task list, synced across devices |
+| `context_tags` | id (uuid), value (text unique), label, bg_color, text_color, sort_order, created_at — first-class @context tags managed in Settings (no auto-create from typing); `tasks.context` text[] references tags by `value` |
 | `task_comments` | id, task_id, body, created_at |
 | `project_comments` | id, project_id, body, created_at |
 | `people_comments` | id, person_id, body, created_at |

@@ -3,11 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom'
 import {
   getTask, updateTask, completeTaskWithOptions, archiveTask, permanentDeleteTask,
   moveToNextAction, moveToQueued, moveToWaiting,
-  clearWaiting, highlightTask, clarifyTask, getAllContextTags,
+  clearWaiting, highlightTask, clarifyTask,
   linkPersonToTask, unlinkPersonFromTask, duplicateTask,
 } from '../lib/api/tasks'
 import { getPeople } from '../lib/api/people'
-import { getTagColors } from '../lib/api/tagColors'
 import { scheduleTaskOnCalendar, deleteTaskCalendarEvent } from '../lib/api/googleActions'
 import { checkProjectStalled } from '../lib/api/projects'
 import Button from '../components/ui/Button'
@@ -28,6 +27,7 @@ import { TASK_ACTIONS } from '../lib/constants'
 import { useEnergyLevels } from '../contexts/EnergyLevelsContext'
 import { usePriorities }   from '../contexts/PrioritiesContext'
 import { useAreas }        from '../contexts/AreasContext'
+import { useContextTags }  from '../contexts/ContextTagsContext'
 
 const CLARIFY_REQUIRED = ['description', 'priority', 'duration', 'energy_level', 'area']
 function isClarified(task) {
@@ -53,6 +53,7 @@ export default function TaskPage() {
   const { levels, levelMap }    = useEnergyLevels()
   const { priorities, priorityMap } = usePriorities()
   const { areas }               = useAreas()
+  const { tags: contextTagPool, tagMap: contextTagMap } = useContextTags()
 
   const [task,    setTask]    = useState(null)
   const [loading, setLoading] = useState(true)
@@ -67,10 +68,7 @@ export default function TaskPage() {
   const [showCompletion, setShowCompletion] = useState(false)
   const [showRoute,      setShowRoute]      = useState(false)
   const [showDiscard,    setShowDiscard]    = useState(false)
-  const [allTags,       setAllTags]       = useState([])
-  const [tagInput,      setTagInput]      = useState('')
-
-  const [tagColors, setTagColors] = useState({})
+  const [tagPick,       setTagPick]       = useState('')
 
   const [allPeople,        setAllPeople]        = useState([])
   const [peopleSearch,     setPeopleSearch]     = useState('')
@@ -87,24 +85,18 @@ export default function TaskPage() {
   }
 
   useEffect(() => { load() }, [id])
-  useEffect(() => { getAllContextTags().then(setAllTags).catch(() => {}) }, [id])
-  useEffect(() => { getTagColors().then(setTagColors).catch(() => {}) }, [])
   useEffect(() => { getPeople().then(setAllPeople).catch(() => {}) }, [])
 
   const saveContext = async (context) => {
     setTask(prev => ({ ...prev, context }))
     await updateTask(id, { context })
-    getAllContextTags().then(setAllTags).catch(() => {})
   }
 
-  const addTag = (e) => {
-    if ((e.key === 'Enter' || e.key === ',') && tagInput.trim()) {
-      e.preventDefault()
-      const tag = tagInput.trim().replace(/^@/, '')
-      const current = task?.context ?? []
-      if (!current.includes(tag)) saveContext([...current, tag])
-      setTagInput('')
-    }
+  const addTag = () => {
+    if (!tagPick) return
+    const current = task?.context ?? []
+    if (!current.includes(tagPick)) saveContext([...current, tagPick])
+    setTagPick('')
   }
 
   const removeTag = (tag) => saveContext((task?.context ?? []).filter(t => t !== tag))
@@ -440,49 +432,40 @@ export default function TaskPage() {
             <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Context Tags</h2>
             <div className="rounded-xl border p-4 space-y-3" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
               <div className="flex gap-2">
-                <input
-                  list="tp-tag-suggestions"
-                  type="text"
-                  value={tagInput}
-                  onChange={e => setTagInput(e.target.value)}
-                  onKeyDown={addTag}
-                  placeholder="Type a tag and press Enter…"
+                <select
+                  value={tagPick}
+                  onChange={e => setTagPick(e.target.value)}
                   className={`${inputCls} flex-1`}
                   style={inputStyle}
-                />
-                <datalist id="tp-tag-suggestions">
-                  {allTags.filter(t => !task.context?.includes(t)).map(t => (
-                    <option key={t} value={t} />
-                  ))}
-                </datalist>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => {
-                    if (tagInput.trim()) {
-                      const tag = tagInput.trim().replace(/^@/, '')
-                      const current = task?.context ?? []
-                      if (!current.includes(tag)) saveContext([...current, tag])
-                      setTagInput('')
-                    }
-                  }}
-                  disabled={!tagInput.trim()}
                 >
+                  <option value="">Pick a tag…</option>
+                  {contextTagPool
+                    .filter(t => !task.context?.includes(t.value))
+                    .map(t => (
+                      <option key={t.id} value={t.value}>@{t.label}</option>
+                    ))}
+                </select>
+                <Button size="sm" variant="secondary" onClick={addTag} disabled={!tagPick}>
                   Add
                 </Button>
               </div>
+              {contextTagPool.length === 0 && (
+                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  No tags defined yet — add some in Settings → Context Tags.
+                </p>
+              )}
 
               {task.context?.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {task.context.map(tag => {
-                    const c = tagColors[tag]
+                    const def = contextTagMap[tag]
                     return (
                       <span
                         key={tag}
                         className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
-                        style={{ backgroundColor: c?.bg ?? 'var(--context-tag-bg)', color: c?.text ?? 'var(--context-tag-text)' }}
+                        style={{ backgroundColor: def?.bg_color ?? 'var(--context-tag-bg)', color: def?.text_color ?? 'var(--context-tag-text)' }}
                       >
-                        @{tag}
+                        @{def?.label ?? tag}
                         <button
                           onClick={() => removeTag(tag)}
                           className="ml-0.5 hover:opacity-70 leading-none"

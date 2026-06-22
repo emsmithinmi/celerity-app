@@ -1,7 +1,9 @@
 ﻿import { StatusPill, PriorityBadge, EnergyBadge, DurationDisplay, ContextTag, ProgressBar, DragHandle } from '../ui'
+import { useContextTags } from '../../contexts/ContextTagsContext'
 import { computeProgress } from '../../lib/progress'
 
 export default function TaskRow({ task, onClick, selectable = false, selected = false, onToggle, reorderable = false, onDragStart, onDragEnd }) {
+  const { tagMap: contextTagMap } = useContextTags()
   const isDone          = task.status === 'done'
   const isWaiting       = task.status === 'waiting'
   const today           = new Date().toLocaleDateString('en-CA')
@@ -55,9 +57,17 @@ export default function TaskRow({ task, onClick, selectable = false, selected = 
         )}
         {task.context?.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-1">
-            {task.context.map(tag => (
-              <ContextTag key={tag} tag={`@${tag}`} />
-            ))}
+            {task.context.map(tag => {
+              const def = contextTagMap[tag]
+              return (
+                <ContextTag
+                  key={tag}
+                  tag={`@${def?.label ?? tag}`}
+                  bgColor={def?.bg_color}
+                  textColor={def?.text_color}
+                />
+              )
+            })}
           </div>
         )}
       </div>

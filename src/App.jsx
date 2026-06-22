@@ -4,6 +4,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import { EnergyLevelsProvider } from './contexts/EnergyLevelsContext'
 import { PrioritiesProvider }   from './contexts/PrioritiesContext'
 import { AreasProvider }        from './contexts/AreasContext'
+import { ContextTagsProvider }  from './contexts/ContextTagsContext'
 import ProtectedRoute from './components/layout/ProtectedRoute'
 import Layout from './components/layout/Layout'
 import ReloadPrompt from './components/ui/ReloadPrompt'
@@ -30,6 +31,7 @@ export default function App() {
       <EnergyLevelsProvider>
       <PrioritiesProvider>
       <AreasProvider>
+      <ContextTagsProvider>
         <BrowserRouter>
           <Routes>
             <Route path="/login"                  element={<Login />} />
@@ -54,6 +56,7 @@ export default function App() {
           </Routes>
         </BrowserRouter>
         <ReloadPrompt />
+      </ContextTagsProvider>
       </AreasProvider>
       </PrioritiesProvider>
       </EnergyLevelsProvider>

@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useCallback } from 'react'
-import { Plus, GripVertical, ChevronUp, ChevronDown } from 'lucide-react'
+import { Plus, GripVertical } from 'lucide-react'
 import Button from '../components/ui/Button'
 import { PencilBtn, TrashBtn } from '../components/ui/IconBtn'
 import { getConnectedGoogleAccounts, getGoogleConnectUrl, disconnectGoogleAccount } from '../lib/api/googleConnect'
@@ -7,12 +7,35 @@ import ConfirmDialog from '../components/ui/ConfirmDialog'
 import { useEnergyLevels } from '../contexts/EnergyLevelsContext'
 import { usePriorities }   from '../contexts/PrioritiesContext'
 import { useAreas }        from '../contexts/AreasContext'
+import { useContextTags }  from '../contexts/ContextTagsContext'
 import { createEnergyLevel, updateEnergyLevel, deleteEnergyLevel } from '../lib/api/energyLevels'
 import { createPriority,   updatePriority,   deletePriority   } from '../lib/api/priorities'
 import { createArea,       updateArea,       deleteArea       } from '../lib/api/areas'
-import { getAllContextTags } from '../lib/api/tasks'
-import { getTagColors, setTagColor, removeTagColor } from '../lib/api/tagColors'
+import { createContextTag, updateContextTag, deleteContextTag } from '../lib/api/contextTags'
 import { useTheme } from '../contexts/ThemeContext'
+import { useSortableList } from '../hooks/useSortableList'
+
+// Drag handle — wraps GripVertical with draggable + cursor:grab. Set on the
+// element you want the user to grab to start a drag; the surrounding row
+// receives the drop via onDragOver/onDrop.
+function DragHandle({ onDragStart, onDragEnd }) {
+  return (
+    <span
+      draggable
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      title="Drag to reorder"
+      style={{ cursor: 'grab', color: 'var(--text-dim)', flexShrink: 0, display: 'inline-flex' }}
+    >
+      <GripVertical size={14} />
+    </span>
+  )
+}
+
+// Inline-style helper for a drop-target wrapper around a sortable row.
+function dropTargetStyle(isOver) {
+  return isOver ? { boxShadow: 'inset 0 2px 0 0 var(--accent)' } : undefined
+}
 
 // ─── Shared form input styles ─────────────────────────────────────────────────
 // FIELD_STYLE: for bg-transparent inputs (forms inside cards)
@@ -21,7 +44,7 @@ const FIELD_STYLE = { borderColor: 'var(--border)', color: 'var(--text-primary)'
 const INPUT_STYLE = { backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)', color: 'var(--text-primary)' }
 
 // ─── Inline editable row ──────────────────────────────────────────────────────
-function EnergyRow({ level, onSaved, onDelete }) {
+function EnergyRow({ level, onSaved, onDelete, onDragStart, onDragEnd }) {
   const [editing, setEditing]   = useState(false)
   const [saving,  setSaving]    = useState(false)
   const [draft,   setDraft]     = useState(null)
@@ -169,8 +192,7 @@ function EnergyRow({ level, onSaved, onDelete }) {
         className="flex items-center gap-3 px-4 py-3 rounded-xl border"
         style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
       >
-        {/* Drag handle (visual only) */}
-        <GripVertical size={14} style={{ color: 'var(--text-dim)', flexShrink: 0 }} />
+        <DragHandle onDragStart={onDragStart} onDragEnd={onDragEnd} />
 
         {/* Badge preview */}
         <span
@@ -371,7 +393,7 @@ function AddEnergyForm({ onAdded, nextSortOrder }) {
 }
 
 // ─── Priority rows ────────────────────────────────────────────────────────────
-function PriorityRow({ item, onSaved, onDelete, onMoveUp, onMoveDown }) {
+function PriorityRow({ item, onSaved, onDelete, onDragStart, onDragEnd }) {
   const [editing, setEditing] = useState(false)
   const [saving,  setSaving]  = useState(false)
   const [draft,   setDraft]   = useState(null)
@@ -436,12 +458,10 @@ function PriorityRow({ item, onSaved, onDelete, onMoveUp, onMoveDown }) {
   return (
     <>
       <div className="flex items-center gap-3 px-4 py-3 rounded-xl border" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
-        <GripVertical size={14} style={{ color: 'var(--text-dim)', flexShrink: 0 }} />
+        <DragHandle onDragStart={onDragStart} onDragEnd={onDragEnd} />
         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold tracking-wide uppercase" style={{ backgroundColor: item.bg_color, color: item.text_color }}>{item.label}</span>
         <p className="flex-1 text-xs truncate" style={{ color: 'var(--text-dim)' }}>{item.value}</p>
         <div className="flex items-center gap-1 shrink-0">
-          <button onClick={onMoveUp} title="Move up" disabled={!onMoveUp} className="flex items-center justify-center rounded transition-colors disabled:opacity-20" style={{ width: 24, height: 24, color: 'var(--text-secondary)', backgroundColor: 'transparent' }} onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--border)' }} onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent' }}><ChevronUp size={13} /></button>
-          <button onClick={onMoveDown} title="Move down" disabled={!onMoveDown} className="flex items-center justify-center rounded transition-colors disabled:opacity-20" style={{ width: 24, height: 24, color: 'var(--text-secondary)', backgroundColor: 'transparent' }} onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--border)' }} onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent' }}><ChevronDown size={13} /></button>
           <PencilBtn onClick={() => { setDraft({ ...item }); setEditing(true) }} />
           <TrashBtn  onClick={() => setShowDel(true)} />
         </div>
@@ -516,7 +536,7 @@ function AddPriorityForm({ onAdded, nextSortOrder }) {
 }
 
 // ─── Area rows (with colors) ──────────────────────────────────────────────────
-function AreaRow({ item, onSaved, onDelete }) {
+function AreaRow({ item, onSaved, onDelete, onDragStart, onDragEnd }) {
   const [editing,   setEditing]   = useState(false)
   const [saving,    setSaving]    = useState(false)
   const [label,     setLabel]     = useState(item.label)
@@ -542,7 +562,7 @@ function AreaRow({ item, onSaved, onDelete }) {
     <>
       <div className="rounded-xl border" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
         <div className="flex items-center gap-3 px-4 py-3">
-          <GripVertical size={14} style={{ color: 'var(--text-dim)', flexShrink: 0 }} />
+          <DragHandle onDragStart={onDragStart} onDragEnd={onDragEnd} />
           {editing ? (
             <>
               <input autoFocus value={label} onChange={e => setLabel(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') { setLabel(item.label); setEditing(false) } }} className="flex-1 px-2 py-1 rounded-lg text-sm border outline-none bg-transparent" style={{ borderColor: 'var(--accent)', color: 'var(--text-primary)' }} />
@@ -655,71 +675,133 @@ function AddAreaForm({ onAdded, nextSortOrder }) {
   )
 }
 
-// ─── Tag Colors ───────────────────────────────────────────────────────────────
-function TagColorsSection() {
-  const [tags,      setTags]      = useState([])
-  const [colors,    setColors]    = useState({})
-  const [loading,   setLoading]   = useState(true)
-  const [saving,    setSaving]    = useState(null) // tag currently saving
+// ─── Context Tag rows (full CRUD, mirrors AreaRow) ───────────────────────────
+function ContextTagRow({ item, onSaved, onDelete, onDragStart, onDragEnd }) {
+  const [editing,   setEditing]   = useState(false)
+  const [saving,    setSaving]    = useState(false)
+  const [label,     setLabel]     = useState(item.label)
+  const [bgColor,   setBgColor]   = useState(item.bg_color ?? '#374151')
+  const [textColor, setTextColor] = useState(item.text_color ?? '#f9fafb')
+  const [showDel,   setShowDel]   = useState(false)
 
-  useEffect(() => {
-    Promise.all([getAllContextTags(), getTagColors()]).then(([t, c]) => {
-      setTags(t)
-      setColors(c)
-      setLoading(false)
-    })
-  }, [])
-
-  const handleChange = (tag, field, value) => {
-    setColors(prev => ({ ...prev, [tag]: { ...( prev[tag] ?? { bg: '#374151', text: '#f9fafb' }), [field]: value } }))
-  }
-
-  const handleSave = async (tag) => {
-    setSaving(tag)
+  const save = async () => {
+    if (!label.trim()) return
+    setSaving(true)
     try {
-      const c = colors[tag] ?? { bg: '#374151', text: '#f9fafb' }
-      await setTagColor(tag, c.bg, c.text)
-    } finally { setSaving(null) }
+      const updated = await updateContextTag(item.id, { label: label.trim(), bg_color: bgColor, text_color: textColor })
+      onSaved(updated); setEditing(false)
+    } finally { setSaving(false) }
   }
 
-  const handleReset = async (tag) => {
-    setSaving(tag)
-    try {
-      const updated = await removeTagColor(tag)
-      setColors(updated)
-    } finally { setSaving(null) }
+  const handleDelete = async () => {
+    await deleteContextTag(item.id); onDelete(item.id); setShowDel(false)
   }
-
-  if (loading) return <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p>
-  if (tags.length === 0) return <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>No context tags found. Add some to tasks first.</p>
 
   return (
-    <div className="space-y-2">
-      {tags.map(tag => {
-        const c = colors[tag] ?? { bg: 'var(--context-tag-bg)', text: 'var(--context-tag-text)' }
-        const hasCustom = !!colors[tag]
-        const bg   = hasCustom ? c.bg   : '#374151'
-        const text = hasCustom ? c.text : '#f9fafb'
-        return (
-          <div key={tag} className="rounded-xl border px-4 py-3" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
-            <div className="flex items-center gap-3 flex-wrap">
-              <span className="px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: hasCustom ? c.bg : 'var(--context-tag-bg)', color: hasCustom ? c.text : 'var(--context-tag-text)' }}>@{tag}</span>
-              <div className="flex items-center gap-2">
-                <input type="color" value={bg} onChange={e => handleChange(tag, 'bg', e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0 p-0" title="Background color" />
-                <input value={bg} onChange={e => handleChange(tag, 'bg', e.target.value)} className="w-24 px-2 py-1 rounded-lg text-xs border outline-none font-mono bg-transparent" style={FIELD_STYLE} />
+    <>
+      <div className="rounded-xl border" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
+        <div className="flex items-center gap-3 px-4 py-3">
+          <DragHandle onDragStart={onDragStart} onDragEnd={onDragEnd} />
+          {editing ? (
+            <>
+              <input autoFocus value={label} onChange={e => setLabel(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') { setLabel(item.label); setEditing(false) } }} className="flex-1 px-2 py-1 rounded-lg text-sm border outline-none bg-transparent" style={{ borderColor: 'var(--accent)', color: 'var(--text-primary)' }} />
+              <Button size="sm" variant="primary" onClick={save} disabled={saving}>{saving ? '…' : 'Save'}</Button>
+              <Button size="sm" variant="ghost" onClick={() => { setLabel(item.label); setBgColor(item.bg_color ?? '#374151'); setTextColor(item.text_color ?? '#f9fafb'); setEditing(false) }}>Cancel</Button>
+            </>
+          ) : (
+            <>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: bgColor, color: textColor }}>@{label}</span>
+              <span className="flex-1" />
+              <div className="flex items-center gap-1 shrink-0">
+                <PencilBtn onClick={() => setEditing(true)} />
+                <TrashBtn  onClick={() => setShowDel(true)} />
               </div>
+            </>
+          )}
+        </div>
+        {editing && (
+          <div className="px-4 pb-3 grid grid-cols-2 gap-4 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Background</label>
               <div className="flex items-center gap-2">
-                <input type="color" value={text} onChange={e => handleChange(tag, 'text', e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0 p-0" title="Text color" />
-                <input value={text} onChange={e => handleChange(tag, 'text', e.target.value)} className="w-24 px-2 py-1 rounded-lg text-xs border outline-none font-mono bg-transparent" style={FIELD_STYLE} />
-              </div>
-              <div className="flex items-center gap-2 ml-auto">
-                <Button size="sm" variant="primary" onClick={() => handleSave(tag)} disabled={saving === tag}>{saving === tag ? '…' : 'Save'}</Button>
-                {hasCustom && <Button size="sm" variant="ghost" onClick={() => handleReset(tag)} disabled={saving === tag}>Reset</Button>}
+                <input type="color" value={bgColor} onChange={e => setBgColor(e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+                <input value={bgColor} onChange={e => setBgColor(e.target.value)} className="flex-1 px-2 py-1 rounded-lg text-xs border outline-none font-mono bg-transparent" style={FIELD_STYLE} />
               </div>
             </div>
+            <div>
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Text</label>
+              <div className="flex items-center gap-2">
+                <input type="color" value={textColor} onChange={e => setTextColor(e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+                <input value={textColor} onChange={e => setTextColor(e.target.value)} className="flex-1 px-2 py-1 rounded-lg text-xs border outline-none font-mono bg-transparent" style={FIELD_STYLE} />
+              </div>
+            </div>
+            <div className="col-span-2">
+              <p className="text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>Preview</p>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: bgColor, color: textColor }}>@{label || 'tag'}</span>
+            </div>
           </div>
-        )
-      })}
+        )}
+      </div>
+      <ConfirmDialog open={showDel} onClose={() => setShowDel(false)} onConfirm={handleDelete} title="Remove Context Tag?" message={`"@${item.label}" will be removed from the list. Tasks that already use it keep the stored value but it won't appear in the picker.`} confirmLabel="Remove" variant="danger" />
+    </>
+  )
+}
+
+function AddContextTagForm({ onAdded, nextSortOrder }) {
+  const [open,      setOpen]      = useState(false)
+  const [label,     setLabel]     = useState('')
+  const [bgColor,   setBgColor]   = useState('#374151')
+  const [textColor, setTextColor] = useState('#f9fafb')
+  const [saving,    setSaving]    = useState(false)
+  const [error,     setError]     = useState(null)
+
+  const submit = async () => {
+    if (!label.trim()) { setError('Name is required.'); return }
+    setSaving(true); setError(null)
+    try {
+      const value = label.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
+      const created = await createContextTag({ value, label: label.trim(), bg_color: bgColor, text_color: textColor, sort_order: nextSortOrder })
+      onAdded(created); setLabel(''); setBgColor('#374151'); setTextColor('#f9fafb'); setOpen(false)
+    } catch (err) { setError(err.message ?? 'Failed to create context tag') } finally { setSaving(false) }
+  }
+
+  if (!open) return (
+    <button onClick={() => setOpen(true)} className="flex items-center gap-2 w-full px-4 py-2.5 rounded-xl border text-sm transition-colors" style={{ borderColor: 'var(--border)', borderStyle: 'dashed', color: 'var(--text-secondary)', backgroundColor: 'transparent' }} onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)' }} onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)' }}>
+      <Plus size={14} />Add context tag
+    </button>
+  )
+
+  return (
+    <div className="rounded-xl border p-4 space-y-3" style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--accent)' }}>
+      {error && <p className="text-xs px-2 py-1 rounded" style={{ backgroundColor: 'var(--state-error-bg)', color: 'var(--state-error-text)' }}>{error}</p>}
+      <div>
+        <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Name <span style={{ color: 'var(--danger)' }}>*</span></label>
+        <input autoFocus value={label} onChange={e => setLabel(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') { setOpen(false); setLabel('') } }} className="w-full px-3 py-1.5 rounded-lg text-sm border outline-none bg-transparent" style={FIELD_STYLE} placeholder="e.g. Lawncare" />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Background</label>
+          <div className="flex items-center gap-2">
+            <input type="color" value={bgColor} onChange={e => setBgColor(e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+            <input value={bgColor} onChange={e => setBgColor(e.target.value)} className="flex-1 px-2 py-1 rounded-lg text-xs border outline-none font-mono bg-transparent" style={FIELD_STYLE} />
+          </div>
+        </div>
+        <div>
+          <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Text</label>
+          <div className="flex items-center gap-2">
+            <input type="color" value={textColor} onChange={e => setTextColor(e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0" />
+            <input value={textColor} onChange={e => setTextColor(e.target.value)} className="flex-1 px-2 py-1 rounded-lg text-xs border outline-none font-mono bg-transparent" style={FIELD_STYLE} />
+          </div>
+        </div>
+      </div>
+      <div>
+        <p className="text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>Preview</p>
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: bgColor, color: textColor }}>@{label || 'tag'}</span>
+      </div>
+      <div className="flex gap-2 pt-1">
+        <Button size="sm" variant="primary" onClick={submit} disabled={saving}>{saving ? 'Adding…' : 'Add'}</Button>
+        <Button size="sm" variant="ghost" onClick={() => { setOpen(false); setError(null) }}>Cancel</Button>
+      </div>
     </div>
   )
 }
@@ -831,30 +913,21 @@ function GoogleAccountsSection() {
 export default function Settings() {
   const { levels,     loading: elLoading,   reload: reloadEL }   = useEnergyLevels()
   const { priorities, loading: priLoading,  reload: reloadPri }  = usePriorities()
-  const { areas,      loading: areaLoading, reload: reloadArea }  = useAreas()
+  const { areas,      loading: areaLoading, reload: reloadArea } = useAreas()
+  const { tags: ctxTags, loading: ctxLoading, reload: reloadCtx } = useContextTags()
   const { theme, setTheme, themes } = useTheme()
 
   const el  = useLocalList(levels,     reloadEL)
   const pri = useLocalList(priorities, reloadPri)
   const ar  = useLocalList(areas,      reloadArea)
+  const ct  = useLocalList(ctxTags,    reloadCtx)
 
-  // Priority reorder — swap sort_order values between two adjacent items
-  const handlePriMoveUp = async (index) => {
-    if (index === 0) return
-    const list = [...pri.displayed]
-    const a = list[index - 1], b = list[index]
-    const aOrder = a.sort_order, bOrder = b.sort_order
-    const [updA, updB] = await Promise.all([
-      updatePriority(a.id, { sort_order: bOrder }),
-      updatePriority(b.id, { sort_order: aOrder }),
-    ])
-    pri.onSaved(updA)
-    pri.onSaved(updB)
-  }
-  const handlePriMoveDown = async (index) => {
-    if (index >= pri.displayed.length - 1) return
-    await handlePriMoveUp(index + 1)
-  }
+  // Drag-to-reorder per list — drag in any of the 4 Settings sections
+  // recomputes every row's sort_order to (i+1)*10 and writes the changes back.
+  const elSortable  = useSortableList(el.displayed,  updateEnergyLevel, reloadEL)
+  const priSortable = useSortableList(pri.displayed, updatePriority,    reloadPri)
+  const arSortable  = useSortableList(ar.displayed,  updateArea,        reloadArea)
+  const ctSortable  = useSortableList(ct.displayed,  updateContextTag,  reloadCtx)
 
   return (
     <div className="px-10 py-8 max-w-2xl space-y-12">
@@ -896,7 +969,22 @@ export default function Settings() {
         </div>
         {elLoading ? <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p> : (
           <div className="space-y-2">
-            {el.displayed.map(level => <EnergyRow key={level.id} level={level} onSaved={el.onSaved} onDelete={el.onDeleted} />)}
+            {elSortable.ordered.map(level => (
+              <div
+                key={level.id}
+                onDragOver={e => elSortable.handleDragOver(e, level.id)}
+                onDrop={() => elSortable.handleDrop(level.id)}
+                style={dropTargetStyle(elSortable.dragOverId === level.id)}
+              >
+                <EnergyRow
+                  level={level}
+                  onSaved={el.onSaved}
+                  onDelete={el.onDeleted}
+                  onDragStart={() => elSortable.handleDragStart(level.id)}
+                  onDragEnd={elSortable.handleDragEnd}
+                />
+              </div>
+            ))}
             <AddEnergyForm onAdded={el.onAdded} nextSortOrder={(el.displayed[el.displayed.length - 1]?.sort_order ?? 0) + 10} />
           </div>
         )}
@@ -910,15 +998,21 @@ export default function Settings() {
         </div>
         {priLoading ? <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p> : (
           <div className="space-y-2">
-            {pri.displayed.map((item, idx) => (
-              <PriorityRow
+            {priSortable.ordered.map(item => (
+              <div
                 key={item.id}
-                item={item}
-                onSaved={pri.onSaved}
-                onDelete={pri.onDeleted}
-                onMoveUp={idx > 0 ? () => handlePriMoveUp(idx) : null}
-                onMoveDown={idx < pri.displayed.length - 1 ? () => handlePriMoveDown(idx) : null}
-              />
+                onDragOver={e => priSortable.handleDragOver(e, item.id)}
+                onDrop={() => priSortable.handleDrop(item.id)}
+                style={dropTargetStyle(priSortable.dragOverId === item.id)}
+              >
+                <PriorityRow
+                  item={item}
+                  onSaved={pri.onSaved}
+                  onDelete={pri.onDeleted}
+                  onDragStart={() => priSortable.handleDragStart(item.id)}
+                  onDragEnd={priSortable.handleDragEnd}
+                />
+              </div>
             ))}
             <AddPriorityForm onAdded={pri.onAdded} nextSortOrder={(pri.displayed[pri.displayed.length - 1]?.sort_order ?? 0) + 10} />
           </div>
@@ -933,7 +1027,22 @@ export default function Settings() {
         </div>
         {areaLoading ? <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p> : (
           <div className="space-y-2">
-            {ar.displayed.map(item => <AreaRow key={item.id} item={item} onSaved={ar.onSaved} onDelete={ar.onDeleted} />)}
+            {arSortable.ordered.map(item => (
+              <div
+                key={item.id}
+                onDragOver={e => arSortable.handleDragOver(e, item.id)}
+                onDrop={() => arSortable.handleDrop(item.id)}
+                style={dropTargetStyle(arSortable.dragOverId === item.id)}
+              >
+                <AreaRow
+                  item={item}
+                  onSaved={ar.onSaved}
+                  onDelete={ar.onDeleted}
+                  onDragStart={() => arSortable.handleDragStart(item.id)}
+                  onDragEnd={arSortable.handleDragEnd}
+                />
+              </div>
+            ))}
             <AddAreaForm onAdded={ar.onAdded} nextSortOrder={(ar.displayed[ar.displayed.length - 1]?.sort_order ?? 0) + 10} />
           </div>
         )}
@@ -943,9 +1052,29 @@ export default function Settings() {
       <section>
         <div className="mb-4">
           <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Context Tags</h2>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>Set custom colors for your @context tags. Tags are created on tasks — add some there first.</p>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>The set of @context tags you can apply to tasks. Add them here first; tasks pick from this list.</p>
         </div>
-        <TagColorsSection />
+        {ctxLoading ? <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p> : (
+          <div className="space-y-2">
+            {ctSortable.ordered.map(item => (
+              <div
+                key={item.id}
+                onDragOver={e => ctSortable.handleDragOver(e, item.id)}
+                onDrop={() => ctSortable.handleDrop(item.id)}
+                style={dropTargetStyle(ctSortable.dragOverId === item.id)}
+              >
+                <ContextTagRow
+                  item={item}
+                  onSaved={ct.onSaved}
+                  onDelete={ct.onDeleted}
+                  onDragStart={() => ctSortable.handleDragStart(item.id)}
+                  onDragEnd={ctSortable.handleDragEnd}
+                />
+              </div>
+            ))}
+            <AddContextTagForm onAdded={ct.onAdded} nextSortOrder={(ct.displayed[ct.displayed.length - 1]?.sort_order ?? 0) + 10} />
+          </div>
+        )}
       </section>
 
       {/* ── Google Accounts ── */}

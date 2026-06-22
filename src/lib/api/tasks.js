@@ -32,16 +32,6 @@ export async function getTask(id) {
   return data
 }
 
-export async function getAllContextTags() {
-  const { data, error } = await supabase
-    .from('tasks')
-    .select('context')
-    .not('context', 'is', null)
-  if (error) throw error
-  const all = data.flatMap(r => r.context ?? [])
-  return [...new Set(all)].sort()
-}
-
 export async function getTaskComments(taskId) {
   const { data, error } = await supabase
     .from('task_comments')
