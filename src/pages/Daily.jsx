@@ -161,12 +161,12 @@ export default function Daily() {
         />
 
 
-        {/* Projects */}
-        <ProjectsSection />
-
-
         {/* Tasks */}
         <TasksSection onRefreshStats={refreshStats} />
+
+
+        {/* Projects */}
+        <ProjectsSection />
 
 
         {/* Notes */}

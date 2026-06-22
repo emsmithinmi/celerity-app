@@ -4,6 +4,16 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-21
+
+### Changed
+- **Daily page** — Tasks section now appears above Projects section.
+
+### Added
+- **Next Actions drag-to-reorder** — tasks on the Next Actions tab (Daily page) can be dragged into any order. Order persists to localStorage; no DB writes, no effect on task status or priority.
+
+---
+
 ## 2026-06-19
 
 ### Removed
@@ -110,7 +120,6 @@ The replacement is an external agent (Hermes on desktop, or any MCP-speaking mod
 
 ### Changed
 - **Reviews page** — "Start Review" landing screen added. Email feed, calendar strip, and all data hooks only fire after the user explicitly clicks "Start Review", ensuring fresh data on every review instead of showing stale data from the previous session load.
-
 ---
 
 ## 2026-06-09 (continued again)
