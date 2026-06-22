@@ -14,6 +14,7 @@ All notable changes to Focus Flow are recorded here.
 
 ### Fixed
 - **Divider lines restored between Next Actions tasks** — the drag wrapper had swallowed each row's bottom border; the divider now sits on the wrapper so Next Actions matches the other tabs.
+- **Stale data / double-refresh fixed** — the PWA service worker was caching Supabase reads with StaleWhileRevalidate for 5 min, so a saved change only appeared after refreshing twice. Switched to NetworkFirst (5s timeout): reads always hit the network when online, falling back to cache only offline. Changes now show on the next read. (Takes effect after the next deploy + service-worker update.)
 
 ---
 
