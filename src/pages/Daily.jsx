@@ -81,7 +81,7 @@ export default function Daily() {
   const today = todayStr()
 
   // ── Data for today ──
-  const { note, habitHistory, stats, loading, error, toggleHabit, addNote, editNote, deleteNote, refreshStats } = useDaily(today)
+  const { note, habitHistory, stats, loading, error, toggleHabit, toggleHabitForDate, addNote, editNote, deleteNote, refreshStats } = useDaily(today)
 
   // Quick capture hooks (separate so modals don't re-render sections)
   const { createTask }    = useTasksCapture({})
@@ -183,6 +183,7 @@ export default function Daily() {
           note={note}
           habitHistory={habitHistory}
           onToggle={toggleHabit}
+          onToggleDate={toggleHabitForDate}
         />
 
 

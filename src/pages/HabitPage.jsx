@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getHabitHistory } from '../lib/api/daily'
+import { getHabitHistory, setHabitForDate } from '../lib/api/daily'
 import { HABITS } from '../lib/constants'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -103,7 +103,7 @@ const TIMEFRAMES = [
   { key: 'year',  label: 'This Year'  },
 ]
 
-function HabitCalendar({ habitKey, calYear, calMonth, dateMap, onPrev, onNext }) {
+function HabitCalendar({ habitKey, calYear, calMonth, dateMap, onPrev, onNext, onToggle }) {
   const grid  = useMemo(() => buildCalendarGrid(calYear, calMonth), [calYear, calMonth])
   const today = new Date().toLocaleDateString('en-CA')
 
@@ -152,25 +152,29 @@ function HabitCalendar({ habitKey, calYear, calMonth, dateMap, onPrev, onNext })
           const dayNum   = parseInt(dateStr.split('-')[2], 10)
 
           return (
-            <div
+            <button
               key={dateStr}
-              className="flex flex-col items-center justify-center rounded-lg py-1.5 gap-0.5"
+              disabled={isFuture}
+              onClick={() => !isFuture && onToggle(dateStr, !done)}
+              title={isFuture ? '' : done ? 'Done — click to clear' : 'Click to mark done'}
+              className="flex flex-col items-center justify-center rounded-lg py-1.5 gap-0.5 transition-colors"
               style={{
                 backgroundColor: isToday ? 'var(--card-task-bg)' : 'transparent',
                 outline: isToday ? '1px solid var(--accent)' : 'none',
                 minHeight: '48px',
+                cursor: isFuture ? 'default' : 'pointer',
               }}
             >
               <span className="text-xs" style={{ color: isToday ? 'var(--accent)' : isFuture ? 'var(--text-dim)' : 'var(--text-primary)' }}>
                 {dayNum}
               </span>
-              {!isFuture && row && (
+              {!isFuture && (
                 <div
                   className="w-4 h-4 rounded-full"
                   style={{ backgroundColor: done ? 'var(--habit-done-bg)' : 'var(--border)' }}
                 />
               )}
-            </div>
+            </button>
           )
         })}
       </div>
@@ -218,6 +222,22 @@ export default function HabitPage() {
   const percent       = useMemo(() => computePercent(dateMap, habitKey, timeframe), [dateMap, habitKey, timeframe])
 
   const barColor = percent === null ? 'var(--text-dim)' : percent >= 70 ? 'var(--habit-done-bg)' : percent >= 40 ? 'var(--state-warning-text)' : 'var(--danger)'
+
+  const handleToggleDay = async (dateStr, value) => {
+    // Optimistic — keep streaks / % live
+    setHistory(prev => {
+      const exists = prev.some(r => r.date === dateStr)
+      return exists
+        ? prev.map(r => r.date === dateStr ? { ...r, [habitKey]: value } : r)
+        : [...prev, { date: dateStr, [habitKey]: value }]
+    })
+    try {
+      await setHabitForDate(dateStr, habitKey, value)
+    } catch {
+      const yearAgo = new Date(); yearAgo.setFullYear(yearAgo.getFullYear() - 1)
+      getHabitHistory(yearAgo.toLocaleDateString('en-CA')).then(setHistory)
+    }
+  }
 
   const handlePrevMonth = () => {
     if (calMonth === 0) { setCalYear(y => y - 1); setCalMonth(11) }
@@ -306,10 +326,11 @@ export default function HabitPage() {
               dateMap={dateMap}
               onPrev={handlePrevMonth}
               onNext={handleNextMonth}
+              onToggle={handleToggleDay}
             />
 
             <p className="text-xs pb-4" style={{ color: 'var(--text-dim)' }}>
-              Streak = consecutive days completed · Best = longest run ever
+              Click any day to check or uncheck it · Streak = consecutive days completed · Best = longest run ever
             </p>
           </>
         )}

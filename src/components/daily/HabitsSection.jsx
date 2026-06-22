@@ -1,9 +1,65 @@
-﻿import { HABITS } from '../../lib/constants'
+import { useMemo } from 'react'
+import { HABITS } from '../../lib/constants'
 
-function HabitRow({ habit, checked, onToggle, percentage }) {
+const DOW_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'] // Sunday → Saturday
+
+// The 7 dates of the current week, Sunday → Saturday.
+function currentWeekDates() {
+  const now = new Date()
+  const sunday = new Date(now)
+  sunday.setDate(now.getDate() - now.getDay())
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(sunday)
+    d.setDate(sunday.getDate() + i)
+    return d.toLocaleDateString('en-CA')
+  })
+}
+
+function WeekChecks({ weekDates, today, doneFor, onToggleDate }) {
+  return (
+    <div className="flex items-center gap-1 shrink-0">
+      {weekDates.map((date, i) => {
+        const isFuture = date > today
+        const isToday  = date === today
+        const done     = doneFor(date)
+        return (
+          <button
+            key={date}
+            disabled={isFuture}
+            onClick={() => !isFuture && onToggleDate(date, !done)}
+            title={`${date}${isToday ? ' (today)' : ''}`}
+            className="flex flex-col items-center gap-0.5"
+            style={{ cursor: isFuture ? 'default' : 'pointer' }}
+          >
+            <span className="text-[10px] leading-none" style={{ color: isToday ? 'var(--accent)' : 'var(--text-dim)' }}>
+              {DOW_LABELS[i]}
+            </span>
+            <span
+              className="flex items-center justify-center rounded transition-colors"
+              style={{
+                width: 18,
+                height: 18,
+                border: `1.5px solid ${isToday ? 'var(--accent)' : 'var(--border)'}`,
+                backgroundColor: done ? 'var(--habit-done-bg)' : 'transparent',
+                opacity: isFuture ? 0.35 : 1,
+              }}
+            >
+              {done && <span className="text-[10px] text-black font-bold leading-none">✓</span>}
+            </span>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function HabitRow({ habit, checked, onToggle, weekDates, today, dateMap, noteToday, onToggleDate }) {
+  const doneFor = (date) =>
+    date === today ? !!noteToday : !!(dateMap[date] && dateMap[date][habit.key])
+
   return (
     <div className="flex items-center gap-3 px-4 py-3 border-b last:border-b-0" style={{ borderColor: 'var(--border)' }}>
-      {/* Checkbox */}
+      {/* Today's checkbox */}
       <button
         onClick={() => onToggle(!checked)}
         className="shrink-0 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors"
@@ -20,37 +76,26 @@ function HabitRow({ habit, checked, onToggle, percentage }) {
       <span className="text-lg shrink-0">{habit.icon}</span>
       <span className="text-sm flex-1" style={{ color: 'var(--text-primary)' }}>{habit.label}</span>
 
-      {/* 7-day mini bar */}
-      <div className="flex items-center gap-2 shrink-0">
-        <div
-          className="w-20 h-1.5 rounded-full overflow-hidden"
-          style={{ backgroundColor: 'var(--border)' }}
-        >
-          <div
-            className="h-full rounded-full transition-all"
-            style={{
-              width: `${percentage}%`,
-              backgroundColor: percentage >= 70 ? 'var(--habit-done-bg)' : percentage >= 40 ? 'var(--state-warning-text)' : 'var(--danger)',
-            }}
-          />
-        </div>
-        <span className="text-xs w-8 text-right" style={{ color: 'var(--text-secondary)' }}>
-          {percentage}%
-        </span>
-      </div>
+      {/* Week (Sun–Sat) check-offs */}
+      <WeekChecks
+        weekDates={weekDates}
+        today={today}
+        doneFor={doneFor}
+        onToggleDate={(date, val) => onToggleDate(habit.key, date, val)}
+      />
     </div>
   )
 }
 
-export default function HabitsSection({ note, habitHistory = [], onToggle }) {
-  if (!note) return null
+export default function HabitsSection({ note, habitHistory = [], onToggle, onToggleDate }) {
+  const today     = new Date().toLocaleDateString('en-CA')
+  const weekDates = useMemo(currentWeekDates, [])
+  const dateMap   = useMemo(
+    () => Object.fromEntries(habitHistory.map(r => [r.date, r])),
+    [habitHistory]
+  )
 
-  // Compute current-week percentage (Sun–Sat) for each habit from history
-  const getPercentage = (habitKey) => {
-    if (!habitHistory.length) return 0
-    const completed = habitHistory.filter(day => day[habitKey]).length
-    return Math.round((completed / 7) * 100)
-  }
+  if (!note) return null
 
   const displayHabits  = HABITS.filter(h => h.key !== 'habit_code_challenge')
   const completedToday = displayHabits.filter(h => note[h.key]).length
@@ -74,7 +119,11 @@ export default function HabitsSection({ note, habitHistory = [], onToggle }) {
             habit={habit}
             checked={!!note[habit.key]}
             onToggle={(val) => onToggle(habit.key, val)}
-            percentage={getPercentage(habit.key)}
+            weekDates={weekDates}
+            today={today}
+            dateMap={dateMap}
+            noteToday={note[habit.key]}
+            onToggleDate={onToggleDate}
           />
         ))}
       </div>

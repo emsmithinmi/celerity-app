@@ -73,6 +73,13 @@ export async function toggleHabit(noteId, habitKey, value) {
   return data
 }
 
+// Set a habit on an arbitrary date — ensures the day's note exists first so a
+// missed day can be back-filled. Returns the updated note row.
+export async function setHabitForDate(date, habitKey, value) {
+  const note = await ensureNoteForDate(date)
+  return toggleHabit(note.id, habitKey, value)
+}
+
 export async function getHabitHistory(since) {
   const { data, error } = await supabase
     .from('daily_notes')

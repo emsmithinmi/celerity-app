@@ -4,6 +4,7 @@ import {
   getHabitHistory,
   getDailyStats,
   toggleHabit,
+  setHabitForDate,
   addNoteEntry,
   updateNotesArray,
   updateTopOfMind,
@@ -76,6 +77,22 @@ export function useDaily(date) {
     }
   }
 
+  // Toggle a habit for any day of the current week (back-fill a missed day).
+  const handleToggleHabitForDate = async (habitKey, dateStr, value) => {
+    if (dateStr === date) setNote(prev => prev ? { ...prev, [habitKey]: value } : prev)
+    try {
+      const updated = await setHabitForDate(dateStr, habitKey, value)
+      if (dateStr === date) setNote(updated)
+      const d = new Date(date + 'T12:00:00')
+      const sun = new Date(d)
+      sun.setDate(d.getDate() - d.getDay())
+      const history = await getHabitHistory(sun.toLocaleDateString('en-CA'))
+      setHabitHistory(history)
+    } catch {
+      if (dateStr === date) setNote(prev => prev ? { ...prev, [habitKey]: !value } : prev)
+    }
+  }
+
   const handleAddNote = async (body) => {
     if (!note) return
     const newEntry = { timestamp: new Date().toISOString(), body }
@@ -115,6 +132,7 @@ export function useDaily(date) {
     refresh: load,
     refreshStats,
     toggleHabit: handleToggleHabit,
+    toggleHabitForDate: handleToggleHabitForDate,
     addNote: handleAddNote,
     editNote: handleEditNote,
     deleteNote: handleDeleteNote,

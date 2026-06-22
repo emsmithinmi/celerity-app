@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getHabitHistory } from '../lib/api/daily'
+import { getHabitHistory, setHabitForDate } from '../lib/api/daily'
 import { HABITS } from '../lib/constants'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -51,7 +51,7 @@ function getLast7Days(dateMap, habitKey) {
 
 // ─── Habit Card ───────────────────────────────────────────────────────────────
 
-function HabitCard({ habit, dateMap, history, onClick }) {
+function HabitCard({ habit, dateMap, history, onClick, onToggleDay }) {
   const streak  = computeCurrentStreak(dateMap, habit.key)
   const percent = computePercent(dateMap, habit.key, 30)
   const last7   = getLast7Days(dateMap, habit.key)
@@ -76,13 +76,15 @@ function HabitCard({ habit, dateMap, history, onClick }) {
         <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>day streak</p>
       </div>
 
-      {/* Last 7 days dots */}
+      {/* Last 7 days dots — click to back-fill a missed day */}
       <div className="flex gap-1 mb-3">
         {last7.map(({ date, done }) => (
-          <div
+          <button
             key={date}
-            className="flex-1 h-2 rounded-full"
-            style={{ backgroundColor: done ? 'var(--habit-done-bg)' : 'var(--border)' }}
+            onClick={(e) => { e.stopPropagation(); onToggleDay(date, !done) }}
+            title={`${date}${done ? ' — done, click to clear' : ' — click to mark done'}`}
+            className="flex-1 h-2 rounded-full transition-colors"
+            style={{ backgroundColor: done ? 'var(--habit-done-bg)' : 'var(--border)', cursor: 'pointer' }}
           />
         ))}
       </div>
@@ -113,6 +115,22 @@ export default function Habits() {
 
   const dateMap = useMemo(() => buildDateMap(history), [history])
 
+  const handleToggleDay = async (habitKey, dateStr, value) => {
+    // Optimistic — update the card's dots / streak immediately
+    setHistory(prev => {
+      const exists = prev.some(r => r.date === dateStr)
+      return exists
+        ? prev.map(r => r.date === dateStr ? { ...r, [habitKey]: value } : r)
+        : [...prev, { date: dateStr, [habitKey]: value }]
+    })
+    try {
+      await setHabitForDate(dateStr, habitKey, value)
+    } catch {
+      const yearAgo = new Date(); yearAgo.setFullYear(yearAgo.getFullYear() - 1)
+      getHabitHistory(yearAgo.toLocaleDateString('en-CA')).then(setHistory)
+    }
+  }
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
@@ -131,7 +149,7 @@ export default function Habits() {
         ) : (
           <>
             <p className="text-xs mb-4" style={{ color: 'var(--text-secondary)' }}>
-              Click a habit to see full history and stats
+              Click a habit to see full history and stats · click a day-dot to back-fill a missed day
             </p>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
               {HABITS.map(habit => (
@@ -141,6 +159,7 @@ export default function Habits() {
                   dateMap={dateMap}
                   history={history}
                   onClick={() => navigate(`/habits/${habit.key}`)}
+                  onToggleDay={(date, value) => handleToggleDay(habit.key, date, value)}
                 />
               ))}
             </div>
