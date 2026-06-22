@@ -54,6 +54,8 @@ When syncing, fetch all four calendars for the target date range and upsert into
 
 Do not commit without a corresponding changelog entry. The changelog is the human-readable record of the project — keep it up to date so it never has to be backfilled again.
 
+**Cross-machine sync rule:** This project is worked on from multiple computers. After every code change lands, the workflow is: update `CHANGELOG.md` → commit → **push to origin**. Don't leave finished work sitting uncommitted/unpushed locally — the changelog + git history is how the other machine knows what state things are in. When in doubt, commit and push.
+
 ## Project Structure
 ```
 src/
@@ -131,7 +133,7 @@ src/
   pages/
     Login.jsx              # Google OAuth + magic link; auto-redirects to /daily when a session appears
     ResetPassword.jsx      # handles Supabase PASSWORD_RECOVERY flow at /reset-password
-    Daily.jsx                # date nav (← →), top-of-mind, stat cards, agenda, habits, notes, challenge
+    Daily.jsx                # dashboard for today (no date nav), quote, stat cards, agenda, tasks, projects, notes, habits, challenge
     Tasks.jsx                # tabbed by status, stat row, capture modal
     TaskPage.jsx             # full detail page at /tasks/:id
     Projects.jsx             # tabbed by status, stat row, capture modal
@@ -226,7 +228,7 @@ Contexts mounted at App root (outside BrowserRouter):
 - This gives Claude permanent live-preview access via `preview_start` — no tokens to paste. Signing out is fine; next reload signs back in.
 
 ## Pages — Current State
-- **Daily** — date nav, daily quote (rerolls each load + on skip, 30-day dedupe, per-user blocklist via "never" button), quick capture bar, top-of-mind, stat cards, agenda (Google Calendar events + all-day tasks/project deadlines), projects section, tasks section, notes log, habit toggles (7 habits, code challenge excluded), collapsible Challenge section (auto-marks habit on submit). No in-app AI — the Daily Brief shown is whatever's in the DB (read-only display until external agent writes one).
+- **Daily** — dashboard for today (no date navigation — it was dropped 2026-06-19; Daily is a live "right now" view). Daily quote (rerolls each load + on skip, 30-day dedupe, per-user blocklist via "never" button), quick capture bar, stat cards, agenda (Google Calendar events + all-day tasks/project deadlines), **Tasks section (above Projects)**, Projects section, notes log, habit toggles (7 habits, code challenge excluded), collapsible Challenge section (auto-marks habit on submit). No in-app AI. The Tasks section's **Next Actions tab supports drag-to-reorder** — display-only, persisted to localStorage (`daily-next-actions-order`), no DB writes / no effect on status or priority.
 - **Tasks** — tabbed by status, stat summary row, capture modal, click row → `/tasks/:id`
 - **TaskPage** — full detail: title, status, priority, energy level, area, due date, duration, description, **Context Tags section** (toggleable chips + combobox input, saves immediately), subtask checklist, **Notes** (was Comments), linked people, archive/delete
 - **Projects** — tabbed by status, capture modal, click row → `/projects/:id`
