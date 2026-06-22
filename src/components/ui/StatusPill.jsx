@@ -1,4 +1,5 @@
 import { TASK_STATUSES, PROJECT_STATUSES, PEOPLE_STATUSES } from '../../lib/constants'
+import LucideIcon from './LucideIcon'
 
 const STATUS_MAPS = {
   task:    TASK_STATUSES,
@@ -21,7 +22,7 @@ export default function StatusPill({ status, type = 'task', className = '' }) {
         borderColor: def.border ?? def.bg,
       }}
     >
-      {def.icon && <span className="leading-none">{def.icon}</span>}
+      <LucideIcon name={def.icon} size={11} />
       {def.label}
     </span>
   )

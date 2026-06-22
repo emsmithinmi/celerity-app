@@ -251,7 +251,7 @@ export default function ProjectDetail({ project: initialProject, open, onClose, 
             className="rounded-lg px-4 py-3 mb-4 border text-sm"
             style={{ backgroundColor: 'var(--state-warning-bg)', borderColor: 'var(--state-warning-text)', color: 'var(--state-warning-text)' }}
           >
-            <p className="font-medium mb-1">📋 Fill in required fields to start planning</p>
+            <p className="font-medium mb-1">Fill in required fields to start planning</p>
             <p className="text-xs" style={{ color: 'var(--state-warning-dim)' }}>Missing: {missing.join(', ')}</p>
           </div>
         )}
@@ -263,7 +263,7 @@ export default function ProjectDetail({ project: initialProject, open, onClose, 
             style={{ backgroundColor: 'var(--state-info-bg)', borderColor: 'var(--accent)', color: 'var(--accent)' }}
           >
             <p className="font-medium">
-              🗂 Add at least {Math.max(0, 2 - taskCount)} more task{2 - taskCount !== 1 ? 's' : ''} to start this project
+              Add at least {Math.max(0, 2 - taskCount)} more task{2 - taskCount !== 1 ? 's' : ''} to start this project
             </p>
             <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
               {taskCount} of 2 minimum tasks added
@@ -277,7 +277,7 @@ export default function ProjectDetail({ project: initialProject, open, onClose, 
             className="rounded-lg px-4 py-3 mb-4 border text-sm"
             style={{ backgroundColor: 'var(--state-purple-bg)', borderColor: 'var(--accent-purple)', color: 'var(--accent-purple)' }}
           >
-            <p className="font-medium">⚠ Project is stalled</p>
+            <p className="font-medium">Project is stalled</p>
             <p className="text-xs mt-1" style={{ color: 'var(--state-purple-dim)' }}>
               Move a task to Next Actions to un-stall this project.
             </p>
@@ -290,7 +290,7 @@ export default function ProjectDetail({ project: initialProject, open, onClose, 
             className="rounded-lg px-4 py-3 mb-4 border text-sm"
             style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
           >
-            <p className="font-medium" style={{ color: 'var(--text-primary)' }}>🔮 Someday/Maybe</p>
+            <p className="font-medium" style={{ color: 'var(--text-primary)' }}>Someday/Maybe</p>
             <p className="text-xs mt-1">
               {somedayAge} — fill in area, dates &amp; description when you're ready to plan it.
             </p>

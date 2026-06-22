@@ -16,8 +16,7 @@ function initials(name) {
 }
 
 // bgColor: custom background hex (overrides CSS var)
-// emoji: custom emoji icon shown instead of initials when no photo
-export default function AvatarCircle({ src, name = '', size = 'md', canUpload = false, uploading = false, onFileSelect, bgColor, emoji }) {
+export default function AvatarCircle({ src, name = '', size = 'md', canUpload = false, uploading = false, onFileSelect, bgColor }) {
   const fileRef = useRef(null)
   const [hovered, setHovered] = useState(false)
   const { px, fontSize, iconSize } = SIZES[size] ?? SIZES.md
@@ -38,8 +37,6 @@ export default function AvatarCircle({ src, name = '', size = 'md', canUpload = 
     >
       {src ? (
         <img src={src} alt={name} className="w-full h-full object-cover" />
-      ) : emoji ? (
-        <span style={{ fontSize, lineHeight: 1 }}>{emoji}</span>
       ) : (
         <span style={{ fontSize, color: 'var(--accent)', fontWeight: 600, lineHeight: 1 }}>
           {initials(name)}

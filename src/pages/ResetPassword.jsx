@@ -30,7 +30,7 @@ export default function ResetPassword() {
         <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>Choose something you'll remember.</p>
 
         {done ? (
-          <p className="text-sm text-center" style={{ color: 'var(--accent-green)' }}>✓ Password updated — taking you in…</p>
+          <p className="text-sm text-center" style={{ color: 'var(--accent-green)' }}>Password updated — taking you in…</p>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

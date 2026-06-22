@@ -145,7 +145,7 @@ export default function Tasks() {
         <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>Tasks</h1>
         <div className="flex items-center gap-2">
           <Button size="sm" variant={selectMode ? 'secondary' : 'ghost'} onClick={() => selectMode ? exitSelectMode() : setSelectMode(true)}>
-            {selectMode ? `✕ Cancel (${selectedIds.size} selected)` : '☑ Select'}
+            {selectMode ? `Cancel (${selectedIds.size} selected)` : 'Select'}
           </Button>
           <Button size="sm" variant="primary" onClick={() => setShowCapture(true)}>+ New Task</Button>
         </div>

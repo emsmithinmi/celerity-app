@@ -2,6 +2,7 @@
 import { useNavigate } from 'react-router-dom'
 import { getHabitHistory, setHabitForDate } from '../lib/api/daily'
 import { HABITS } from '../lib/constants'
+import LucideIcon from '../components/ui/LucideIcon'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -66,7 +67,9 @@ function HabitCard({ habit, dateMap, history, onClick, onToggleDay }) {
     >
       {/* Icon + name */}
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-2xl">{habit.icon}</span>
+        <span style={{ color: 'var(--text-secondary)' }}>
+          <LucideIcon name={habit.icon} size={22} />
+        </span>
         <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{habit.label}</p>
       </div>
 

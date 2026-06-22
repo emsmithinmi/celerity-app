@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect, useCallback } from 'react'
 import { Plus, GripVertical } from 'lucide-react'
 import Button from '../components/ui/Button'
+import LucideIcon from '../components/ui/LucideIcon'
 import { PencilBtn, TrashBtn } from '../components/ui/IconBtn'
 import { getConnectedGoogleAccounts, getGoogleConnectUrl, disconnectGoogleAccount } from '../lib/api/googleConnect'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
@@ -117,13 +118,13 @@ function EnergyRow({ level, onSaved, onDelete, onDragStart, onDragEnd }) {
         </div>
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Icon (emoji)</label>
+            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Icon (Lucide name)</label>
             <input
               value={draft.icon ?? ''}
               onChange={e => ch('icon', e.target.value)}
               className="w-full px-3 py-1.5 rounded-lg text-sm border outline-none bg-transparent text-center"
               style={FIELD_STYLE}
-              placeholder="💪"
+              placeholder="Dumbbell"
             />
           </div>
           <div>
@@ -171,7 +172,7 @@ function EnergyRow({ level, onSaved, onDelete, onDragStart, onDragEnd }) {
             className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
             style={{ backgroundColor: draft.bg_color, color: draft.text_color }}
           >
-            <span>{draft.icon}</span>
+            <LucideIcon name={draft.icon} size={12} />
             {draft.label || 'Label'}
           </span>
         </div>
@@ -199,7 +200,7 @@ function EnergyRow({ level, onSaved, onDelete, onDragStart, onDragEnd }) {
           className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
           style={{ backgroundColor: level.bg_color, color: level.text_color }}
         >
-          <span>{level.icon}</span>
+          <LucideIcon name={level.icon} size={12} />
           {level.label}
         </span>
 
@@ -323,13 +324,13 @@ function AddEnergyForm({ onAdded, nextSortOrder }) {
       </div>
       <div className="grid grid-cols-3 gap-3">
         <div>
-          <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Icon (emoji)</label>
+          <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Icon (Lucide name)</label>
           <input
             value={draft.icon}
             onChange={e => ch('icon', e.target.value)}
             className="w-full px-3 py-1.5 rounded-lg text-sm border outline-none bg-transparent text-center"
             style={FIELD_STYLE}
-            placeholder="🧠"
+            placeholder="Brain"
           />
         </div>
         <div>
@@ -375,7 +376,7 @@ function AddEnergyForm({ onAdded, nextSortOrder }) {
           className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
           style={{ backgroundColor: draft.bg_color, color: draft.text_color }}
         >
-          <span>{draft.icon || '?'}</span>
+          <LucideIcon name={draft.icon} size={12} />
           {draft.label || 'Label'}
         </span>
       </div>
@@ -571,7 +572,7 @@ function AreaRow({ item, onSaved, onDelete, onDragStart, onDragEnd }) {
             </>
           ) : (
             <>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: bgColor, color: textColor }}>{icon && <span>{icon}</span>}{label}</span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: bgColor, color: textColor }}><LucideIcon name={icon} size={12} />{label}</span>
               <span className="flex-1" />
               <div className="flex items-center gap-1 shrink-0">
                 <PencilBtn onClick={() => setEditing(true)} />
@@ -583,8 +584,8 @@ function AreaRow({ item, onSaved, onDelete, onDragStart, onDragEnd }) {
         {editing && (
           <div className="px-4 pb-3 grid grid-cols-3 gap-4 border-t pt-3" style={{ borderColor: 'var(--border)' }}>
             <div>
-              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Icon (emoji)</label>
-              <input value={icon} onChange={e => setIcon(e.target.value)} className="w-full px-2 py-1 rounded-lg text-sm border outline-none bg-transparent text-center" style={FIELD_STYLE} placeholder="🏠" />
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Icon (Lucide name)</label>
+              <input value={icon} onChange={e => setIcon(e.target.value)} className="w-full px-2 py-1 rounded-lg text-sm border outline-none bg-transparent text-center" style={FIELD_STYLE} placeholder="Home" />
             </div>
             <div>
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Background</label>
@@ -602,7 +603,7 @@ function AreaRow({ item, onSaved, onDelete, onDragStart, onDragEnd }) {
             </div>
             <div className="col-span-3">
               <p className="text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>Preview</p>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: bgColor, color: textColor }}>{icon && <span>{icon}</span>}{label || 'Area'}</span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: bgColor, color: textColor }}><LucideIcon name={icon} size={12} />{label || 'Area'}</span>
             </div>
           </div>
         )}
@@ -646,7 +647,7 @@ function AddAreaForm({ onAdded, nextSortOrder }) {
       <div className="grid grid-cols-3 gap-4">
         <div>
           <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Icon (emoji)</label>
-          <input value={icon} onChange={e => setIcon(e.target.value)} className="w-full px-2 py-1 rounded-lg text-sm border outline-none bg-transparent text-center" style={FIELD_STYLE} placeholder="🏠" />
+          <input value={icon} onChange={e => setIcon(e.target.value)} className="w-full px-2 py-1 rounded-lg text-sm border outline-none bg-transparent text-center" style={FIELD_STYLE} placeholder="Home" />
         </div>
         <div>
           <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Background</label>
@@ -665,7 +666,7 @@ function AddAreaForm({ onAdded, nextSortOrder }) {
       </div>
       <div>
         <p className="text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>Preview</p>
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: bgColor, color: textColor }}>{icon && <span>{icon}</span>}{label || 'Area'}</span>
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: bgColor, color: textColor }}><LucideIcon name={icon} size={12} />{label || 'Area'}</span>
       </div>
       <div className="flex gap-2">
         <Button size="sm" variant="primary" onClick={submit} disabled={saving}>{saving ? 'Adding…' : 'Add'}</Button>

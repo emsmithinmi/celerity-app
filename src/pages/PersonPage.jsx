@@ -269,7 +269,7 @@ export default function PersonPage() {
         {/* ── Stale banner ── */}
         {isStale && (
           <div className="rounded-lg px-4 py-3 border text-sm" style={{ backgroundColor: 'var(--state-error-bg)', borderColor: 'var(--danger)', color: 'var(--state-error-text)' }}>
-            <p className="font-medium">⚠ Contact is stale</p>
+            <p className="font-medium">Contact is stale</p>
           </div>
         )}
 
@@ -302,7 +302,6 @@ export default function PersonPage() {
               uploading={avatarUploading}
               onFileSelect={handleAvatarUpload}
               bgColor={person.color ?? undefined}
-              emoji={person.icon ?? undefined}
             />
             <div>
               <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{displayName(person)}</p>
@@ -346,18 +345,7 @@ export default function PersonPage() {
 
             {/* Avatar icon + color (edit mode only) */}
             {editing && (
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Avatar Icon (emoji)</label>
-                  <input
-                    type="text"
-                    value={d.icon ?? ''}
-                    onChange={e => change('icon', e.target.value)}
-                    className={inputCls}
-                    style={inputStyle}
-                    placeholder="😊 (shows when no photo)"
-                  />
-                </div>
+              <div className="grid grid-cols-1 gap-3">
                 <div>
                   <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Avatar Color</label>
                   <div className="flex items-center gap-2">

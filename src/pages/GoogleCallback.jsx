@@ -33,7 +33,7 @@ export default function GoogleCallback() {
         sessionStorage.removeItem('google_connect_label')
 
         const result = await connectGoogleAccount(code, redirectUri, label)
-        setStatus(`Connected ${result.email} ✓`)
+        setStatus(`Connected ${result.email}`)
 
         // Brief pause so the user sees the success message, then back to Settings
         setTimeout(() => navigate('/settings', { replace: true }), 1200)

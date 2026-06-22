@@ -216,7 +216,7 @@ export default function ProjectPage() {
           {/* Status banners */}
           {project.status === 'inbox' && !clarified && (
             <div className="rounded-lg px-4 py-3 border text-sm" style={{ backgroundColor: 'var(--state-warning-bg)', borderColor: 'var(--state-warning-text)', color: 'var(--state-warning-text)' }}>
-              <p className="font-medium mb-1">📋 Fill in required fields to start planning</p>
+              <p className="font-medium mb-1">Fill in required fields to start planning</p>
               <p className="text-xs" style={{ color: 'var(--state-warning-dim)' }}>
                 Missing: {PLAN_REQUIRED.filter(f => !project[f]).join(', ')}
               </p>
@@ -225,26 +225,26 @@ export default function ProjectPage() {
           {project.status === 'planning' && !canStart && (
             <div className="rounded-lg px-4 py-3 border text-sm" style={{ backgroundColor: 'var(--state-info-bg)', borderColor: 'var(--accent)', color: 'var(--accent)' }}>
               <p className="font-medium">
-                🗂 Add at least {Math.max(0, 2 - taskCount)} more task{2 - taskCount !== 1 ? 's' : ''} to start this project
+                Add at least {Math.max(0, 2 - taskCount)} more task{2 - taskCount !== 1 ? 's' : ''} to start this project
               </p>
               <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{taskCount} of 2 minimum tasks added</p>
             </div>
           )}
           {project.status === 'stalled' && (
             <div className="rounded-lg px-4 py-3 border text-sm" style={{ backgroundColor: 'var(--state-stalled-bg)', borderColor: 'var(--highlight)', color: 'var(--highlight)' }}>
-              <p className="font-medium">⚠ Project is stalled</p>
+              <p className="font-medium">Project is stalled</p>
               <p className="text-xs mt-1" style={{ color: 'var(--state-stalled-dim)' }}>Move a task to Next Actions to un-stall this project.</p>
             </div>
           )}
           {project.status === 'waiting' && (
             <div className="rounded-lg px-4 py-3 border text-sm" style={{ backgroundColor: 'var(--state-error-bg)', borderColor: 'var(--danger)', color: 'var(--state-error-text)' }}>
-              <p className="font-medium">⏳ Project is waiting on blocked tasks</p>
+              <p className="font-medium">Project is waiting on blocked tasks</p>
               <p className="text-xs mt-1" style={{ color: 'var(--state-error-dim)' }}>Clear blockers on waiting tasks to resume.</p>
             </div>
           )}
           {project.status === 'someday' && (
             <div className="rounded-lg px-4 py-3 border text-sm" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}>
-              <p className="font-medium" style={{ color: 'var(--text-primary)' }}>🔮 Someday/Maybe</p>
+              <p className="font-medium" style={{ color: 'var(--text-primary)' }}>Someday/Maybe</p>
               <p className="text-xs mt-1">{somedayAge} — fill in area, dates &amp; description when you're ready to plan it.</p>
             </div>
           )}
@@ -432,7 +432,7 @@ export default function ProjectPage() {
       >
         {saveError && (
           <div className="rounded-lg px-3 py-2 mb-3 text-sm" style={{ backgroundColor: 'var(--state-error-bg)', border: '1px solid var(--danger)', color: 'var(--state-error-text)' }}>
-            ⚠ {saveError}
+            {saveError}
           </div>
         )}
         {editing && draft && (

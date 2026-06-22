@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom'
+import { HardHat } from 'lucide-react'
 
 const S = {
   card:  { backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' },
@@ -7,9 +8,9 @@ const S = {
 }
 
 const REVIEW_TYPES = [
-  { key: 'daily',   label: '📋 Daily'   },
-  { key: 'weekly',  label: '📅 Weekly'  },
-  { key: 'monthly', label: '📆 Monthly' },
+  { key: 'daily',   label: 'Daily'   },
+  { key: 'weekly',  label: 'Weekly'  },
+  { key: 'monthly', label: 'Monthly' },
 ]
 
 export default function Reviews() {
@@ -43,7 +44,7 @@ export default function Reviews() {
       {/* Body — under construction */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-2xl mx-auto px-6 py-24 text-center">
-          <p className="text-6xl mb-6">🚧</p>
+          <HardHat size={56} strokeWidth={1.5} className="mx-auto mb-6" style={{ color: 'var(--text-secondary)' }} />
           <h2 className="text-2xl font-semibold mb-3" style={S.text}>Under construction</h2>
           <p className="text-sm leading-relaxed" style={S.muted}>
             The review system is getting rebuilt from the ground up. Hang tight — this page will come back when the new flow is ready.

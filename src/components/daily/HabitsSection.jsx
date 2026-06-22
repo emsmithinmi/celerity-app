@@ -1,5 +1,7 @@
 import { useMemo } from 'react'
+import { Check } from 'lucide-react'
 import { HABITS } from '../../lib/constants'
+import LucideIcon from '../ui/LucideIcon'
 
 const DOW_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'] // Sunday → Saturday
 
@@ -44,7 +46,7 @@ function WeekChecks({ weekDates, today, doneFor, onToggleDate }) {
                 opacity: isFuture ? 0.35 : 1,
               }}
             >
-              {done && <span className="text-[10px] text-black font-bold leading-none">✓</span>}
+              {done && <Check size={10} strokeWidth={3} style={{ color: '#000' }} />}
             </span>
           </button>
         )
@@ -60,7 +62,9 @@ function HabitRow({ habit, weekDates, today, dateMap, noteToday, onToggleDate })
   return (
     <div className="flex items-center gap-3 px-4 py-3 border-b last:border-b-0" style={{ borderColor: 'var(--border)' }}>
       {/* Icon + Label */}
-      <span className="text-lg shrink-0">{habit.icon}</span>
+      <span className="shrink-0" style={{ color: 'var(--text-secondary)' }}>
+        <LucideIcon name={habit.icon} size={18} />
+      </span>
       <span className="text-sm flex-1" style={{ color: 'var(--text-primary)' }}>{habit.label}</span>
 
       {/* Week (Sun–Sat) check-offs */}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { Check, ChevronDown, ChevronRight } from 'lucide-react'
 import Button from '../ui/Button'
 import { pickRandomChallenge, deleteChallenge } from '../../lib/api/challenges'
 
@@ -63,7 +64,7 @@ export default function ChallengeSection({ challenge, onUpdate, onComplete }) {
       const done = { ...current, completed: true }
       setCurrent(done)
       onUpdate(done)
-      onComplete?.() // marks the 💻 habit for today
+      onComplete?.() // marks the Code Challenge habit for today
     } finally {
       setWorking(false)
     }
@@ -83,7 +84,7 @@ export default function ChallengeSection({ challenge, onUpdate, onComplete }) {
           </span>
         )}
         {current?.completed && (
-          <span className="text-xs" style={{ color: 'var(--habit-done-bg)' }}>✓ done</span>
+          <span className="text-xs inline-flex items-center gap-1" style={{ color: 'var(--habit-done-bg)' }}><Check size={12} strokeWidth={3} /> done</span>
         )}
       </div>
 
@@ -95,7 +96,7 @@ export default function ChallengeSection({ challenge, onUpdate, onComplete }) {
         {!current ? (
           <p className="px-4 py-4 text-sm" style={{ color: 'var(--text-secondary)' }}>
             {bankEmpty
-              ? "🎉 You've cleared the whole bank! Run the refresh-challenges skill to load 25 more."
+              ? "You've cleared the whole bank! Run the refresh-challenges skill to load 25 more."
               : 'Loading a challenge…'}
           </p>
         ) : (
@@ -114,10 +115,11 @@ export default function ChallengeSection({ challenge, onUpdate, onComplete }) {
             <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
               <button
                 onClick={() => setRevealed(r => !r)}
-                className="text-xs font-medium transition-opacity hover:opacity-80"
+                className="text-xs font-medium transition-opacity hover:opacity-80 inline-flex items-center gap-1"
                 style={{ color: 'var(--accent)' }}
               >
-                {revealed ? '▾ Hide answer' : '▸ Reveal answer'}
+                {revealed ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                {revealed ? 'Hide answer' : 'Reveal answer'}
               </button>
               {revealed && (
                 <pre
@@ -138,7 +140,7 @@ export default function ChallengeSection({ challenge, onUpdate, onComplete }) {
               ) : (
                 <div className="flex gap-2">
                   <Button size="sm" variant="success" onClick={handleComplete} disabled={working}>
-                    {working ? '…' : '✓ Mark Complete'}
+                    {working ? '…' : 'Mark Complete'}
                   </Button>
                   <Button size="sm" variant="ghost" onClick={handleSkip} disabled={working}>
                     Skip

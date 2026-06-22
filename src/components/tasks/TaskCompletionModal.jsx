@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Archive, Star, Clock } from 'lucide-react'
 import Modal from '../ui/Modal'
 import Button from '../ui/Button'
 
@@ -39,13 +40,13 @@ export default function TaskCompletionModal({ open, onClose, onConfirm }) {
     <Modal
       open={open}
       onClose={handleClose}
-      title="Mark Complete 🎉"
+      title="Mark Complete"
       size="sm"
       footer={
         <>
           <Button variant="ghost" onClick={handleClose} disabled={saving}>Cancel</Button>
           <Button variant="success" onClick={handleConfirm} disabled={saving}>
-            {saving ? 'Saving…' : '✓ Done'}
+            {saving ? 'Saving…' : 'Done'}
           </Button>
         </>
       }
@@ -80,7 +81,7 @@ export default function TaskCompletionModal({ open, onClose, onConfirm }) {
             style={{ accentColor: 'var(--accent-purple)' }}
           />
           <div>
-            <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>📁 Archive</p>
+            <p className="text-sm font-medium inline-flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}><Archive size={13} /> Archive</p>
             <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
               Keep as a permanent record — won't be auto-deleted.
             </p>
@@ -97,7 +98,7 @@ export default function TaskCompletionModal({ open, onClose, onConfirm }) {
             style={{ accentColor: 'var(--accent-yellow)' }}
           />
           <div className="flex-1">
-            <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>⭐ Highlight</p>
+            <p className="text-sm font-medium inline-flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}><Star size={13} /> Highlight</p>
             <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
               Flag this as a notable win or milestone.
             </p>
@@ -124,10 +125,10 @@ export default function TaskCompletionModal({ open, onClose, onConfirm }) {
         {/* 30-day warning — only shown when neither box is checked */}
         {neitherChecked && (
           <p
-            className="text-xs px-3 py-2 rounded-lg"
+            className="text-xs px-3 py-2 rounded-lg inline-flex items-center gap-1.5"
             style={{ backgroundColor: 'var(--state-warning-bg)', color: 'var(--state-warning-text)' }}
           >
-            ⏱ Without archive or highlight, this task will be auto-deleted in 30 days.
+            <Clock size={12} /> Without archive or highlight, this task will be auto-deleted in 30 days.
           </p>
         )}
 

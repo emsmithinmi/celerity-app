@@ -1,4 +1,5 @@
-﻿import { StatusPill, PriorityBadge, EnergyBadge, DurationDisplay, ContextTag, ProgressBar, DragHandle } from '../ui'
+﻿import { Check, Star, Folder, FolderOpen, AlertCircle, AlertTriangle } from 'lucide-react'
+import { StatusPill, PriorityBadge, EnergyBadge, DurationDisplay, ContextTag, ProgressBar, DragHandle } from '../ui'
 import { useContextTags } from '../../contexts/ContextTagsContext'
 import { computeProgress } from '../../lib/progress'
 
@@ -24,7 +25,7 @@ export default function TaskRow({ task, onClick, selectable = false, selected = 
           className="flex items-center justify-center rounded border shrink-0"
           style={{ width: 16, height: 16, borderColor: selected ? 'var(--accent)' : 'var(--border)', backgroundColor: selected ? 'var(--accent)' : 'transparent' }}
         >
-          {selected && <span style={{ color: 'var(--pane-bg)', fontSize: 10, lineHeight: 1, fontWeight: 700 }}>✓</span>}
+          {selected && <Check size={10} strokeWidth={3} style={{ color: 'var(--pane-bg)' }} />}
         </div>
       ) : (
         <StatusPill status={task.status} type="task" />
@@ -39,17 +40,17 @@ export default function TaskRow({ task, onClick, selectable = false, selected = 
             textDecoration: isDone ? 'line-through' : 'none',
           }}
         >
-          {task.is_highlight && <span className="mr-1">⭐</span>}
+          {task.is_highlight && <Star size={11} fill="currentColor" className="inline-block mr-1 -mt-0.5" style={{ color: 'var(--highlight)' }} />}
           {task.title}
         </p>
         {task.projects?.title && (
-          <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-            📁 {task.projects.title}
+          <p className="text-xs truncate mt-0.5 inline-flex items-center gap-1" style={{ color: 'var(--text-secondary)' }}>
+            <FolderOpen size={10} /> {task.projects.title}
           </p>
         )}
         {!task.projects?.title && task.area && (
-          <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-            📂 {task.area}
+          <p className="text-xs truncate mt-0.5 inline-flex items-center gap-1" style={{ color: 'var(--text-secondary)' }}>
+            <Folder size={10} /> {task.area}
           </p>
         )}
         {task.subtasks?.length > 0 && (
@@ -76,7 +77,7 @@ export default function TaskRow({ task, onClick, selectable = false, selected = 
       <div className="flex items-center gap-2 shrink-0">
         {task.deadline && !isDone && (
           <span
-            className="text-xs font-medium px-1.5 py-0.5 rounded"
+            className="text-xs font-medium px-1.5 py-0.5 rounded inline-flex items-center gap-1"
             style={{
               backgroundColor: deadlineUrgent ? 'var(--state-error-bg)' : 'transparent',
               color: deadlineUrgent ? 'var(--accent-red)' : 'var(--accent-red)',
@@ -85,12 +86,13 @@ export default function TaskRow({ task, onClick, selectable = false, selected = 
             }}
             title="Deadline"
           >
-            🔴 {new Date(task.deadline + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            <AlertCircle size={10} />
+            {new Date(task.deadline + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
           </span>
         )}
         {task.due_date && (
-          <span className="text-xs" style={{ color: overdue ? 'var(--danger)' : 'var(--text-secondary)' }}>
-            {overdue ? '⚠ ' : ''}
+          <span className="text-xs inline-flex items-center gap-1" style={{ color: overdue ? 'var(--danger)' : 'var(--text-secondary)' }}>
+            {overdue && <AlertTriangle size={10} />}
             {new Date(task.due_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
           </span>
         )}

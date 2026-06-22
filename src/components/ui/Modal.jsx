@@ -1,4 +1,5 @@
 ﻿import { useEffect, useRef } from 'react'
+import { X } from 'lucide-react'
 
 /**
  * Modal sizes: sm | md (default) | lg | xl
@@ -66,11 +67,11 @@ export default function Modal({
             {!hideClose && (
               <button
                 onClick={onClose}
-                className="ml-auto text-lg leading-none transition-opacity hover:opacity-70"
+                className="ml-auto flex items-center justify-center transition-opacity hover:opacity-70"
                 style={{ color: 'var(--text-secondary)' }}
                 aria-label="Close"
               >
-                ✕
+                <X size={18} />
               </button>
             )}
           </div>

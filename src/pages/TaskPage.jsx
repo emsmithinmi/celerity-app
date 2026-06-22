@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { Star, Archive, Copy, Trash2, Calendar, User, AlertCircle } from 'lucide-react'
 import {
   getTask, updateTask, completeTaskWithOptions, archiveTask, permanentDeleteTask,
   moveToNextAction, moveToQueued, moveToWaiting,
@@ -295,7 +296,7 @@ export default function TaskPage() {
               className="rounded-lg px-4 py-3 border text-sm"
               style={{ backgroundColor: 'var(--state-warning-bg)', borderColor: 'var(--state-warning-text)', color: 'var(--state-warning-text)' }}
             >
-              <p className="font-medium mb-1">📋 This task needs clarification</p>
+              <p className="font-medium mb-1">This task needs clarification</p>
               <p className="text-xs" style={{ color: 'var(--state-warning-dim)' }}>
                 Missing: {CLARIFY_REQUIRED.filter(f => !task[f]).join(', ')}
               </p>
@@ -313,8 +314,8 @@ export default function TaskPage() {
               className="rounded-xl border p-4 space-y-4"
               style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
             >
-              <p className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
-                {task.is_highlight && <span className="mr-1">⭐</span>}
+              <p className="text-base font-semibold inline-flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
+                {task.is_highlight && <Star size={14} fill="currentColor" style={{ color: 'var(--highlight)' }} />}
                 {task.title}
               </p>
 
@@ -343,8 +344,9 @@ export default function TaskPage() {
                 <div>
                   <p className="text-xs font-medium mb-0.5" style={{ color: 'var(--text-secondary)' }}>Deadline</p>
                   {task.deadline ? (
-                    <p className="text-sm font-medium" style={{ color: 'var(--accent-red)' }}>
-                      🔴 {new Date(task.deadline + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    <p className="text-sm font-medium inline-flex items-center gap-1.5" style={{ color: 'var(--accent-red)' }}>
+                      <AlertCircle size={14} />
+                      {new Date(task.deadline + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                     </p>
                   ) : (
                     <p className="text-sm" style={{ color: 'var(--text-dim)' }}>—</p>
@@ -395,10 +397,10 @@ export default function TaskPage() {
                           key={p.id}
                           onMouseDown={e => e.preventDefault()}
                           onClick={() => handleLinkPerson(p.id)}
-                          className="w-full text-left px-3 py-2 text-sm hover:opacity-80 border-t first:border-t-0"
+                          className="w-full text-left px-3 py-2 text-sm hover:opacity-80 border-t first:border-t-0 inline-flex items-center gap-2"
                           style={{ borderColor: 'var(--border)', color: 'var(--text-primary)', backgroundColor: 'transparent' }}
                         >
-                          👤 {displayName}
+                          <User size={12} /> {displayName}
                         </button>
                       )
                     })}
@@ -414,7 +416,7 @@ export default function TaskPage() {
                       className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs border"
                       style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
                     >
-                      👤 {tp.people.preferred_name ?? tp.people.first_name} {tp.people.last_name}
+                      <User size={12} /> {tp.people.preferred_name ?? tp.people.first_name} {tp.people.last_name}
                       <button
                         onClick={() => handleUnlinkPerson(tp.person_id)}
                         className="ml-1 hover:opacity-60"
@@ -505,7 +507,7 @@ export default function TaskPage() {
               {task.status === 'inbox' && (
                 <>
                   <Button variant="danger"    size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.did_it}</Button>
-                  <Button variant="secondary" size="sm" onClick={() => setShowSchedule(true)}>📅 Schedule</Button>
+                  <Button variant="secondary" size="sm" onClick={() => setShowSchedule(true)}>Schedule</Button>
                   {clarified && (
                     <>
                       {hasProject
@@ -524,7 +526,7 @@ export default function TaskPage() {
                   <Button variant="success"   size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.complete}</Button>
                   <Button variant="danger"    size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.did_it}</Button>
                   <Button variant="secondary" size="sm" onClick={() => setShowWaiting(true)}>{TASK_ACTIONS.waiting}</Button>
-                  <Button variant="secondary" size="sm" onClick={() => setShowSchedule(true)}>📅 Schedule</Button>
+                  <Button variant="secondary" size="sm" onClick={() => setShowSchedule(true)}>Schedule</Button>
                   {hasProject  && <Button variant="ghost" size="sm" onClick={handleQueue}>{TASK_ACTIONS.queue}</Button>}
                   {!hasProject && <Button variant="ghost" size="sm" onClick={() => setShowRoute(true)}>Assign to Project →</Button>}
                 </>
@@ -533,14 +535,14 @@ export default function TaskPage() {
                 <>
                   <Button variant="success"   size="sm" onClick={handleNextAction}>{TASK_ACTIONS.next_action}</Button>
                   <Button variant="danger"    size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.did_it}</Button>
-                  <Button variant="secondary" size="sm" onClick={() => setShowSchedule(true)}>📅 Schedule</Button>
+                  <Button variant="secondary" size="sm" onClick={() => setShowSchedule(true)}>Schedule</Button>
                 </>
               )}
               {task.status === 'waiting' && (
                 <>
                   <Button variant="success"   size="sm" onClick={handleClearWaiting}>Clear Blocker</Button>
                   <Button variant="danger"    size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.did_it}</Button>
-                  <Button variant="secondary" size="sm" onClick={() => setShowSchedule(true)}>📅 Schedule</Button>
+                  <Button variant="secondary" size="sm" onClick={() => setShowSchedule(true)}>Schedule</Button>
                 </>
               )}
               {task.status === 'scheduled' && (
@@ -548,39 +550,39 @@ export default function TaskPage() {
                   <Button variant="success"   size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.complete}</Button>
                   <Button variant="danger"    size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.did_it}</Button>
                   <Button variant="secondary" size="sm" onClick={handleNextAction}>{TASK_ACTIONS.next_action}</Button>
-                  <Button variant="secondary" size="sm" onClick={() => setShowSchedule(true)}>📅 Reschedule</Button>
+                  <Button variant="secondary" size="sm" onClick={() => setShowSchedule(true)}>Reschedule</Button>
                 </>
               )}
               {task.status === 'someday' && (
                 <>
                   <Button variant="success"   size="sm" onClick={handleNextAction}>{TASK_ACTIONS.next_action}</Button>
                   <Button variant="danger"    size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.did_it}</Button>
-                  <Button variant="secondary" size="sm" onClick={() => setShowSchedule(true)}>📅 Schedule</Button>
+                  <Button variant="secondary" size="sm" onClick={() => setShowSchedule(true)}>Schedule</Button>
                 </>
               )}
               {isCompleted && (
                 <>
                   {!task.is_highlight && (
                     <Button variant="secondary" size="sm" onClick={() => setShowHighlight(true)}>
-                      ⭐ Add to Highlights
+                      Add to Highlights
                     </Button>
                   )}
                   {isDone && (
                     <Button variant="secondary" size="sm" onClick={handleArchive}>
-                      📁 Archive
+                      Archive
                     </Button>
                   )}
                   <Button variant="secondary" size="sm" onClick={handleDuplicate}>
-                    ⧉ Duplicate
+                    Duplicate
                   </Button>
                   <Button variant="danger" size="sm" onClick={() => setShowDiscard(true)}>
-                    🗑 Permanently Delete
+                    Permanently Delete
                   </Button>
                 </>
               )}
               {!isCompleted && (
                 <span className="ml-auto flex items-center gap-2">
-                  <Button variant="ghost" size="sm" onClick={handleDuplicate}>⧉ Duplicate</Button>
+                  <Button variant="ghost" size="sm" onClick={handleDuplicate}>Duplicate</Button>
                   <TrashBtn onClick={() => setShowDiscard(true)} />
                 </span>
               )}
@@ -631,7 +633,7 @@ export default function TaskPage() {
       >
         {saveError && (
           <div className="rounded-lg px-3 py-2 mb-3 text-sm" style={{ backgroundColor: 'var(--state-error-bg)', borderColor: 'var(--danger)', border: '1px solid', color: 'var(--state-error-text)' }}>
-            ⚠ {saveError}
+            {saveError}
           </div>
         )}
         {editing && draft && (

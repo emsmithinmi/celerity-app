@@ -2,6 +2,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { getHabitHistory, setHabitForDate } from '../lib/api/daily'
 import { HABITS } from '../lib/constants'
+import LucideIcon from '../components/ui/LucideIcon'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -269,7 +270,9 @@ export default function HabitPage() {
           ← Habits
         </button>
         <span style={{ color: 'var(--border)' }}>/</span>
-        <span className="text-xl">{habit.icon}</span>
+        <span style={{ color: 'var(--text-secondary)' }}>
+          <LucideIcon name={habit.icon} size={18} />
+        </span>
         <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{habit.label}</span>
       </div>
 
@@ -292,7 +295,7 @@ export default function HabitPage() {
               </div>
               <div className="rounded-xl border p-4 text-center" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
                 <p className="text-3xl font-bold" style={{ color: barColor }}>
-                  {percent === null ? '—' : timeframe === 'today' ? (percent === 100 ? '✓' : '✗') : `${percent}%`}
+                  {percent === null ? '—' : timeframe === 'today' ? (percent === 100 ? 'Done' : '—') : `${percent}%`}
                 </p>
                 <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
                   {TIMEFRAMES.find(t => t.key === timeframe)?.label}

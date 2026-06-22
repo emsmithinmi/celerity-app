@@ -1,21 +1,23 @@
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import { Pin, PinOff } from 'lucide-react'
+import {
+  Pin, PinOff, Sun, FolderKanban, Zap, Users, Target, NotebookText, Settings, LogOut,
+} from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import AvatarCircle from '../ui/AvatarCircle'
 import { uploadUserAvatar } from '../../lib/api/user'
 
 const NAV_ITEMS = [
-  { to: '/daily',    label: 'Daily',    icon: '📅' },
-  { to: '/projects', label: 'Projects', icon: '🗂' },
-  { to: '/tasks',    label: 'Tasks',    icon: '⚡' },
-  { to: '/people',   label: 'People',   icon: '👥' },
-  { to: '/habits',   label: 'Habits',   icon: '🎯' },
-  { to: '/reviews',  label: 'Reviews',  icon: '🔍' },
+  { to: '/daily',    label: 'Daily',    Icon: Sun          },
+  { to: '/projects', label: 'Projects', Icon: FolderKanban },
+  { to: '/tasks',    label: 'Tasks',    Icon: Zap          },
+  { to: '/people',   label: 'People',   Icon: Users        },
+  { to: '/habits',   label: 'Habits',   Icon: Target       },
+  { to: '/reviews',  label: 'Reviews',  Icon: NotebookText },
 ]
 
 const BOTTOM_NAV = [
-  { to: '/settings', label: 'Settings', icon: '⚙️' },
+  { to: '/settings', label: 'Settings', Icon: Settings },
 ]
 
 export default function Layout() {
@@ -129,7 +131,7 @@ export default function Layout() {
           {/* Nav */}
           <nav className="flex-1 overflow-y-auto" style={{ padding: expanded ? '16px 12px' : '16px 8px' }}>
             <div className="space-y-1">
-              {NAV_ITEMS.map(({ to, label, icon }) => (
+              {NAV_ITEMS.map(({ to, label, Icon }) => (
                 <NavLink
                   key={to}
                   to={to}
@@ -137,7 +139,7 @@ export default function Layout() {
                   className={navItemClass}
                   style={navItemStyle}
                 >
-                  <span>{icon}</span>
+                  <Icon size={16} />
                   {expanded && <span>{label}</span>}
                 </NavLink>
               ))}
@@ -149,7 +151,7 @@ export default function Layout() {
             className="border-t pb-1"
             style={{ borderColor: 'var(--border)', padding: expanded ? '8px 12px 4px' : '8px 8px 4px' }}
           >
-            {BOTTOM_NAV.map(({ to, label, icon }) => (
+            {BOTTOM_NAV.map(({ to, label, Icon }) => (
               <NavLink
                 key={to}
                 to={to}
@@ -157,7 +159,7 @@ export default function Layout() {
                 className={navItemClass}
                 style={navItemStyle}
               >
-                <span>{icon}</span>
+                <Icon size={16} />
                 {expanded && <span>{label}</span>}
               </NavLink>
             ))}
@@ -190,7 +192,7 @@ export default function Layout() {
               }}
               title={!expanded ? 'Sign out' : undefined}
             >
-              {expanded ? 'Sign out' : '→'}
+              {expanded ? 'Sign out' : <LogOut size={13} className="mx-auto" />}
             </button>
           </div>
         </aside>
