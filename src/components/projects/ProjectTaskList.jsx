@@ -1,8 +1,9 @@
 ﻿import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTasks } from '../../hooks/useTasks'
+import { useListOrder } from '../../hooks/useListOrder'
 import { createTask } from '../../lib/api/tasks'
-import { StatusPill, PriorityBadge } from '../ui'
+import { StatusPill, PriorityBadge, DragHandle } from '../ui'
 
 const STATUS_TABS = [
   { key: 'active',      label: 'Active'       },
@@ -15,7 +16,7 @@ const STATUS_TABS = [
 
 const ACTIVE = ['inbox', 'next_action', 'queued', 'scheduled', 'waiting']
 
-function MiniTaskRow({ task }) {
+function MiniTaskRow({ task, reorderable = false, onDragStart, onDragEnd }) {
   const navigate = useNavigate()
   return (
     <div
@@ -23,6 +24,7 @@ function MiniTaskRow({ task }) {
       className="flex items-center gap-3 px-4 py-2.5 border-b last:border-b-0 cursor-pointer hover:opacity-90 transition-opacity"
       style={{ borderColor: 'var(--border)' }}
     >
+      {reorderable && <DragHandle onDragStart={onDragStart} onDragEnd={onDragEnd} className="-ml-1" />}
       <StatusPill status={task.status} type="task" />
       <span
         className="flex-1 text-sm truncate"
@@ -48,6 +50,10 @@ export default function ProjectTaskList({ projectId, onTaskCountChange }) {
   const displayed = tab === 'active'
     ? tasks.filter(t => ACTIVE.includes(t.status))
     : tasks.filter(t => t.status === tab)
+
+  // Drag-to-reorder per status tab (display-only, localStorage, per project)
+  const { ordered, dragOverId, handleDragStart, handleDragOver, handleDrop, handleDragEnd } =
+    useListOrder(`project-${projectId}-tasks-order-${tab}`, displayed)
 
   // Count by status for tabs
   const counts = {
@@ -105,9 +111,21 @@ export default function ProjectTaskList({ projectId, onTaskCountChange }) {
         >
           {loading ? (
             <p className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p>
-          ) : displayed.length > 0 ? (
-            displayed.map(t => (
-              <MiniTaskRow key={t.id} task={t} />
+          ) : ordered.length > 0 ? (
+            ordered.map(t => (
+              <div
+                key={t.id}
+                onDragOver={(e) => handleDragOver(e, t.id)}
+                onDrop={() => handleDrop(t.id)}
+                style={{ boxShadow: dragOverId === t.id ? 'inset 0 2px 0 0 var(--accent)' : 'none' }}
+              >
+                <MiniTaskRow
+                  task={t}
+                  reorderable
+                  onDragStart={() => handleDragStart(t.id)}
+                  onDragEnd={handleDragEnd}
+                />
+              </div>
             ))
           ) : (
             <p className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>

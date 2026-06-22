@@ -56,6 +56,15 @@ export function toIntervalString(hhmmss) {
   return `${parseInt(h)} hours ${parseInt(m)} minutes ${parseInt(s)} seconds`
 }
 
+/** Converts a count of seconds to a postgres interval string, or null if ≤ 0. */
+export function secondsToInterval(totalSeconds) {
+  if (!totalSeconds || totalSeconds <= 0) return null
+  const hours   = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = Math.floor(totalSeconds % 60)
+  return `${hours} hours ${minutes} minutes ${seconds} seconds`
+}
+
 export default function DurationDisplay({ duration, className = '' }) {
   if (!duration) return <span style={{ color: 'var(--text-secondary)' }}>—</span>
 

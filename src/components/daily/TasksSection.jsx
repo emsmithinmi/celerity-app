@@ -1,7 +1,8 @@
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { RefreshCw } from 'lucide-react'
 import { useTasks } from '../../hooks/useTasks'
+import { useListOrder } from '../../hooks/useListOrder'
 import { EmptyState } from '../ui'
 import TaskRow from '../tasks/TaskRow'
 
@@ -14,25 +15,6 @@ const TABS = [
   { key: 'waiting',     label: 'Waiting'      },
   { key: 'scheduled',   label: 'Scheduled'    },
 ]
-
-const LS_KEY = 'daily-next-actions-order'
-
-function loadOrder() {
-  try { return JSON.parse(localStorage.getItem(LS_KEY)) ?? [] } catch { return [] }
-}
-
-function saveOrder(ids) {
-  localStorage.setItem(LS_KEY, JSON.stringify(ids))
-}
-
-function applyOrder(tasks, orderedIds) {
-  const indexMap = Object.fromEntries(orderedIds.map((id, i) => [id, i]))
-  return [...tasks].sort((a, b) => {
-    const ai = indexMap[a.id] ?? Infinity
-    const bi = indexMap[b.id] ?? Infinity
-    return ai - bi
-  })
-}
 
 export default function TasksSection({ onRefreshStats }) {
   const navigate = useNavigate()
@@ -52,41 +34,19 @@ export default function TasksSection({ onRefreshStats }) {
 
   const tabCount = (key) => allTasks.filter(t => t.status === key).length
 
-  // ── Next Actions ordering ──────────────────────────────────────────────────
-  const [nextOrder, setNextOrder] = useState(loadOrder)
-  const dragId = useRef(null)
-  const dragOverId = useRef(null)
-
+  // ── Next Actions drag-to-reorder (display-only, localStorage) ───────────────
   const nextActionTasks = useMemo(
-    () => applyOrder(allTasks.filter(t => t.status === 'next_action'), nextOrder),
-    [allTasks, nextOrder]
+    () => allTasks.filter(t => t.status === 'next_action'),
+    [allTasks]
   )
-
-  const handleDragStart = (id) => { dragId.current = id }
-  const handleDragOver  = (e, id) => { e.preventDefault(); dragOverId.current = id }
-
-  const handleDrop = () => {
-    const from = dragId.current
-    const to   = dragOverId.current
-    if (!from || !to || from === to) return
-
-    const ids = nextActionTasks.map(t => t.id)
-    const fromIdx = ids.indexOf(from)
-    const toIdx   = ids.indexOf(to)
-    ids.splice(fromIdx, 1)
-    ids.splice(toIdx, 0, from)
-
-    setNextOrder(ids)
-    saveOrder(ids)
-    dragId.current = null
-    dragOverId.current = null
-  }
+  const { ordered, dragOverId, handleDragStart, handleDragOver, handleDrop, handleDragEnd } =
+    useListOrder('daily-next-actions-order', nextActionTasks)
 
   // ── Rendered task list ─────────────────────────────────────────────────────
   const tasks = useMemo(() => {
-    if (activeTab === 'next_action') return nextActionTasks
+    if (activeTab === 'next_action') return ordered
     return allTasks.filter(t => t.status === activeTab)
-  }, [allTasks, activeTab, nextActionTasks])
+  }, [allTasks, activeTab, ordered])
 
   return (
     <div>
@@ -139,14 +99,21 @@ export default function TasksSection({ onRefreshStats }) {
             activeTab === 'next_action' ? (
               <div
                 key={t.id}
-                draggable
-                onDragStart={() => handleDragStart(t.id)}
                 onDragOver={(e) => handleDragOver(e, t.id)}
-                onDrop={handleDrop}
+                onDrop={() => handleDrop(t.id)}
                 className="border-b last:border-b-0"
-                style={{ cursor: 'grab', borderColor: 'var(--border)' }}
+                style={{
+                  borderColor: 'var(--border)',
+                  boxShadow: dragOverId === t.id ? 'inset 0 2px 0 0 var(--accent)' : 'none',
+                }}
               >
-                <TaskRow task={t} onClick={() => navigate(`/tasks/${t.id}`)} />
+                <TaskRow
+                  task={t}
+                  onClick={() => navigate(`/tasks/${t.id}`)}
+                  reorderable
+                  onDragStart={() => handleDragStart(t.id)}
+                  onDragEnd={handleDragEnd}
+                />
               </div>
             ) : (
               <TaskRow key={t.id} task={t} onClick={() => navigate(`/tasks/${t.id}`)} />

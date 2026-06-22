@@ -1,7 +1,7 @@
-﻿import { StatusPill, PriorityBadge, EnergyBadge, DurationDisplay, ContextTag, ProgressBar } from '../ui'
+﻿import { StatusPill, PriorityBadge, EnergyBadge, DurationDisplay, ContextTag, ProgressBar, DragHandle } from '../ui'
 import { computeProgress } from '../../lib/progress'
 
-export default function TaskRow({ task, onClick, selectable = false, selected = false, onToggle }) {
+export default function TaskRow({ task, onClick, selectable = false, selected = false, onToggle, reorderable = false, onDragStart, onDragEnd }) {
   const isDone          = task.status === 'done'
   const isWaiting       = task.status === 'waiting'
   const today           = new Date().toLocaleDateString('en-CA')
@@ -14,6 +14,8 @@ export default function TaskRow({ task, onClick, selectable = false, selected = 
       className="flex items-center gap-3 px-4 py-3 border-b last:border-b-0 cursor-pointer transition-colors hover:opacity-90"
       style={{ borderColor: 'var(--border)', backgroundColor: selected ? 'var(--state-info-bg)' : 'transparent' }}
     >
+      {reorderable && <DragHandle onDragStart={onDragStart} onDragEnd={onDragEnd} className="-ml-1" />}
+
       {/* Checkbox (select mode) or status dot */}
       {selectable ? (
         <div

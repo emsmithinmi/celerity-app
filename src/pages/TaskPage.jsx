@@ -500,6 +500,7 @@ export default function TaskPage() {
             taskId={task.id}
             subtasks={task.subtasks ?? []}
             onSubtasksChange={subtasks => setTask(prev => ({ ...prev, subtasks }))}
+            onDurationChange={duration => setTask(prev => ({ ...prev, duration }))}
           />
 
           {/* Comments section */}

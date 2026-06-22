@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { updateTask } from '../../lib/api/tasks'
 import Button from '../ui/Button'
-import { ProgressBar } from '../ui'
+import { ProgressBar, DragHandle, secondsToInterval } from '../ui'
 import DurationInput from './DurationInput'
 import { computeProgress, formatSeconds } from '../../lib/progress'
 
@@ -13,7 +13,7 @@ function genId() {
 const inputCls = 'flex-1 px-2 py-1 rounded text-sm border outline-none bg-transparent'
 const inputStyle = { borderColor: 'var(--border)', color: 'var(--text-primary)' }
 
-function SubtaskRow({ item, onToggle, onTextChange, onDurationChange, onRemove }) {
+function SubtaskRow({ item, onToggle, onTextChange, onDurationChange, onRemove, onDragStart, onDragEnd, onDragOver, onDrop, isDropTarget }) {
   const [text, setText] = useState(item.text)
 
   // Stay in sync if the underlying item changes outside this row
@@ -27,7 +27,13 @@ function SubtaskRow({ item, onToggle, onTextChange, onDurationChange, onRemove }
   }
 
   return (
-    <div className="flex items-center gap-2.5">
+    <div
+      className="flex items-center gap-2.5"
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      style={{ boxShadow: isDropTarget ? 'inset 0 2px 0 0 var(--accent)' : 'none' }}
+    >
+      <DragHandle onDragStart={onDragStart} onDragEnd={onDragEnd} size={14} />
       <input
         type="checkbox"
         checked={item.done}
@@ -67,14 +73,36 @@ function SubtaskRow({ item, onToggle, onTextChange, onDurationChange, onRemove }
   )
 }
 
-export default function TaskChecklist({ taskId, subtasks = [], onSubtasksChange }) {
+export default function TaskChecklist({ taskId, subtasks = [], onSubtasksChange, onDurationChange }) {
   const [quickAddText,     setQuickAddText]     = useState('')
   const [quickAddDuration, setQuickAddDuration] = useState(null)
   const [quickAdding,      setQuickAdding]      = useState(false)
 
+  const [dragId,     setDragId]     = useState(null)
+  const [dragOverId, setDragOverId] = useState(null)
+
   const save = async (next) => {
-    await updateTask(taskId, { subtasks: next })
+    // When subtasks carry time estimates, the task's Duration tracks the
+    // remaining (unchecked) time — so it drops as steps get checked off.
+    const prog = computeProgress(next)
+    const patch = { subtasks: next }
+    if (prog.hasEstimates) {
+      patch.duration = secondsToInterval(prog.remainingSeconds)
+    }
+    await updateTask(taskId, patch)
     onSubtasksChange(next)
+    if (prog.hasEstimates) onDurationChange?.(patch.duration)
+  }
+
+  const reorder = (fromId, toId) => {
+    if (!fromId || !toId || fromId === toId) return
+    const fromIdx = subtasks.findIndex(s => s.id === fromId)
+    const toIdx   = subtasks.findIndex(s => s.id === toId)
+    if (fromIdx === -1 || toIdx === -1) return
+    const next = [...subtasks]
+    const [moved] = next.splice(fromIdx, 1)
+    next.splice(toIdx, 0, moved)
+    save(next)
   }
 
   const toggle = (itemId) =>
@@ -162,6 +190,11 @@ export default function TaskChecklist({ taskId, subtasks = [], onSubtasksChange 
                   onTextChange={(text) => updateText(item.id, text)}
                   onDurationChange={(duration) => updateDuration(item.id, duration)}
                   onRemove={() => remove(item.id)}
+                  onDragStart={() => setDragId(item.id)}
+                  onDragEnd={() => { setDragId(null); setDragOverId(null) }}
+                  onDragOver={(e) => { e.preventDefault(); setDragOverId(item.id) }}
+                  onDrop={() => { reorder(dragId, item.id); setDragId(null); setDragOverId(null) }}
+                  isDropTarget={dragOverId === item.id && dragId !== item.id}
                 />
               ))}
             </div>

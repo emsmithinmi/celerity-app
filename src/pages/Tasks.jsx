@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTasks } from '../hooks/useTasks'
+import { useListOrder } from '../hooks/useListOrder'
 import TaskRow from '../components/tasks/TaskRow'
 import Button from '../components/ui/Button'
 import { EmptyState } from '../components/ui'
@@ -57,6 +58,13 @@ export default function Tasks() {
     if (search) base = base.filter(t => t.title.toLowerCase().includes(search.toLowerCase()))
     return base
   })()
+
+  // Drag-to-reorder per status tab (display-only, localStorage). Disabled while
+  // selecting, searching, or on the mixed "All Active" tab.
+  const reorderable = !selectMode && !search && activeTab !== 'all'
+  const { ordered, dragOverId, handleDragStart, handleDragOver, handleDrop, handleDragEnd } =
+    useListOrder(`tasks-order-${activeTab}`, displayed)
+  const rows = reorderable ? ordered : displayed
 
   const stats = {
     active:  tasks.filter(t => ALL_ACTIVE.includes(t.status)).length,
@@ -209,15 +217,32 @@ export default function Tasks() {
           />
         ) : (
           <div style={{ backgroundColor: 'var(--pane-bg)' }}>
-            {displayed.map(task => (
-              <TaskRow
-                key={task.id}
-                task={task}
-                onClick={() => !selectMode && navigate(`/tasks/${task.id}`)}
-                selectable={selectMode}
-                selected={selectedIds.has(task.id)}
-                onToggle={() => toggleSelect(task.id)}
-              />
+            {rows.map(task => (
+              reorderable ? (
+                <div
+                  key={task.id}
+                  onDragOver={(e) => handleDragOver(e, task.id)}
+                  onDrop={() => handleDrop(task.id)}
+                  style={{ boxShadow: dragOverId === task.id ? 'inset 0 2px 0 0 var(--accent)' : 'none' }}
+                >
+                  <TaskRow
+                    task={task}
+                    onClick={() => navigate(`/tasks/${task.id}`)}
+                    reorderable
+                    onDragStart={() => handleDragStart(task.id)}
+                    onDragEnd={handleDragEnd}
+                  />
+                </div>
+              ) : (
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  onClick={() => !selectMode && navigate(`/tasks/${task.id}`)}
+                  selectable={selectMode}
+                  selected={selectedIds.has(task.id)}
+                  onToggle={() => toggleSelect(task.id)}
+                />
+              )
             ))}
           </div>
         )}

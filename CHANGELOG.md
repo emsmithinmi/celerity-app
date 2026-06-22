@@ -4,6 +4,18 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-22
+
+### Added
+- **Subtask time rolls up into the task's Duration** — when a task's subtasks carry time estimates, the Duration field now shows the **remaining** (unchecked) time, summed from those subtasks. Check a step off and the Duration drops by that step's estimate; the read-out updates live on the task page. Tasks with no subtask estimates keep their manually-set Duration.
+- **Drag handles on reorderable rows** — movable list rows now show a small grip handle (⠿). Grab the handle to drag; click anywhere else on the row still opens it. No more "is this a click or a drag?" guesswork.
+- **Drag-to-reorder expanded everywhere** — the per-list custom ordering that was only on the Daily page's Next Actions now works on **all task lists**: every status tab on the Tasks page, the task list inside each Project, and the **subtasks list** within a task. Task-list order persists per list to localStorage (per-device, no DB writes, no effect on status/priority), matching the existing Daily behavior. Subtask order is saved to the task itself, so it sticks across devices. Reorder is off while multi-selecting, searching, or on the mixed "All Active" tab.
+
+### Changed
+- Refactored the Daily Next Actions drag logic into a shared `useListOrder` hook + `DragHandle` component, reused across all the lists above.
+
+---
+
 ## 2026-06-21
 
 ### Changed
