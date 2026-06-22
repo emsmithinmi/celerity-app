@@ -15,6 +15,9 @@ All notable changes to Focus Flow are recorded here.
 - Refactored the Daily Next Actions drag logic into a shared `useListOrder` hook + `DragHandle` component, reused across all the lists above.
 - **Duration field goes read-only when subtasks drive it** — on a task whose subtasks carry estimates, the edit modal now shows the derived remaining time as a read-only value with a "Driven by subtasks" note, instead of an editable input that would just get overwritten on the next checkoff.
 
+### Removed
+- **Dead code:** deleted `TaskDetail.jsx` and `PersonDetail.jsx` — orphaned legacy edit components (the live detail UIs are the full `/tasks/:id` and `/people/:id` pages). `PersonDetail` was imported nowhere, and it was the only thing that pulled in `TaskDetail`.
+
 ---
 
 ## 2026-06-21

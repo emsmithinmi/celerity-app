@@ -100,7 +100,6 @@ src/
       TopOfMind.jsx
     tasks/
       TaskRow.jsx
-      TaskDetail.jsx         # inline edit component (used inside TaskPage)
       TaskComments.jsx
       TaskChecklist.jsx      # subtask checklist — JSONB steps scoped to the task, not real tasks
       DurationInput.jsx
@@ -114,7 +113,6 @@ src/
       ProjectTaskList.jsx
     people/
       PersonRow.jsx          # shows avatar, name, relationship/occupation/company subtitle
-      PersonDetail.jsx       # legacy component (may be unused)
       PersonComments.jsx
     ui/
       AvatarCircle.jsx       # circular avatar: shows image or initials fallback; canUpload adds camera-hover + file input (sizes: sm/md/lg)
