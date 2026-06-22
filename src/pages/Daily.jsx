@@ -161,14 +161,6 @@ export default function Daily() {
         />
 
 
-        {/* Tasks */}
-        <TasksSection onRefreshStats={refreshStats} />
-
-
-        {/* Projects */}
-        <ProjectsSection />
-
-
         {/* Notes */}
         <NotesSection
           notes={note?.notes ?? []}
@@ -176,6 +168,14 @@ export default function Daily() {
           onEdit={editNote}
           onDelete={deleteNote}
         />
+
+
+        {/* Tasks */}
+        <TasksSection onRefreshStats={refreshStats} />
+
+
+        {/* Projects */}
+        <ProjectsSection />
 
 
         {/* Habits */}

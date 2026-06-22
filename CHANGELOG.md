@@ -8,6 +8,7 @@ All notable changes to Focus Flow are recorded here.
 
 ### Changed
 - **Daily page** — Tasks section now appears above Projects section.
+- **Daily page** — Notes section moved up to sit directly under the Agenda (above Tasks).
 
 ### Added
 - **Next Actions drag-to-reorder** — tasks on the Next Actions tab (Daily page) can be dragged into any order. Order persists to localStorage; no DB writes, no effect on task status or priority.

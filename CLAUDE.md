@@ -280,6 +280,7 @@ Static pool of ~400 quotes in `src/lib/quotes.js` (Stoicism / Science / Comedian
 - **External agent tool layer** — design and build the MCP/REST surface that lets an outside agent drive the app (see "External Agent Tool Layer — Planned" above).
 - **Reviews page rebuild** — currently an under-construction shell; the replacement flow will be agent-orchestrated.
 - **PWA update race:** right after a deploy, an open tab can briefly blank while the service worker swaps versions — a refresh fixes it. Not a code bug.
+- **Supabase Realtime (live auto-update)** — subscribe to Postgres changes over websocket so the UI updates with no manual refresh, even from another device (phone/watch). Bridge it into the existing `eventBus` (Realtime → `eventBus.emit` → hooks refetch), reusing the current refetch plumbing. One-time setup: `ALTER PUBLICATION supabase_realtime ADD TABLE …` for tasks/projects/people/daily_notes/comments. Watch StrictMode double-subscribe — clean up channels on unmount. Prereq already shipped: NetworkFirst SW caching (otherwise a Realtime-triggered refetch could still be answered from stale cache). Completes the cross-tab/cross-device gap the eventBus comment notes.
 
 ## Project Rename — Completed (2026-05-29)
 The project was officially renamed to **Focus Flow**. All references updated:
