@@ -328,6 +328,168 @@
   --status-person-stale-text:  #c9d1d9;
 }
 
+[data-theme="cobalt2"] {
+  /* Surfaces */
+  --app-bg:           #193549;
+  --pane-bg:          #15232D;
+  --border:           #0d3a58;
+
+  /* Text */
+  --text-primary:     #ffffff;
+  --text-secondary:   #5d8fa9;
+  --text-dim:         #3a546b;
+  --text-mid:         #a8c5d8;
+
+  /* Accent — the iconic Cobalt2 yellow */
+  --link:             #FFC600;
+  --accent:           #FFC600;
+  --accent-hover:     #FFD83D;
+
+  /* Cobalt2 palette */
+  --accent-purple:    #FB94FF;
+  --accent-green:     #3AD900;
+  --accent-red:       #FF628C;
+  --accent-yellow:    #FFC600;
+  --accent-teal:      #80FCFF;
+  --accent-orange:    #FF9D00;
+
+  /* Nav / muted buttons */
+  --nav-active-bg:    #0d3a58;
+  --nav-active-text:  #FFC600;
+  --nav-idle-text:    #5d8fa9;
+  --btn-muted-bg:     #0d3a58;
+  --btn-muted-text:   #a8c5d8;
+
+  /* Highlight (daily orange) */
+  --highlight:        #FF9D00;
+  --highlight-hover:  #FFB347;
+
+  /* Context tags */
+  --context-tag-bg:          #FFC600;
+  --context-tag-text:        #193549;
+  --context-tag-active-bg:   #FF9D00;
+  --context-tag-active-text: #193549;
+
+  /* Danger (destructive actions) */
+  --danger:           #FF628C;
+  --danger-hover:     #ff3d70;
+  --delete-hover-bg:  #3a1a25;
+
+  /* Overlays */
+  --modal-overlay:    rgba(7, 23, 35, 0.7);
+  --avatar-overlay:   rgba(7, 23, 35, 0.55);
+
+  /* State banners */
+  --state-warning-bg:   #3d2f0a;
+  --state-warning-text: #FFC600;
+  --state-warning-dim:  #d4a700;
+  --state-info-bg:      #0d2a3d;
+  --state-info-text:    #80FCFF;
+  --state-error-bg:     #3a1a25;
+  --state-error-text:   #FF628C;
+  --state-error-dim:    #c84d6e;
+  --state-success-bg:   #143a14;
+  --state-success-text: #3AD900;
+  --state-stalled-bg:   #3a2210;
+  --state-stalled-text: #FF9D00;
+  --state-stalled-dim:  #c97a14;
+  --state-purple-bg:    #2d1a3d;
+  --state-purple-text:  #FB94FF;
+  --state-purple-dim:   #c074d0;
+
+  /* Highlight note panel (project/task) */
+  --highlight-note-bg:   #3d2f0a;
+  --highlight-note-text: #FFC600;
+
+  /* Challenge type badges */
+  --challenge-python-bg:    #0d2a3d;
+  --challenge-python-text:  #80FCFF;
+  --challenge-ai-bg:        #2d1a3d;
+  --challenge-ai-text:      #FB94FF;
+  --challenge-llm-bg:       #143a14;
+  --challenge-llm-text:     #3AD900;
+  --challenge-general-bg:   #3d2f0a;
+  --challenge-general-text: #FFC600;
+
+  /* Review suggestion cards */
+  --card-task-bg:     #0d2a3d;
+  --card-project-bg:  #0d3a58;
+  --card-new-task-bg: #143a14;
+  --card-reminder-bg: #3a2210;
+  --card-insight-bg:  #2d1a3d;
+
+  /* Habit calendar */
+  --habit-done-bg:      #3AD900;
+  --habit-today-bg:     #0d3a58;
+  --habit-today-border: #FFC600;
+  --habit-today-text:   #FFC600;
+
+  /* Success button */
+  --success:            #3AD900;
+  --success-text:       #000000;
+  --success-hover:      #2eb000;
+
+  /* Action button / elevated surface */
+  --surface-2:          #234E6D;
+
+  /* Pink accent for insight cards */
+  --accent-pink:        #FB94FF;
+
+  /* ─── Status pills — task (Cobalt2) ───────────────────────────────────── */
+  --status-task-inbox-bg:        #FFC600;
+  --status-task-inbox-text:      #193549;
+  --status-task-inbox-border:    #d4a700;
+  --status-task-next-bg:         #3AD900;
+  --status-task-next-text:       #000000;
+  --status-task-next-border:     #2eb000;
+  --status-task-queued-bg:       #0050A4;
+  --status-task-queued-text:     #ffffff;
+  --status-task-queued-border:   #003b7a;
+  --status-task-scheduled-bg:    #80FCFF;
+  --status-task-scheduled-text:  #193549;
+  --status-task-scheduled-border:#3ad8db;
+  --status-task-waiting-bg:      #FF628C;
+  --status-task-waiting-text:    #193549;
+  --status-task-waiting-border:  #d04068;
+  --status-task-someday-bg:      #FB94FF;
+  --status-task-someday-text:    #193549;
+  --status-task-someday-border:  #c074d0;
+  --status-task-done-bg:         #0d3a58;
+  --status-task-done-text:       #a8c5d8;
+  --status-task-done-border:     #234E6D;
+
+  /* ─── Status pills — project (Cobalt2) ────────────────────────────────── */
+  --status-project-inbox-bg:        #FFC600;
+  --status-project-inbox-text:      #193549;
+  --status-project-inbox-border:    #d4a700;
+  --status-project-planning-bg:     #80FCFF;
+  --status-project-planning-text:   #193549;
+  --status-project-planning-border: #3ad8db;
+  --status-project-inprogress-bg:   #0050A4;
+  --status-project-inprogress-text: #ffffff;
+  --status-project-inprogress-border:#003b7a;
+  --status-project-waiting-bg:      #FF628C;
+  --status-project-waiting-text:    #193549;
+  --status-project-waiting-border:  #d04068;
+  --status-project-stalled-bg:      #FF9D00;
+  --status-project-stalled-text:    #193549;
+  --status-project-stalled-border:  #c97a14;
+  --status-project-someday-bg:      #FB94FF;
+  --status-project-someday-text:    #193549;
+  --status-project-someday-border:  #c074d0;
+  --status-project-completed-bg:    #0d3a58;
+  --status-project-completed-text:  #a8c5d8;
+  --status-project-completed-border:#234E6D;
+
+  /* ─── Status pills — person (Cobalt2) ─────────────────────────────────── */
+  --status-person-inbox-bg:    #FFC600;
+  --status-person-inbox-text:  #193549;
+  --status-person-active-bg:   #3AD900;
+  --status-person-active-text: #000000;
+  --status-person-stale-bg:    #3a546b;
+  --status-person-stale-text:  #a8c5d8;
+}
+
 @theme {
   /* App Background */
   --color-app-bg: #1e1e2e;

@@ -6,6 +6,9 @@ All notable changes to Focus Flow are recorded here.
 
 ## 2026-06-22
 
+### Added
+- **Cobalt2 theme** — Wes Bos's iconic Cobalt2 (the VS Code theme) is now a third option in Settings → Appearance, alongside Catppuccin and GitHub Dark. Deep cobalt navy app background (#193549), signature electric yellow (#FFC600) for accents and active sidebar items, lime green (#3AD900) for Next Action / success states, hot pink (#FF628C) for Waiting / danger, neon cyan (#80FCFF) for Scheduled, and that warm orange (#FF9D00) for highlights. Looks straight out of Wes's editor.
+
 ### Changed
 - **Theme system now reaches status pills** — Inbox / Next Action / Queued / Scheduled / Waiting / Someday / Done pills (and the project + people equivalents) were the last spot using hardcoded brand hex values from `constants.js`. They now reference new `--status-*` CSS variables in `index.css`, with parallel Catppuccin (default) and GitHub Dark palettes. Switching themes in Settings → Appearance now shifts the pills too: Catppuccin keeps the original saturated Google-style colors, GitHub Dark uses GitHub's actual badge tones (`#2ea043` green, `#e3b341` yellow, `#1f6feb` blue, etc.). The "Done" pill also lost its harsh pure-black background in favor of a theme-appropriate subtle dark surface. Dead `PRIORITIES` constant (long replaced by the user-customizable `priorities` table) was removed at the same time.
 

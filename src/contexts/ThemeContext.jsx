@@ -3,6 +3,7 @@ import { createContext, useContext, useState, useEffect } from 'react'
 const THEMES = [
   { id: 'catppuccin', label: 'Catppuccin' },
   { id: 'github-dark', label: 'GitHub Dark' },
+  { id: 'cobalt2', label: 'Cobalt2' },
 ]
 
 const ThemeContext = createContext(null)
