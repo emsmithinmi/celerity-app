@@ -1,9 +1,9 @@
 ﻿import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTasks } from '../../hooks/useTasks'
-import { useListOrder } from '../../hooks/useListOrder'
+import { useTaskListSort } from '../../hooks/useListSort'
 import { createTask } from '../../lib/api/tasks'
-import { StatusPill, PriorityBadge, DragHandle } from '../ui'
+import { StatusPill, PriorityBadge, DragHandle, SortDropdown } from '../ui'
 
 const STATUS_TABS = [
   { key: 'active',      label: 'Active'       },
@@ -51,9 +51,11 @@ export default function ProjectTaskList({ projectId, onTaskCountChange }) {
     ? tasks.filter(t => ACTIVE.includes(t.status))
     : tasks.filter(t => t.status === tab)
 
-  // Drag-to-reorder per status tab (display-only, localStorage, per project)
-  const { ordered, dragOverId, handleDragStart, handleDragOver, handleDrop, handleDragEnd } =
-    useListOrder(`project-${projectId}-tasks-order-${tab}`, displayed)
+  // Per-tab sort + manual order, synced via list_preferences (per project).
+  const {
+    ordered, sortMode, setSortMode, isReorderable, dragOverId,
+    handleDragStart, handleDragOver, handleDrop, handleDragEnd,
+  } = useTaskListSort(`project:${projectId}:${tab}`, displayed)
 
   // Count by status for tabs
   const counts = {
@@ -79,8 +81,9 @@ export default function ProjectTaskList({ projectId, onTaskCountChange }) {
   return (
     <>
       <div className="space-y-3">
-        {/* Status tabs with counts */}
-        <div className="flex gap-1 flex-wrap">
+        {/* Status tabs with counts + sort */}
+        <div className="flex items-center gap-2">
+          <div className="flex gap-1 flex-wrap flex-1 min-w-0">
           {STATUS_TABS.map(t => (
             <button
               key={t.key}
@@ -102,6 +105,8 @@ export default function ProjectTaskList({ projectId, onTaskCountChange }) {
               )}
             </button>
           ))}
+          </div>
+          <SortDropdown value={sortMode} onChange={setSortMode} className="shrink-0" />
         </div>
 
         {/* Task list */}
@@ -113,19 +118,23 @@ export default function ProjectTaskList({ projectId, onTaskCountChange }) {
             <p className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p>
           ) : ordered.length > 0 ? (
             ordered.map(t => (
-              <div
-                key={t.id}
-                onDragOver={(e) => handleDragOver(e, t.id)}
-                onDrop={() => handleDrop(t.id)}
-                style={{ boxShadow: dragOverId === t.id ? 'inset 0 2px 0 0 var(--accent)' : 'none' }}
-              >
-                <MiniTaskRow
-                  task={t}
-                  reorderable
-                  onDragStart={() => handleDragStart(t.id)}
-                  onDragEnd={handleDragEnd}
-                />
-              </div>
+              isReorderable ? (
+                <div
+                  key={t.id}
+                  onDragOver={(e) => handleDragOver(e, t.id)}
+                  onDrop={() => handleDrop(t.id)}
+                  style={{ boxShadow: dragOverId === t.id ? 'inset 0 2px 0 0 var(--accent)' : 'none' }}
+                >
+                  <MiniTaskRow
+                    task={t}
+                    reorderable
+                    onDragStart={() => handleDragStart(t.id)}
+                    onDragEnd={handleDragEnd}
+                  />
+                </div>
+              ) : (
+                <MiniTaskRow key={t.id} task={t} />
+              )
             ))
           ) : (
             <p className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>

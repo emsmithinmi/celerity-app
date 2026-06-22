@@ -1,10 +1,10 @@
 ﻿import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTasks } from '../hooks/useTasks'
-import { useListOrder } from '../hooks/useListOrder'
+import { useTaskListSort } from '../hooks/useListSort'
 import TaskRow from '../components/tasks/TaskRow'
 import Button from '../components/ui/Button'
-import { EmptyState } from '../components/ui'
+import { EmptyState, SortDropdown } from '../components/ui'
 import { CaptureTaskModal } from '../components/daily/QuickCaptureModals'
 import { updateTask, archiveTask, permanentDeleteTask, duplicateTask } from '../lib/api/tasks'
 
@@ -59,12 +59,15 @@ export default function Tasks() {
     return base
   })()
 
-  // Drag-to-reorder per status tab (display-only, localStorage). Disabled while
+  // Per-status-tab sort preference, synced via list_preferences. Manual mode
+  // = drag-to-reorder; auto modes ignore manual_order. Disabled while
   // selecting, searching, or on the mixed "All Active" tab.
-  const reorderable = !selectMode && !search && activeTab !== 'all'
-  const { ordered, dragOverId, handleDragStart, handleDragOver, handleDrop, handleDragEnd } =
-    useListOrder(`tasks-order-${activeTab}`, displayed)
-  const rows = reorderable ? ordered : displayed
+  const sortEnabled = !selectMode && !search && activeTab !== 'all'
+  const {
+    ordered, sortMode, setSortMode, isReorderable, dragOverId,
+    handleDragStart, handleDragOver, handleDrop, handleDragEnd,
+  } = useTaskListSort(`tasks:${activeTab}`, displayed, { enabled: sortEnabled })
+  const rows = sortEnabled ? ordered : displayed
 
   const stats = {
     active:  tasks.filter(t => ALL_ACTIVE.includes(t.status)).length,
@@ -173,9 +176,10 @@ export default function Tasks() {
 
         {/* Tabs */}
         <div
-          className="flex gap-1 px-4 pb-2 overflow-x-auto shrink-0"
+          className="flex items-center gap-1 px-4 pb-2 overflow-x-auto shrink-0"
           style={{ borderBottom: '1px solid var(--border)' }}
         >
+          <div className="flex gap-1 flex-1 min-w-0 overflow-x-auto">
           {TABS.map(tab => {
             const count = tabCount(tab.key)
             return (
@@ -203,6 +207,13 @@ export default function Tasks() {
               </button>
             )
           })}
+          </div>
+          <SortDropdown
+            value={sortMode}
+            onChange={setSortMode}
+            disabled={!sortEnabled}
+            className="ml-2 shrink-0"
+          />
         </div>
 
         {/* Task list */}
@@ -218,7 +229,7 @@ export default function Tasks() {
         ) : (
           <div style={{ backgroundColor: 'var(--pane-bg)' }}>
             {rows.map(task => (
-              reorderable ? (
+              isReorderable ? (
                 <div
                   key={task.id}
                   onDragOver={(e) => handleDragOver(e, task.id)}

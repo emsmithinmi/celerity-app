@@ -2,8 +2,8 @@ import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { RefreshCw } from 'lucide-react'
 import { useTasks } from '../../hooks/useTasks'
-import { useListOrder } from '../../hooks/useListOrder'
-import { EmptyState } from '../ui'
+import { useTaskListSort } from '../../hooks/useListSort'
+import { EmptyState, SortDropdown } from '../ui'
 import TaskRow from '../tasks/TaskRow'
 
 const ACTIVE_STATUSES = ['inbox', 'next_action', 'queued', 'waiting', 'scheduled']
@@ -34,13 +34,15 @@ export default function TasksSection({ onRefreshStats }) {
 
   const tabCount = (key) => allTasks.filter(t => t.status === key).length
 
-  // ── Next Actions drag-to-reorder (display-only, localStorage) ───────────────
+  // ── Next Actions sort + drag-to-reorder, synced via list_preferences ────────
   const nextActionTasks = useMemo(
     () => allTasks.filter(t => t.status === 'next_action'),
     [allTasks]
   )
-  const { ordered, dragOverId, handleDragStart, handleDragOver, handleDrop, handleDragEnd } =
-    useListOrder('daily-next-actions-order', nextActionTasks)
+  const {
+    ordered, sortMode, setSortMode, isReorderable, dragOverId,
+    handleDragStart, handleDragOver, handleDrop, handleDragEnd,
+  } = useTaskListSort('daily:next_action', nextActionTasks)
 
   // ── Rendered task list ─────────────────────────────────────────────────────
   const tasks = useMemo(() => {
@@ -57,8 +59,9 @@ export default function TasksSection({ onRefreshStats }) {
         </button>
       </div>
 
-      {/* Filter tabs */}
-      <div className="flex gap-1 mb-3 flex-wrap">
+      {/* Filter tabs + sort */}
+      <div className="flex items-center gap-2 mb-3">
+        <div className="flex gap-1 flex-wrap flex-1 min-w-0">
         {TABS.map(tab => {
           const count = tabCount(tab.key)
           return (
@@ -86,6 +89,14 @@ export default function TasksSection({ onRefreshStats }) {
             </button>
           )
         })}
+        </div>
+        {activeTab === 'next_action' && (
+          <SortDropdown
+            value={sortMode}
+            onChange={setSortMode}
+            className="shrink-0"
+          />
+        )}
       </div>
 
       <div
@@ -96,7 +107,7 @@ export default function TasksSection({ onRefreshStats }) {
           <EmptyState message="Loading…" />
         ) : tasks.length > 0 ? (
           tasks.map(t => (
-            activeTab === 'next_action' ? (
+            activeTab === 'next_action' && isReorderable ? (
               <div
                 key={t.id}
                 onDragOver={(e) => handleDragOver(e, t.id)}

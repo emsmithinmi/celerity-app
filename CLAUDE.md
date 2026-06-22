@@ -72,6 +72,7 @@ src/
       priorities.js      # CRUD for priorities table
       areas.js           # CRUD for areas table
       challenges.js      # code-challenge bank: getChallengeBank/Count, pickRandomChallenge, deleteChallenge
+      listPreferences.js # per-list sort + manual order: getListPreference, setListSortMode, setListManualOrder
       user.js            # uploadUserAvatar — uploads to avatars bucket, saves URL in auth user_metadata
   contexts/
     AuthContext.jsx
@@ -83,6 +84,7 @@ src/
     useProjects.js
     usePeople.js
     useDaily.js              # accepts date param; returns note, stats, habitHistory
+    useListSort.js           # per-list sort mode + manual-order drag, synced via list_preferences
   components/
     layout/
       Layout.jsx             # collapsible sidebar, nav links, settings link
@@ -168,6 +170,7 @@ All tables have RLS enabled with `USING (true) WITH CHECK (true)` + `GRANT ALL T
 | `habits` | (separate habit tracking table) |
 | `habit_history` | (per-date habit records) |
 | `code_challenges` | id (uuid), prompt, answer, difficulty, created_at — consumable bank of small Python challenges for the Daily Challenge section |
+| `list_preferences` | list_key (text PK), sort_mode (text), manual_order (jsonb array of task ids), updated_at — per-list sort + manual order for every task list, synced across devices |
 | `task_comments` | id, task_id, body, created_at |
 | `project_comments` | id, project_id, body, created_at |
 | `people_comments` | id, person_id, body, created_at |
@@ -229,7 +232,7 @@ Contexts mounted at App root (outside BrowserRouter):
 - **Dedicated dev account:** `claude-dev@focusflow.dev` was created directly in Supabase auth (email identity, bcrypt password) for this purpose — NOT Eric's real Google/personal credentials. Since RLS is `USING(true)`, it sees the same data. The password is **only** in the gitignored `.env.local` (never in the repo). On a new machine, add `VITE_DEV_EMAIL` + `VITE_DEV_PASSWORD` to that machine's `.env.local` (or reset the password in Supabase) — the account itself already exists server-side.
 
 ## Pages — Current State
-- **Daily** — dashboard for today (no date navigation — it was dropped 2026-06-19; Daily is a live "right now" view). Daily quote (rerolls each load + on skip, 30-day dedupe, per-user blocklist via "never" button), quick capture bar, stat cards, agenda (Google Calendar events + all-day tasks/project deadlines), **Tasks section (above Projects)**, Projects section, notes log, habit toggles (7 habits shown as a Sun→Sat week of clickable check-offs; code challenge excluded from this row), Challenge section (deterministic code-challenge bank — see "Code Challenge System"). No in-app AI. The Tasks section's **Next Actions tab supports drag-to-reorder** — display-only, persisted to localStorage (`daily-next-actions-order`), no DB writes / no effect on status or priority.
+- **Daily** — dashboard for today (no date navigation — it was dropped 2026-06-19; Daily is a live "right now" view). Daily quote (rerolls each load + on skip, 30-day dedupe, per-user blocklist via "never" button), quick capture bar, stat cards, agenda (Google Calendar events + all-day tasks/project deadlines), **Tasks section (above Projects)**, Projects section, notes log, habit toggles (7 habits shown as a Sun→Sat week of clickable check-offs; code challenge excluded from this row), Challenge section (deterministic code-challenge bank — see "Code Challenge System"). No in-app AI. The Tasks section's **Next Actions tab has a Sort dropdown** — Manual (drag-to-reorder) plus auto modes (newest/oldest, longest/shortest duration, due soonest, priority, alpha, energy, area). Sort choice + manual order persist via `list_preferences` (`daily:next_action`), syncing across devices.
 - **Tasks** — tabbed by status, stat summary row, capture modal, click row → `/tasks/:id`
 - **TaskPage** — full detail: title, status, priority, energy level, area, due date, duration, description, **Context Tags section** (toggleable chips + combobox input, saves immediately), subtask checklist, **Notes** (was Comments), linked people, archive/delete
 - **Projects** — tabbed by status, capture modal, click row → `/projects/:id`
