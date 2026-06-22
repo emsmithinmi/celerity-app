@@ -71,6 +71,7 @@ src/
       energyLevels.js    # CRUD for energy_levels table
       priorities.js      # CRUD for priorities table
       areas.js           # CRUD for areas table
+      challenges.js      # code-challenge bank: getChallengeBank/Count, pickRandomChallenge, deleteChallenge
       user.js            # uploadUserAvatar — uploads to avatars bucket, saves URL in auth user_metadata
   contexts/
     AuthContext.jsx
@@ -166,6 +167,7 @@ All tables have RLS enabled with `USING (true) WITH CHECK (true)` + `GRANT ALL T
 | `areas` | id, value, label, sort_order |
 | `habits` | (separate habit tracking table) |
 | `habit_history` | (per-date habit records) |
+| `code_challenges` | id (uuid), prompt, answer, difficulty, created_at — consumable bank of small Python challenges for the Daily Challenge section |
 | `task_comments` | id, task_id, body, created_at |
 | `project_comments` | id, project_id, body, created_at |
 | `people_comments` | id, person_id, body, created_at |
@@ -227,7 +229,7 @@ Contexts mounted at App root (outside BrowserRouter):
 - **Dedicated dev account:** `claude-dev@focusflow.dev` was created directly in Supabase auth (email identity, bcrypt password) for this purpose — NOT Eric's real Google/personal credentials. Since RLS is `USING(true)`, it sees the same data. The password is **only** in the gitignored `.env.local` (never in the repo). On a new machine, add `VITE_DEV_EMAIL` + `VITE_DEV_PASSWORD` to that machine's `.env.local` (or reset the password in Supabase) — the account itself already exists server-side.
 
 ## Pages — Current State
-- **Daily** — dashboard for today (no date navigation — it was dropped 2026-06-19; Daily is a live "right now" view). Daily quote (rerolls each load + on skip, 30-day dedupe, per-user blocklist via "never" button), quick capture bar, stat cards, agenda (Google Calendar events + all-day tasks/project deadlines), **Tasks section (above Projects)**, Projects section, notes log, habit toggles (7 habits, code challenge excluded), collapsible Challenge section (auto-marks habit on submit). No in-app AI. The Tasks section's **Next Actions tab supports drag-to-reorder** — display-only, persisted to localStorage (`daily-next-actions-order`), no DB writes / no effect on status or priority.
+- **Daily** — dashboard for today (no date navigation — it was dropped 2026-06-19; Daily is a live "right now" view). Daily quote (rerolls each load + on skip, 30-day dedupe, per-user blocklist via "never" button), quick capture bar, stat cards, agenda (Google Calendar events + all-day tasks/project deadlines), **Tasks section (above Projects)**, Projects section, notes log, habit toggles (7 habits shown as a Sun→Sat week of clickable check-offs; code challenge excluded from this row), Challenge section (deterministic code-challenge bank — see "Code Challenge System"). No in-app AI. The Tasks section's **Next Actions tab supports drag-to-reorder** — display-only, persisted to localStorage (`daily-next-actions-order`), no DB writes / no effect on status or priority.
 - **Tasks** — tabbed by status, stat summary row, capture modal, click row → `/tasks/:id`
 - **TaskPage** — full detail: title, status, priority, energy level, area, due date, duration, description, **Context Tags section** (toggleable chips + combobox input, saves immediately), subtask checklist, **Notes** (was Comments), linked people, archive/delete
 - **Projects** — tabbed by status, capture modal, click row → `/projects/:id`
@@ -272,6 +274,17 @@ Static pool of ~400 quotes in `src/lib/quotes.js` (Stoicism / Science / Comedian
 - **Never** hover-button → adds the current quote text to `user_metadata.blocked_quotes` (syncs across devices) and rerolls.
 - API: `pickFresh(recentTexts, excludeText)` in `lib/quotes.js`; `getRecentQuoteTexts(days=30)`, `getBlockedQuoteTexts()`, `blockQuoteText(text)` in `lib/api/daily.js`.
 - StrictMode-safe: `rerolledForNoteRef` guard prevents double-fire of the on-mount reroll.
+
+## Code Challenge System (re-added 2026-06-22, deterministic — no AI)
+Daily page Challenge section serves one small **basic-Python refresher** at a time from a **consumable bank** (the `code_challenges` table). Modeled on the quote system but the bank drains: completing a challenge **deletes** its row (one and done); skipping leaves it in the bank.
+
+- **Pin to today:** on first mount, if `daily_notes.code_challenge` has no valid snapshot, `ChallengeSection` picks a random challenge from the bank and saves a snapshot `{id, prompt, answer, difficulty, completed}` to `daily_notes.code_challenge` (so it's stable for the day and survives the row's later deletion).
+- **Skip** → `pickRandomChallenge(currentId)` swaps in a different one (stays in the bank), resets the reveal.
+- **Mark Complete** → `deleteChallenge(id)` (one and done) + `onComplete()` marks `habit_code_challenge` for today; shows a done state.
+- **Reveal answer** → collapsible toggle under the prompt shows the reference solution.
+- **Old AI-era snapshots** (no `answer` field) are treated as stale and replaced (`isValidSnapshot`).
+- API: `getChallengeBank()`, `getChallengeCount()`, `pickRandomChallenge(excludeId)`, `deleteChallenge(id)` in `lib/api/challenges.js`.
+- **Refilling the bank:** the `refresh-challenges` skill (`.claude/skills/refresh-challenges/`) generates 25 new basic-Python challenges and inserts them via Supabase MCP. Run it when the section says the bank is empty.
 
 ## Known Follow-ups
 - **Color theme system** — theme switcher (Catppuccin / GitHub Dark) only re-themes sidebar chrome. Rest of app uses hardcoded hex values. Extend CSS variable coverage to page content, modals, forms, cards, badges.

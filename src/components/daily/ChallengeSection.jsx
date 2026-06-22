@@ -1,130 +1,151 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Button from '../ui/Button'
+import { pickRandomChallenge, deleteChallenge } from '../../lib/api/challenges'
 
-const TOPIC_COLORS = {
-  python:  { bg: 'var(--challenge-python-bg)', text: 'var(--accent)', label: 'Python'  },
-  ai:      { bg: 'var(--state-purple-bg)', text: 'var(--accent-purple)', label: 'AI'      },
-  llm:     { bg: 'var(--challenge-llm-bg)', text: 'var(--accent-teal)', label: 'LLM'     },
-  general: { bg: 'var(--challenge-general-bg)', text: 'var(--accent-yellow)', label: 'General' },
-}
+const toSnapshot = (c) => ({
+  id: c.id,
+  prompt: c.prompt,
+  answer: c.answer,
+  difficulty: c.difficulty ?? 'easy',
+  completed: false,
+})
 
-const DIFFICULTY_COLORS = {
-  beginner:     { text: 'var(--habit-done-bg)' },
-  intermediate: { text: 'var(--state-warning-text)' },
-  advanced:     { text: 'var(--danger)' },
-}
+// A pinned snapshot is only usable if it carries the new shape (prompt + answer).
+// Older AI-era code_challenge blobs are treated as stale and replaced.
+const isValidSnapshot = (c) => !!(c && c.prompt && c.answer)
 
 export default function ChallengeSection({ challenge, onUpdate, onComplete }) {
-  const [response,  setResponse]  = useState(challenge?.user_response ?? '')
-  const [saving,    setSaving]    = useState(false)
-  const [submitted, setSubmitted] = useState(!!challenge?.completed)
+  const [current,   setCurrent]   = useState(isValidSnapshot(challenge) ? challenge : null)
+  const [revealed,  setRevealed]  = useState(false)
+  const [bankEmpty, setBankEmpty] = useState(false)
+  const [working,   setWorking]   = useState(false)
+  const initRef = useRef(false)
 
-  const topic      = challenge ? (TOPIC_COLORS[challenge.topic] ?? TOPIC_COLORS.general) : null
-  const difficulty = challenge ? (DIFFICULTY_COLORS[challenge.difficulty] ?? DIFFICULTY_COLORS.beginner) : null
-
-  const handleSubmit = async () => {
-    if (!response.trim()) return
-    setSaving(true)
-    await onUpdate({ ...challenge, user_response: response, completed: true })
-    onComplete?.()
-    setSubmitted(true)
-    setSaving(false)
-  }
+  // Pin a challenge to today on first mount if none is set yet.
+  useEffect(() => {
+    if (initRef.current) return
+    initRef.current = true
+    if (current) return // already have today's (pinned snapshot)
+    ;(async () => {
+      try {
+        const picked = await pickRandomChallenge()
+        if (picked) {
+          const snap = toSnapshot(picked)
+          setCurrent(snap)
+          onUpdate(snap)
+        } else {
+          setBankEmpty(true)
+        }
+      } catch { /* leave empty */ }
+    })()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSkip = async () => {
-    await onUpdate({ ...challenge, skipped: true })
-    setSubmitted(true)
+    setWorking(true)
+    try {
+      const picked = await pickRandomChallenge(current?.id)
+      if (picked) {
+        const snap = toSnapshot(picked)
+        setCurrent(snap)
+        setRevealed(false)
+        onUpdate(snap)
+      }
+    } finally {
+      setWorking(false)
+    }
+  }
+
+  const handleComplete = async () => {
+    if (!current) return
+    setWorking(true)
+    try {
+      if (current.id) await deleteChallenge(current.id).catch(() => {}) // one and done
+      const done = { ...current, completed: true }
+      setCurrent(done)
+      onUpdate(done)
+      onComplete?.() // marks the 💻 habit for today
+    } finally {
+      setWorking(false)
+    }
   }
 
   return (
     <div>
-      {/* Header row — no toggle */}
-      <div className="flex items-center gap-3 w-full">
+      {/* Header */}
+      <div className="flex items-center gap-3 w-full mb-3">
         <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Challenge</h3>
-        {challenge && topic && (
+        {current && (
           <span
             className="px-2 py-0.5 rounded text-xs font-medium"
-            style={{ backgroundColor: topic.bg, color: topic.text }}
+            style={{ backgroundColor: 'var(--challenge-python-bg)', color: 'var(--accent)' }}
           >
-            {topic.label}
+            Python
           </span>
         )}
-        {challenge && difficulty && (
-          <span className="text-xs font-medium capitalize" style={{ color: difficulty.text }}>
-            {challenge.difficulty}
-          </span>
-        )}
-        {submitted && (
+        {current?.completed && (
           <span className="text-xs" style={{ color: 'var(--habit-done-bg)' }}>✓ done</span>
-        )}
-        {!challenge && (
-          <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>none yet</span>
         )}
       </div>
 
-      {/* Body — always visible */}
+      {/* Body */}
       <div
-        className="mt-3 rounded-xl border overflow-hidden"
+        className="rounded-xl border overflow-hidden"
         style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
       >
-        {!challenge ? (
+        {!current ? (
           <p className="px-4 py-4 text-sm" style={{ color: 'var(--text-secondary)' }}>
-            No challenge yet.
+            {bankEmpty
+              ? "🎉 You've cleared the whole bank! Run the refresh-challenges skill to load 25 more."
+              : 'Loading a challenge…'}
           </p>
         ) : (
           <>
             {/* Prompt */}
             <div className="px-4 py-4 border-b" style={{ borderColor: 'var(--border)' }}>
               <p className="text-sm leading-relaxed" style={{ color: 'var(--text-primary)' }}>
-                {challenge.prompt}
+                {current.prompt}
               </p>
-              {challenge.hint && (
-                <p className="text-xs mt-3 italic" style={{ color: 'var(--text-secondary)' }}>
-                  💡 {challenge.hint}
-                </p>
+              <p className="text-xs mt-3" style={{ color: 'var(--text-dim)' }}>
+                Solve it in your editor, then mark it complete.
+              </p>
+            </div>
+
+            {/* Reveal answer */}
+            <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
+              <button
+                onClick={() => setRevealed(r => !r)}
+                className="text-xs font-medium transition-opacity hover:opacity-80"
+                style={{ color: 'var(--accent)' }}
+              >
+                {revealed ? '▾ Hide answer' : '▸ Reveal answer'}
+              </button>
+              {revealed && (
+                <pre
+                  className="mt-3 text-sm font-mono leading-relaxed whitespace-pre-wrap rounded-lg px-3 py-2"
+                  style={{ color: 'var(--text-mid)', backgroundColor: 'var(--app-bg)' }}
+                >
+                  {current.answer}
+                </pre>
               )}
             </div>
 
-            {/* Previous feedback, if any */}
-            {challenge.ai_feedback && (
-              <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--state-info-bg)' }}>
-                <p className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Feedback from last review</p>
-                <p className="text-sm leading-relaxed" style={{ color: 'var(--text-primary)' }}>{challenge.ai_feedback}</p>
-              </div>
-            )}
-
-            {/* Response area or done state */}
-            {submitted ? (
-              <div className="px-4 py-4">
-                {challenge.user_response && (
-                  <>
-                    <p className="text-xs font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Your answer</p>
-                    <pre className="text-sm font-mono leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--text-mid)' }}>
-                      {challenge.user_response}
-                    </pre>
-                  </>
-                )}
-              </div>
-            ) : (
-              <div className="px-4 py-4 space-y-3">
-                <textarea
-                  value={response}
-                  onChange={e => setResponse(e.target.value)}
-                  placeholder="Paste your solution here…"
-                  rows={6}
-                  className="w-full bg-transparent text-sm outline-none resize-none font-mono border rounded-lg px-3 py-2"
-                  style={{ color: 'var(--text-primary)', borderColor: 'var(--border)' }}
-                />
+            {/* Actions */}
+            <div className="px-4 py-4">
+              {current.completed ? (
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  Nice work — done for today. A fresh one rolls in tomorrow.
+                </p>
+              ) : (
                 <div className="flex gap-2">
-                  <Button size="sm" variant="primary" onClick={handleSubmit} disabled={!response.trim() || saving}>
-                    {saving ? 'Saving…' : 'Submit'}
+                  <Button size="sm" variant="success" onClick={handleComplete} disabled={working}>
+                    {working ? '…' : '✓ Mark Complete'}
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={handleSkip}>
+                  <Button size="sm" variant="ghost" onClick={handleSkip} disabled={working}>
                     Skip
                   </Button>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </>
         )}
       </div>
