@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { RefreshCw } from 'lucide-react'
-import { supabase } from '../../lib/supabase'
+import { getGoogleConnectUrl } from '../../lib/api/googleConnect'
 
 function fmt(date) {
   return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
@@ -11,15 +11,15 @@ function fmtHour(date) {
   return date.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true })
 }
 
+// Reconnect through the google-connect flow (NOT supabase.auth.signInWithOAuth).
+// The calendar reads tokens from the user_integrations table, which only the
+// google-connect edge function writes. Re-authorizing the same email upserts a
+// fresh refresh token onto the existing 'personal' row (onConflict user_id,provider,email).
 async function reconnectGoogle() {
-  await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: `${window.location.origin}/auth/callback`,
-      scopes: 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/gmail.modify',
-      queryParams: { access_type: 'offline', prompt: 'consent' },
-    },
-  })
+  const redirectUri = `${window.location.origin}/auth/google-callback`
+  sessionStorage.setItem('google_connect_label', 'personal')
+  const url = await getGoogleConnectUrl(redirectUri)
+  window.location.href = url
 }
 
 export default function AgendaSection({ calendarEvents = [], dueTasks = [], endingProjects = [], onRefresh, authRequired = false }) {
