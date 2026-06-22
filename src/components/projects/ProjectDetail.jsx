@@ -279,7 +279,7 @@ export default function ProjectDetail({ project: initialProject, open, onClose, 
           >
             <p className="font-medium">Project is stalled</p>
             <p className="text-xs mt-1" style={{ color: 'var(--state-purple-dim)' }}>
-              Move a task to Next Actions to un-stall this project.
+              Move a task to Next to un-stall this project.
             </p>
           </div>
         )}

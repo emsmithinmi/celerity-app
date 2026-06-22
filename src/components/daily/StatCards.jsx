@@ -3,7 +3,7 @@ const CARDS = [
   { key: 'activeProjects', label: 'Projects'        },
   { key: 'activeTasks',    label: 'Tasks'            },
   { key: 'inProgress',     label: 'In Progress'     },
-  { key: 'nextActions',    label: 'Next Actions'    },
+  { key: 'nextActions',    label: 'Next'            },
   { key: 'waiting',        label: 'Waiting'         },
   { key: 'stalled',        label: 'Stalled'         },
   { key: 'dueToday',       label: 'Due Today'       },

@@ -10,7 +10,7 @@ const ACTIVE_STATUSES = ['inbox', 'next_action', 'queued', 'waiting', 'scheduled
 
 const TABS = [
   { key: 'inbox',       label: 'Inbox'        },
-  { key: 'next_action', label: 'Next Actions' },
+  { key: 'next_action', label: 'Next'         },
   { key: 'queued',      label: 'Queued'       },
   { key: 'waiting',     label: 'Waiting'      },
   { key: 'scheduled',   label: 'Scheduled'    },

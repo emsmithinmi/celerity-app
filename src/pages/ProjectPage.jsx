@@ -233,7 +233,7 @@ export default function ProjectPage() {
           {project.status === 'stalled' && (
             <div className="rounded-lg px-4 py-3 border text-sm" style={{ backgroundColor: 'var(--state-stalled-bg)', borderColor: 'var(--highlight)', color: 'var(--highlight)' }}>
               <p className="font-medium">Project is stalled</p>
-              <p className="text-xs mt-1" style={{ color: 'var(--state-stalled-dim)' }}>Move a task to Next Actions to un-stall this project.</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--state-stalled-dim)' }}>Move a task to Next to un-stall this project.</p>
             </div>
           )}
           {project.status === 'waiting' && (
@@ -363,7 +363,7 @@ export default function ProjectPage() {
                   <>
                     <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                       {project.status === 'stalled'
-                        ? 'Move a task to Next Actions to un-stall this project.'
+                        ? 'Move a task to Next to un-stall this project.'
                         : 'Clear blockers on waiting tasks to resume.'}
                     </p>
                     <span className="ml-auto"><TrashBtn onClick={() => setShowDiscard(true)} /></span>

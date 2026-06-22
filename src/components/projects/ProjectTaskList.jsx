@@ -8,7 +8,7 @@ import { StatusPill, PriorityBadge, DragHandle, SortDropdown } from '../ui'
 const STATUS_TABS = [
   { key: 'active',      label: 'Active'       },
   { key: 'inbox',       label: 'Inbox'        },
-  { key: 'next_action', label: 'Next Actions' },
+  { key: 'next_action', label: 'Next'         },
   { key: 'queued',      label: 'Queued'       },
   { key: 'waiting',     label: 'Waiting'      },
   { key: 'done',        label: 'Done'         },
