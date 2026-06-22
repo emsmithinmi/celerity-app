@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react'
-import { Check, ChevronDown, ChevronRight } from 'lucide-react'
 import Button from '../ui/Button'
 import { pickRandomChallenge, deleteChallenge } from '../../lib/api/challenges'
 
@@ -84,7 +83,7 @@ export default function ChallengeSection({ challenge, onUpdate, onComplete }) {
           </span>
         )}
         {current?.completed && (
-          <span className="text-xs inline-flex items-center gap-1" style={{ color: 'var(--habit-done-bg)' }}><Check size={12} strokeWidth={3} /> done</span>
+          <span className="text-xs" style={{ color: 'var(--habit-done-bg)' }}>done</span>
         )}
       </div>
 
@@ -115,10 +114,9 @@ export default function ChallengeSection({ challenge, onUpdate, onComplete }) {
             <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
               <button
                 onClick={() => setRevealed(r => !r)}
-                className="text-xs font-medium transition-opacity hover:opacity-80 inline-flex items-center gap-1"
+                className="text-xs font-medium transition-opacity hover:opacity-80"
                 style={{ color: 'var(--accent)' }}
               >
-                {revealed ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                 {revealed ? 'Hide answer' : 'Reveal answer'}
               </button>
               {revealed && (

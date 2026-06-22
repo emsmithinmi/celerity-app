@@ -1,5 +1,4 @@
 import { TASK_STATUSES, PROJECT_STATUSES, PEOPLE_STATUSES } from '../../lib/constants'
-import LucideIcon from './LucideIcon'
 
 const STATUS_MAPS = {
   task:    TASK_STATUSES,
@@ -15,14 +14,13 @@ export default function StatusPill({ status, type = 'task', className = '' }) {
 
   return (
     <span
-      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium border ${className}`}
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${className}`}
       style={{
         backgroundColor: def.bg,
         color: def.text,
         borderColor: def.border ?? def.bg,
       }}
     >
-      <LucideIcon name={def.icon} size={11} />
       {def.label}
     </span>
   )

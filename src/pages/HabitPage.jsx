@@ -2,7 +2,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { getHabitHistory, setHabitForDate } from '../lib/api/daily'
 import { HABITS } from '../lib/constants'
-import LucideIcon from '../components/ui/LucideIcon'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -270,9 +269,6 @@ export default function HabitPage() {
           ← Habits
         </button>
         <span style={{ color: 'var(--border)' }}>/</span>
-        <span style={{ color: 'var(--text-secondary)' }}>
-          <LucideIcon name={habit.icon} size={18} />
-        </span>
         <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{habit.label}</span>
       </div>
 

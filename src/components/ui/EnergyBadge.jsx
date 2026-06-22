@@ -1,5 +1,4 @@
 import { useEnergyLevels } from '../../contexts/EnergyLevelsContext'
-import LucideIcon from './LucideIcon'
 
 export default function EnergyBadge({ energyLevel, className = '' }) {
   const { levelMap } = useEnergyLevels()
@@ -8,10 +7,9 @@ export default function EnergyBadge({ energyLevel, className = '' }) {
 
   return (
     <span
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${className}`}
+      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${className}`}
       style={{ backgroundColor: def.bg_color, color: def.text_color }}
     >
-      <LucideIcon name={def.icon} size={11} />
       {def.label}
     </span>
   )

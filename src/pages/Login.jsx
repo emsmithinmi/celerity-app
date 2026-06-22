@@ -1,6 +1,5 @@
 ﻿import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MailOpen } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -91,7 +90,6 @@ export default function Login() {
         {sent ? (
           /* Success state */
           <div className="text-center">
-            <MailOpen size={40} strokeWidth={1.5} className="mx-auto mb-4" style={{ color: 'var(--accent)' }} />
             <h2 className="text-lg font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
               Check your email
             </h2>

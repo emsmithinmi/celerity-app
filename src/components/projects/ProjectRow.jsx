@@ -1,4 +1,4 @@
-import { Check, Star, Folder, AlertTriangle } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { StatusPill, PriorityBadge, ProgressBar } from '../ui'
 import { computeProgress, projectTasksToProgressItems } from '../../lib/progress'
 
@@ -43,12 +43,11 @@ export default function ProjectRow({ project, onClick, selectable = false, selec
             textDecoration: project.status === 'completed' ? 'line-through' : 'none',
           }}
         >
-          {project.is_highlight && <Star size={11} fill="currentColor" className="inline-block mr-1 -mt-0.5" style={{ color: 'var(--highlight)' }} />}
           {project.title}
         </p>
         {project.area && (
-          <p className="text-xs truncate mt-0.5 inline-flex items-center gap-1" style={{ color: 'var(--text-secondary)' }}>
-            <Folder size={10} /> {project.area}
+          <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+            {project.area}
           </p>
         )}
         {project.tasks?.length > 0 && (
@@ -81,8 +80,7 @@ export default function ProjectRow({ project, onClick, selectable = false, selec
           </span>
         )}
         {project.end_date && (
-          <span className="text-xs inline-flex items-center gap-1" style={{ color: overdue ? 'var(--danger)' : 'var(--text-secondary)' }}>
-            {overdue && <AlertTriangle size={10} />}
+          <span className="text-xs" style={{ color: overdue ? 'var(--danger)' : 'var(--text-secondary)' }}>
             {new Date(project.end_date + 'T00:00:00').toLocaleDateString('en-US', {
               month: 'short', day: 'numeric',
             })}

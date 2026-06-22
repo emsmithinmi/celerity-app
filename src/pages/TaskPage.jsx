@@ -1,6 +1,5 @@
 ﻿import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Star, Archive, Copy, Trash2, Calendar, User, AlertCircle } from 'lucide-react'
 import {
   getTask, updateTask, completeTaskWithOptions, archiveTask, permanentDeleteTask,
   moveToNextAction, moveToQueued, moveToWaiting,
@@ -314,8 +313,7 @@ export default function TaskPage() {
               className="rounded-xl border p-4 space-y-4"
               style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
             >
-              <p className="text-base font-semibold inline-flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
-                {task.is_highlight && <Star size={14} fill="currentColor" style={{ color: 'var(--highlight)' }} />}
+              <p className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
                 {task.title}
               </p>
 
@@ -344,8 +342,7 @@ export default function TaskPage() {
                 <div>
                   <p className="text-xs font-medium mb-0.5" style={{ color: 'var(--text-secondary)' }}>Deadline</p>
                   {task.deadline ? (
-                    <p className="text-sm font-medium inline-flex items-center gap-1.5" style={{ color: 'var(--accent-red)' }}>
-                      <AlertCircle size={14} />
+                    <p className="text-sm font-medium" style={{ color: 'var(--accent-red)' }}>
                       {new Date(task.deadline + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                     </p>
                   ) : (
@@ -397,10 +394,10 @@ export default function TaskPage() {
                           key={p.id}
                           onMouseDown={e => e.preventDefault()}
                           onClick={() => handleLinkPerson(p.id)}
-                          className="w-full text-left px-3 py-2 text-sm hover:opacity-80 border-t first:border-t-0 inline-flex items-center gap-2"
+                          className="w-full text-left px-3 py-2 text-sm hover:opacity-80 border-t first:border-t-0"
                           style={{ borderColor: 'var(--border)', color: 'var(--text-primary)', backgroundColor: 'transparent' }}
                         >
-                          <User size={12} /> {displayName}
+                          {displayName}
                         </button>
                       )
                     })}
@@ -416,7 +413,7 @@ export default function TaskPage() {
                       className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs border"
                       style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
                     >
-                      <User size={12} /> {tp.people.preferred_name ?? tp.people.first_name} {tp.people.last_name}
+                      {tp.people.preferred_name ?? tp.people.first_name} {tp.people.last_name}
                       <button
                         onClick={() => handleUnlinkPerson(tp.person_id)}
                         className="ml-1 hover:opacity-60"

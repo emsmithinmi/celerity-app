@@ -1,16 +1,15 @@
 // Status pill colors are CSS variables defined in src/index.css so they shift
 // with the active theme (Catppuccin / GitHub Dark). Don't hardcode hex here.
-// `icon` values are Lucide icon names (rendered via the LucideIcon component).
 
 // ─── Task Statuses ───────────────────────────────────────────────────────────
 export const TASK_STATUSES = {
-  inbox:       { label: 'Inbox',         icon: 'Inbox',     bg: 'var(--status-task-inbox-bg)',     text: 'var(--status-task-inbox-text)',     border: 'var(--status-task-inbox-border)'     },
-  next_action: { label: 'Next Action',   icon: 'Zap',       bg: 'var(--status-task-next-bg)',      text: 'var(--status-task-next-text)',      border: 'var(--status-task-next-border)'      },
-  queued:      { label: 'Queued',        icon: 'Layers',    bg: 'var(--status-task-queued-bg)',    text: 'var(--status-task-queued-text)',    border: 'var(--status-task-queued-border)'    },
-  scheduled:   { label: 'Scheduled',     icon: 'Calendar',  bg: 'var(--status-task-scheduled-bg)', text: 'var(--status-task-scheduled-text)', border: 'var(--status-task-scheduled-border)' },
-  waiting:     { label: 'Waiting',       icon: 'Hourglass', bg: 'var(--status-task-waiting-bg)',   text: 'var(--status-task-waiting-text)',   border: 'var(--status-task-waiting-border)'   },
-  someday:     { label: 'Someday/Maybe', icon: 'Sparkles',  bg: 'var(--status-task-someday-bg)',   text: 'var(--status-task-someday-text)',   border: 'var(--status-task-someday-border)'   },
-  done:        { label: 'Done',          icon: 'Check',     bg: 'var(--status-task-done-bg)',      text: 'var(--status-task-done-text)',      border: 'var(--status-task-done-border)'      },
+  inbox:       { label: 'Inbox',         bg: 'var(--status-task-inbox-bg)',     text: 'var(--status-task-inbox-text)',     border: 'var(--status-task-inbox-border)'     },
+  next_action: { label: 'Next Action',   bg: 'var(--status-task-next-bg)',      text: 'var(--status-task-next-text)',      border: 'var(--status-task-next-border)'      },
+  queued:      { label: 'Queued',        bg: 'var(--status-task-queued-bg)',    text: 'var(--status-task-queued-text)',    border: 'var(--status-task-queued-border)'    },
+  scheduled:   { label: 'Scheduled',     bg: 'var(--status-task-scheduled-bg)', text: 'var(--status-task-scheduled-text)', border: 'var(--status-task-scheduled-border)' },
+  waiting:     { label: 'Waiting',       bg: 'var(--status-task-waiting-bg)',   text: 'var(--status-task-waiting-text)',   border: 'var(--status-task-waiting-border)'   },
+  someday:     { label: 'Someday/Maybe', bg: 'var(--status-task-someday-bg)',   text: 'var(--status-task-someday-text)',   border: 'var(--status-task-someday-border)'   },
+  done:        { label: 'Done',          bg: 'var(--status-task-done-bg)',      text: 'var(--status-task-done-text)',      border: 'var(--status-task-done-border)'      },
 }
 
 // ─── Project Statuses ────────────────────────────────────────────────────────
@@ -63,16 +62,15 @@ export const PROJECT_ACTIONS = {
 }
 
 // ─── Habits ──────────────────────────────────────────────────────────────────
-// `icon` is a Lucide icon name; render via the LucideIcon component.
 export const HABITS = [
-  { key: 'habit_morning_meds',    label: 'Morning Meds',      icon: 'Pill'              },
-  { key: 'habit_evening_meds',    label: "Last Night's Meds", icon: 'Moon'              },
-  { key: 'habit_journal',         label: 'Journal',           icon: 'PenLine'           },
-  { key: 'habit_meditation',      label: 'Meditation',        icon: 'Brain'             },
-  { key: 'habit_breathwork',      label: 'Breathwork',        icon: 'Wind'              },
-  { key: 'habit_stretching',      label: 'Stretching',        icon: 'StretchHorizontal' },
-  { key: 'habit_health_tracking', label: 'Health Tracking',   icon: 'Heart'             },
-  { key: 'habit_code_challenge',  label: 'Code Challenge',    icon: 'Code'              },
+  { key: 'habit_morning_meds',    label: 'Morning Meds'      },
+  { key: 'habit_evening_meds',    label: "Last Night's Meds" },
+  { key: 'habit_journal',         label: 'Journal'           },
+  { key: 'habit_meditation',      label: 'Meditation'        },
+  { key: 'habit_breathwork',      label: 'Breathwork'        },
+  { key: 'habit_stretching',      label: 'Stretching'        },
+  { key: 'habit_health_tracking', label: 'Health Tracking'   },
+  { key: 'habit_code_challenge',  label: 'Code Challenge'    },
 ]
 
 // ─── Review Types ─────────────────────────────────────────────────────────────
