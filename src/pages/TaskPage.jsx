@@ -499,91 +499,90 @@ export default function TaskPage() {
 
           {/* Action bar */}
           <section className="pb-6">
-            <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>What's Next?</h2>
-            <div className="flex flex-wrap gap-2 items-center">
-              {task.status === 'inbox' && (
-                <>
-                  <Button variant="danger"    size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.did_it}</Button>
-                  <Button variant="secondary" size="sm" onClick={() => setShowSchedule(true)}>Schedule</Button>
-                  {clarified && (
-                    <>
-                      {hasProject
-                        ? <Button variant="success" size="sm" onClick={handleQueue}>{TASK_ACTIONS.queue}</Button>
-                        : <>
-                            <Button variant="success"   size="sm" onClick={handleClarifyRoute}>{TASK_ACTIONS.next_action}</Button>
-                            <Button variant="secondary" size="sm" onClick={() => setShowRoute(true)}>Assign to Project →</Button>
-                          </>
-                      }
-                    </>
-                  )}
-                </>
-              )}
-              {task.status === 'next_action' && (
-                <>
-                  <Button variant="success"   size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.complete}</Button>
-                  <Button variant="danger"    size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.did_it}</Button>
-                  <Button variant="secondary" size="sm" onClick={() => setShowWaiting(true)}>{TASK_ACTIONS.waiting}</Button>
-                  <Button variant="secondary" size="sm" onClick={() => setShowSchedule(true)}>Schedule</Button>
-                  {hasProject  && <Button variant="ghost" size="sm" onClick={handleQueue}>{TASK_ACTIONS.queue}</Button>}
-                  {!hasProject && <Button variant="ghost" size="sm" onClick={() => setShowRoute(true)}>Assign to Project →</Button>}
-                </>
-              )}
-              {task.status === 'queued' && (
-                <>
-                  <Button variant="success"   size="sm" onClick={handleNextAction}>{TASK_ACTIONS.next_action}</Button>
-                  <Button variant="danger"    size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.did_it}</Button>
-                  <Button variant="secondary" size="sm" onClick={() => setShowSchedule(true)}>Schedule</Button>
-                </>
-              )}
-              {task.status === 'waiting' && (
-                <>
-                  <Button variant="success"   size="sm" onClick={handleClearWaiting}>Clear Blocker</Button>
-                  <Button variant="danger"    size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.did_it}</Button>
-                  <Button variant="secondary" size="sm" onClick={() => setShowSchedule(true)}>Schedule</Button>
-                </>
-              )}
-              {task.status === 'scheduled' && (
-                <>
-                  <Button variant="success"   size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.complete}</Button>
-                  <Button variant="danger"    size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.did_it}</Button>
-                  <Button variant="secondary" size="sm" onClick={handleNextAction}>{TASK_ACTIONS.next_action}</Button>
-                  <Button variant="secondary" size="sm" onClick={() => setShowSchedule(true)}>Reschedule</Button>
-                </>
-              )}
-              {task.status === 'someday' && (
-                <>
-                  <Button variant="success"   size="sm" onClick={handleNextAction}>{TASK_ACTIONS.next_action}</Button>
-                  <Button variant="danger"    size="sm" onClick={() => setShowCompletion(true)}>{TASK_ACTIONS.did_it}</Button>
-                  <Button variant="secondary" size="sm" onClick={() => setShowSchedule(true)}>Schedule</Button>
-                </>
-              )}
-              {isCompleted && (
-                <>
-                  {!task.is_highlight && (
-                    <Button variant="secondary" size="sm" onClick={() => setShowHighlight(true)}>
-                      Add to Highlights
-                    </Button>
-                  )}
-                  {isDone && (
-                    <Button variant="secondary" size="sm" onClick={handleArchive}>
-                      Archive
-                    </Button>
-                  )}
-                  <Button variant="secondary" size="sm" onClick={handleDuplicate}>
+            <h2 className="text-base font-semibold mb-4 text-center" style={{ color: 'var(--text-primary)' }}>What's Next?</h2>
+            {!isCompleted && (
+              <>
+                <div className="flex flex-col items-center gap-3">
+                  {[
+                    { key: 'next',     label: 'Add to Next',          onClick: () => (task.status === 'inbox' && !clarified) ? handleClarifyRoute() : handleNextAction() },
+                    { key: 'done',     label: 'Mark Done',            onClick: () => setShowCompletion(true) },
+                    { key: 'schedule', label: 'Schedule',             onClick: () => setShowSchedule(true) },
+                    { key: 'queue',    label: 'Add to Project Queue', onClick: () => hasProject ? handleQueue() : setShowRoute(true) },
+                    { key: 'waiting',  label: 'Set to Waiting',       onClick: () => setShowWaiting(true) },
+                    { key: 'someday',  label: 'Add to Someday/Maybe', onClick: handleSomeday },
+                  ].map(o => (
+                    <button
+                      key={o.key}
+                      onClick={o.onClick}
+                      className="text-sm transition-colors"
+                      style={{ color: 'var(--text-primary)', background: 'transparent' }}
+                      onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent)' }}
+                      onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-primary)' }}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center justify-center gap-5 mt-6">
+                  <button
+                    onClick={handleDuplicate}
+                    className="text-xs transition-opacity hover:opacity-70"
+                    style={{ color: 'var(--text-secondary)', background: 'transparent' }}
+                  >
                     Duplicate
-                  </Button>
-                  <Button variant="danger" size="sm" onClick={() => setShowDiscard(true)}>
-                    Permanently Delete
-                  </Button>
-                </>
-              )}
-              {!isCompleted && (
-                <span className="ml-auto flex items-center gap-2">
-                  <Button variant="ghost" size="sm" onClick={handleDuplicate}>Duplicate</Button>
-                  <TrashBtn onClick={() => setShowDiscard(true)} />
-                </span>
-              )}
-            </div>
+                  </button>
+                  <button
+                    onClick={() => setShowDiscard(true)}
+                    className="text-xs transition-opacity hover:opacity-70"
+                    style={{ color: 'var(--danger)', background: 'transparent' }}
+                  >
+                    Discard
+                  </button>
+                </div>
+              </>
+            )}
+            {isCompleted && (
+              <div className="flex flex-col items-center gap-3">
+                {!task.is_highlight && (
+                  <button
+                    onClick={() => setShowHighlight(true)}
+                    className="text-sm transition-colors"
+                    style={{ color: 'var(--text-primary)', background: 'transparent' }}
+                    onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent)' }}
+                    onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-primary)' }}
+                  >
+                    Add to Highlights
+                  </button>
+                )}
+                {isDone && (
+                  <button
+                    onClick={handleArchive}
+                    className="text-sm transition-colors"
+                    style={{ color: 'var(--text-primary)', background: 'transparent' }}
+                    onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent)' }}
+                    onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-primary)' }}
+                  >
+                    Archive
+                  </button>
+                )}
+                <button
+                  onClick={handleDuplicate}
+                  className="text-sm transition-colors"
+                  style={{ color: 'var(--text-primary)', background: 'transparent' }}
+                  onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent)' }}
+                  onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-primary)' }}
+                >
+                  Duplicate
+                </button>
+                <button
+                  onClick={() => setShowDiscard(true)}
+                  className="text-sm transition-opacity hover:opacity-70"
+                  style={{ color: 'var(--danger)', background: 'transparent' }}
+                >
+                  Permanently Delete
+                </button>
+              </div>
+            )}
           </section>
         </div>
       </div>
