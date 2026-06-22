@@ -182,7 +182,6 @@ export default function Daily() {
         <HabitsSection
           note={note}
           habitHistory={habitHistory}
-          onToggle={toggleHabit}
           onToggleDate={toggleHabitForDate}
         />
 

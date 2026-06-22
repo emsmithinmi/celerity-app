@@ -53,25 +53,12 @@ function WeekChecks({ weekDates, today, doneFor, onToggleDate }) {
   )
 }
 
-function HabitRow({ habit, checked, onToggle, weekDates, today, dateMap, noteToday, onToggleDate }) {
+function HabitRow({ habit, weekDates, today, dateMap, noteToday, onToggleDate }) {
   const doneFor = (date) =>
     date === today ? !!noteToday : !!(dateMap[date] && dateMap[date][habit.key])
 
   return (
     <div className="flex items-center gap-3 px-4 py-3 border-b last:border-b-0" style={{ borderColor: 'var(--border)' }}>
-      {/* Today's checkbox */}
-      <button
-        onClick={() => onToggle(!checked)}
-        className="shrink-0 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors"
-        style={{
-          borderColor: checked ? 'var(--habit-done-bg)' : 'var(--border)',
-          backgroundColor: checked ? 'var(--habit-done-bg)' : 'transparent',
-        }}
-        aria-label={`Toggle ${habit.label}`}
-      >
-        {checked && <span className="text-xs text-black font-bold">✓</span>}
-      </button>
-
       {/* Icon + Label */}
       <span className="text-lg shrink-0">{habit.icon}</span>
       <span className="text-sm flex-1" style={{ color: 'var(--text-primary)' }}>{habit.label}</span>
@@ -87,7 +74,7 @@ function HabitRow({ habit, checked, onToggle, weekDates, today, dateMap, noteTod
   )
 }
 
-export default function HabitsSection({ note, habitHistory = [], onToggle, onToggleDate }) {
+export default function HabitsSection({ note, habitHistory = [], onToggleDate }) {
   const today     = new Date().toLocaleDateString('en-CA')
   const weekDates = useMemo(currentWeekDates, [])
   const dateMap   = useMemo(
@@ -117,8 +104,6 @@ export default function HabitsSection({ note, habitHistory = [], onToggle, onTog
           <HabitRow
             key={habit.key}
             habit={habit}
-            checked={!!note[habit.key]}
-            onToggle={(val) => onToggle(habit.key, val)}
             weekDates={weekDates}
             today={today}
             dateMap={dateMap}

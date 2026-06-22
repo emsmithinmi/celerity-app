@@ -17,6 +17,7 @@ All notable changes to Focus Flow are recorded here.
 
 ### Changed
 - Refactored the Daily Next Actions drag logic into a shared `useListOrder` hook + `DragHandle` component, reused across all the lists above.
+- **Daily habits: dropped the left checkbox** — each habit row now shows only the Sun→Sat week strip (today's cell already toggles today), removing the duplicate single checkbox.
 - **Duration field goes read-only when subtasks drive it** — on a task whose subtasks carry estimates, the edit modal now shows the derived remaining time as a read-only value with a "Driven by subtasks" note, instead of an editable input that would just get overwritten on the next checkoff.
 
 ### Removed
