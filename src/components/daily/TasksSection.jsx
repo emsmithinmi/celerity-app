@@ -143,7 +143,8 @@ export default function TasksSection({ onRefreshStats }) {
                 onDragStart={() => handleDragStart(t.id)}
                 onDragOver={(e) => handleDragOver(e, t.id)}
                 onDrop={handleDrop}
-                style={{ cursor: 'grab' }}
+                className="border-b last:border-b-0"
+                style={{ cursor: 'grab', borderColor: 'var(--border)' }}
               >
                 <TaskRow task={t} onClick={() => navigate(`/tasks/${t.id}`)} />
               </div>

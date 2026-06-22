@@ -12,6 +12,9 @@ All notable changes to Focus Flow are recorded here.
 ### Added
 - **Next Actions drag-to-reorder** — tasks on the Next Actions tab (Daily page) can be dragged into any order. Order persists to localStorage; no DB writes, no effect on task status or priority.
 
+### Fixed
+- **Divider lines restored between Next Actions tasks** — the drag wrapper had swallowed each row's bottom border; the divider now sits on the wrapper so Next Actions matches the other tabs.
+
 ---
 
 ## 2026-06-19
