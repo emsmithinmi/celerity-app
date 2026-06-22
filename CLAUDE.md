@@ -290,7 +290,6 @@ Daily page Challenge section serves one small **basic-Python refresher** at a ti
 - **Refilling the bank:** the `refresh-challenges` skill (`.claude/skills/refresh-challenges/`) generates 25 new basic-Python challenges and inserts them via Supabase MCP. Run it when the section says the bank is empty.
 
 ## Known Follow-ups
-- **Color theme system** — theme switcher (Catppuccin / GitHub Dark) only re-themes sidebar chrome. Rest of app uses hardcoded hex values. Extend CSS variable coverage to page content, modals, forms, cards, badges.
 - **External agent tool layer** — design and build the MCP/REST surface that lets an outside agent drive the app (see "External Agent Tool Layer — Planned" above).
 - **Reviews page rebuild** — currently an under-construction shell; the replacement flow will be agent-orchestrated.
 - **PWA update race:** right after a deploy, an open tab can briefly blank while the service worker swaps versions — a refresh fixes it. Not a code bug.
@@ -326,4 +325,3 @@ Adopt this personality for all interactions with the user. This is a long-term t
 - Weekly & Monthly Reviews — full implementation (Reviews page is currently under-construction).
 - Obsidian migration script
 - Per-user RLS scoping (if ever multi-user)
-- Color theme system extension — CSS variables currently cover sidebar only; extend to all page content, cards, modals, forms

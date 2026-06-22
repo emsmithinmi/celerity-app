@@ -110,6 +110,60 @@
 
   /* Catppuccin flamingo (pink accent for insight cards) */
   --accent-pink:        #f5c2e7;
+
+  /* ─── Status pills — task ─────────────────────────────────────────────── */
+  --status-task-inbox-bg:        #FBBC05;
+  --status-task-inbox-text:      #000000;
+  --status-task-inbox-border:    #D4990A;
+  --status-task-next-bg:         #0F9D58;
+  --status-task-next-text:       #000000;
+  --status-task-next-border:     #0B7A42;
+  --status-task-queued-bg:       #1967D2;
+  --status-task-queued-text:     #ffffff;
+  --status-task-queued-border:   #1256B0;
+  --status-task-scheduled-bg:    #ADE8F4;
+  --status-task-scheduled-text:  #000000;
+  --status-task-scheduled-border:#378ADD;
+  --status-task-waiting-bg:      #DB4437;
+  --status-task-waiting-text:    #000000;
+  --status-task-waiting-border:  #B03228;
+  --status-task-someday-bg:      #ffffff;
+  --status-task-someday-text:    #000000;
+  --status-task-someday-border:  #BBBBBB;
+  --status-task-done-bg:         #313244;
+  --status-task-done-text:       #cdd6f4;
+  --status-task-done-border:     #45475a;
+
+  /* ─── Status pills — project ──────────────────────────────────────────── */
+  --status-project-inbox-bg:        #FBBC05;
+  --status-project-inbox-text:      #000000;
+  --status-project-inbox-border:    #D4990A;
+  --status-project-planning-bg:     #ffffff;
+  --status-project-planning-text:   #000000;
+  --status-project-planning-border: #BBBBBB;
+  --status-project-inprogress-bg:   #1967D2;
+  --status-project-inprogress-text: #ffffff;
+  --status-project-inprogress-border:#1256B0;
+  --status-project-waiting-bg:      #DB4437;
+  --status-project-waiting-text:    #ffffff;
+  --status-project-waiting-border:  #B03228;
+  --status-project-stalled-bg:      #FB9039;
+  --status-project-stalled-text:    #000000;
+  --status-project-stalled-border:  #c97030;
+  --status-project-someday-bg:      #ffffff;
+  --status-project-someday-text:    #000000;
+  --status-project-someday-border:  #BBBBBB;
+  --status-project-completed-bg:    #313244;
+  --status-project-completed-text:  #cdd6f4;
+  --status-project-completed-border:#45475a;
+
+  /* ─── Status pills — person ───────────────────────────────────────────── */
+  --status-person-inbox-bg:   #FBBC05;
+  --status-person-inbox-text: #000000;
+  --status-person-active-bg:  #0F9D58;
+  --status-person-active-text:#000000;
+  --status-person-stale-bg:   #6c7086;
+  --status-person-stale-text: #ffffff;
 }
 
 [data-theme="github-dark"] {
@@ -218,6 +272,60 @@
 
   /* Pink accent for insight cards */
   --accent-pink:        #ff9ed8;
+
+  /* ─── Status pills — task (GitHub Dark) ───────────────────────────────── */
+  --status-task-inbox-bg:        #e3b341;
+  --status-task-inbox-text:      #000000;
+  --status-task-inbox-border:    #b88a25;
+  --status-task-next-bg:         #2ea043;
+  --status-task-next-text:       #ffffff;
+  --status-task-next-border:     #196c2e;
+  --status-task-queued-bg:       #1f6feb;
+  --status-task-queued-text:     #ffffff;
+  --status-task-queued-border:   #1158c7;
+  --status-task-scheduled-bg:    #79c0ff;
+  --status-task-scheduled-text:  #000000;
+  --status-task-scheduled-border:#1f6feb;
+  --status-task-waiting-bg:      #da3633;
+  --status-task-waiting-text:    #ffffff;
+  --status-task-waiting-border:  #a02523;
+  --status-task-someday-bg:      #c9d1d9;
+  --status-task-someday-text:    #0d1117;
+  --status-task-someday-border:  #8b949e;
+  --status-task-done-bg:         #21262d;
+  --status-task-done-text:       #c9d1d9;
+  --status-task-done-border:     #30363d;
+
+  /* ─── Status pills — project (GitHub Dark) ────────────────────────────── */
+  --status-project-inbox-bg:        #e3b341;
+  --status-project-inbox-text:      #000000;
+  --status-project-inbox-border:    #b88a25;
+  --status-project-planning-bg:     #c9d1d9;
+  --status-project-planning-text:   #0d1117;
+  --status-project-planning-border: #8b949e;
+  --status-project-inprogress-bg:   #1f6feb;
+  --status-project-inprogress-text: #ffffff;
+  --status-project-inprogress-border:#1158c7;
+  --status-project-waiting-bg:      #da3633;
+  --status-project-waiting-text:    #ffffff;
+  --status-project-waiting-border:  #a02523;
+  --status-project-stalled-bg:      #ffa657;
+  --status-project-stalled-text:    #000000;
+  --status-project-stalled-border:  #d07a30;
+  --status-project-someday-bg:      #c9d1d9;
+  --status-project-someday-text:    #0d1117;
+  --status-project-someday-border:  #8b949e;
+  --status-project-completed-bg:    #21262d;
+  --status-project-completed-text:  #c9d1d9;
+  --status-project-completed-border:#30363d;
+
+  /* ─── Status pills — person (GitHub Dark) ─────────────────────────────── */
+  --status-person-inbox-bg:    #e3b341;
+  --status-person-inbox-text:  #000000;
+  --status-person-active-bg:   #2ea043;
+  --status-person-active-text: #ffffff;
+  --status-person-stale-bg:    #484f58;
+  --status-person-stale-text:  #c9d1d9;
 }
 
 @theme {

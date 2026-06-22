@@ -1,38 +1,33 @@
+// Status pill colors are CSS variables defined in src/index.css so they shift
+// with the active theme (Catppuccin / GitHub Dark). Don't hardcode hex here.
+
 // ─── Task Statuses ───────────────────────────────────────────────────────────
 export const TASK_STATUSES = {
-  inbox:       { label: 'Inbox',         icon: '📥', bg: '#FBBC05', text: '#000000', border: '#D4990A' },
-  next_action: { label: 'Next Action',   icon: '⚡', bg: '#0F9D58', text: '#000000', border: '#0B7A42' },
-  queued:      { label: 'Queued',        icon: '🗂',  bg: '#1967D2', text: '#ffffff', border: '#1256B0' },
-  scheduled:   { label: 'Scheduled',     icon: '📅', bg: '#ADE8F4', text: '#000000', border: '#378ADD' },
-  waiting:     { label: 'Waiting',       icon: '⏳', bg: '#DB4437', text: '#000000', border: '#B03228' },
-  someday:     { label: 'Someday/Maybe', icon: '🔮', bg: '#ffffff', text: '#000000', border: '#BBBBBB' },
-  done:        { label: 'Done',          icon: '✓',  bg: '#000000', text: '#ffffff', border: '#333333' },
+  inbox:       { label: 'Inbox',         icon: '📥', bg: 'var(--status-task-inbox-bg)',     text: 'var(--status-task-inbox-text)',     border: 'var(--status-task-inbox-border)'     },
+  next_action: { label: 'Next Action',   icon: '⚡', bg: 'var(--status-task-next-bg)',      text: 'var(--status-task-next-text)',      border: 'var(--status-task-next-border)'      },
+  queued:      { label: 'Queued',        icon: '🗂',  bg: 'var(--status-task-queued-bg)',    text: 'var(--status-task-queued-text)',    border: 'var(--status-task-queued-border)'    },
+  scheduled:   { label: 'Scheduled',     icon: '📅', bg: 'var(--status-task-scheduled-bg)', text: 'var(--status-task-scheduled-text)', border: 'var(--status-task-scheduled-border)' },
+  waiting:     { label: 'Waiting',       icon: '⏳', bg: 'var(--status-task-waiting-bg)',   text: 'var(--status-task-waiting-text)',   border: 'var(--status-task-waiting-border)'   },
+  someday:     { label: 'Someday/Maybe', icon: '🔮', bg: 'var(--status-task-someday-bg)',   text: 'var(--status-task-someday-text)',   border: 'var(--status-task-someday-border)'   },
+  done:        { label: 'Done',          icon: '✓',  bg: 'var(--status-task-done-bg)',      text: 'var(--status-task-done-text)',      border: 'var(--status-task-done-border)'      },
 }
 
 // ─── Project Statuses ────────────────────────────────────────────────────────
 export const PROJECT_STATUSES = {
-  inbox:       { label: 'Inbox',          bg: '#FBBC05', text: '#000000', border: '#D4990A' },
-  planning:    { label: 'Planning',       bg: '#ffffff', text: '#000000', border: '#BBBBBB' },
-  in_progress: { label: 'In Progress',    bg: '#1967D2', text: '#ffffff', border: '#1256B0' },
-  waiting:     { label: 'Waiting',        bg: '#DB4437', text: '#ffffff', border: '#B03228' },
-  stalled:     { label: 'Stalled',        bg: '#FB9039', text: '#000000', border: '#c97030' },
-  someday:     { label: 'Someday/Maybe',  bg: '#ffffff', text: '#000000', border: '#BBBBBB' },
-  completed:   { label: 'Completed',      bg: '#000000', text: '#ffffff', border: '#333333' },
+  inbox:       { label: 'Inbox',          bg: 'var(--status-project-inbox-bg)',      text: 'var(--status-project-inbox-text)',      border: 'var(--status-project-inbox-border)'      },
+  planning:    { label: 'Planning',       bg: 'var(--status-project-planning-bg)',   text: 'var(--status-project-planning-text)',   border: 'var(--status-project-planning-border)'   },
+  in_progress: { label: 'In Progress',    bg: 'var(--status-project-inprogress-bg)', text: 'var(--status-project-inprogress-text)', border: 'var(--status-project-inprogress-border)' },
+  waiting:     { label: 'Waiting',        bg: 'var(--status-project-waiting-bg)',    text: 'var(--status-project-waiting-text)',    border: 'var(--status-project-waiting-border)'    },
+  stalled:     { label: 'Stalled',        bg: 'var(--status-project-stalled-bg)',    text: 'var(--status-project-stalled-text)',    border: 'var(--status-project-stalled-border)'    },
+  someday:     { label: 'Someday/Maybe',  bg: 'var(--status-project-someday-bg)',    text: 'var(--status-project-someday-text)',    border: 'var(--status-project-someday-border)'    },
+  completed:   { label: 'Completed',      bg: 'var(--status-project-completed-bg)',  text: 'var(--status-project-completed-text)',  border: 'var(--status-project-completed-border)'  },
 }
 
 // ─── People Statuses ─────────────────────────────────────────────────────────
 export const PEOPLE_STATUSES = {
-  inbox:  { label: 'Inbox',  bg: '#FBBC05', text: '#000000' },
-  active: { label: 'Active', bg: '#0F9D58', text: '#000000' },
-  stale:  { label: 'Stale',  bg: '#6c7086', text: '#ffffff' },
-}
-
-// ─── Priorities ──────────────────────────────────────────────────────────────
-export const PRIORITIES = {
-  stat:    { label: 'STAT',    bg: '#DB4437', text: '#ffffff' },
-  urgent:  { label: 'Urgent',  bg: '#E8710A', text: '#ffffff' },
-  eod:     { label: 'EOD',     bg: '#FBBC05', text: '#000000' },
-  routine: { label: 'Routine', bg: '#F1EFE8', text: '#5F5E5A' },
+  inbox:  { label: 'Inbox',  bg: 'var(--status-person-inbox-bg)',  text: 'var(--status-person-inbox-text)'  },
+  active: { label: 'Active', bg: 'var(--status-person-active-bg)', text: 'var(--status-person-active-text)' },
+  stale:  { label: 'Stale',  bg: 'var(--status-person-stale-bg)',  text: 'var(--status-person-stale-text)'  },
 }
 
 // ─── Energy Levels ───────────────────────────────────────────────────────────
