@@ -53,6 +53,13 @@ const VARIANTS = {
     hover: 'var(--state-warning-bg)',
     border: 'var(--accent-yellow)',
   },
+  outline: {
+    bg: 'transparent',
+    text: 'var(--accent)',
+    hover: 'var(--accent)',
+    hoverText: 'var(--app-bg)',
+    border: 'var(--accent)',
+  },
 }
 
 const SIZES = {
@@ -91,8 +98,8 @@ export default function Button({
         color: v.text,
         borderColor: v.border,
       }}
-      onMouseEnter={e => { if (!disabled) e.currentTarget.style.backgroundColor = v.hover }}
-      onMouseLeave={e => { if (!disabled) e.currentTarget.style.backgroundColor = v.bg }}
+      onMouseEnter={e => { if (!disabled) { e.currentTarget.style.backgroundColor = v.hover; if (v.hoverText) e.currentTarget.style.color = v.hoverText; } }}
+      onMouseLeave={e => { if (!disabled) { e.currentTarget.style.backgroundColor = v.bg; if (v.hoverText) e.currentTarget.style.color = v.text; } }}
     >
       {children}
     </button>
