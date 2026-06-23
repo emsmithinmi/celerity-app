@@ -7,6 +7,11 @@ All notable changes to Focus Flow are recorded here.
 ## 2026-06-22
 
 ### Changed
+- **People is now a plain contacts section** — removed the status system (Inbox / Active / Stale tabs, stat chips, stale banner, status pill in header, Activate/Reactivate actions). The list page is a flat alphabetical list with a search bar and contact count. The detail page drops the What's Next section entirely; the delete TrashBtn moves to the breadcrumb header. Task linking is preserved as-is.
+
+---
+
+### Changed
 - **All three detail pages now share the same "What's Next?" button style** — TaskPage, ProjectPage, and PersonPage all use tall, full-width stacked `outline` buttons (transparent bg, accent-colored border + text, fills on hover). Destructive actions (Discard / Scrap Project / Remove Contact) move to a small red text link below the button stack. Theme-aware: GitHub Dark = accent blue, Cobalt2 = signature gold/yellow, Catppuccin = lavender.
 - **Button: new `outline` variant** — transparent background, `--accent` border and text, fills to `--accent` bg with `--app-bg` text on hover. Added `hoverText` support to the variant map so hover can swap text color.
 

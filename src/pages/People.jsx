@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePeople } from '../hooks/usePeople'
 import PersonRow from '../components/people/PersonRow'
@@ -6,70 +6,23 @@ import Button from '../components/ui/Button'
 import { EmptyState } from '../components/ui'
 import { CapturePersonModal } from '../components/daily/QuickCaptureModals'
 
-const TABS = [
-  { key: 'inbox',  label: 'Inbox'  },
-  { key: 'active', label: 'Active' },
-  { key: 'stale',  label: 'Stale'  },
-  { key: 'all',    label: 'All'    },
-]
-
-function StatChip({ label, count }) {
-  return (
-    <div
-      className="flex flex-col items-center px-4 py-3 rounded-xl border"
-      style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
-    >
-      <span className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{count}</span>
-      <span className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{label}</span>
-    </div>
-  )
-}
-
 export default function People() {
   const navigate = useNavigate()
-  const [activeTab,   setActiveTab]   = useState('inbox')
-  const [tabSet,      setTabSet]      = useState(false)   // true once auto-default is applied
   const [showCapture, setShowCapture] = useState(false)
   const [search,      setSearch]      = useState('')
 
   const { people, loading, refresh, createPerson } = usePeople({})
 
-  // Auto-select the first non-empty tab: inbox → stale → active
-  useEffect(() => {
-    if (loading || tabSet) return
-    setTabSet(true)
-    const hasInbox = people.some(p => p.status === 'inbox')
-    if (hasInbox) { setActiveTab('inbox'); return }
-    const hasStale = people.some(p => p.status === 'stale' || p.is_stale)
-    if (hasStale) { setActiveTab('stale'); return }
-    setActiveTab('active')
-  }, [loading, people, tabSet])
-
-  const displayed = (() => {
-    let base = activeTab === 'all' ? people : people.filter(p => p.status === activeTab)
-    if (search) base = base.filter(p =>
-      `${p.first_name} ${p.last_name}`.toLowerCase().includes(search.toLowerCase()) ||
-      (p.company ?? '').toLowerCase().includes(search.toLowerCase())
-    )
-    return base
-  })()
-
-  const stats = {
-    total:  people.length,
-    active: people.filter(p => p.status === 'active').length,
-    inbox:  people.filter(p => p.status === 'inbox').length,
-    stale:  people.filter(p => p.status === 'stale' || p.is_stale).length,
-  }
-
-  const tabCount = (key) => {
-    if (key === 'all') return people.length
-    return people.filter(p => p.status === key).length
-  }
+  const displayed = search
+    ? people.filter(p =>
+        `${p.first_name} ${p.last_name}`.toLowerCase().includes(search.toLowerCase()) ||
+        (p.company ?? '').toLowerCase().includes(search.toLowerCase())
+      )
+    : people
 
   const handleCapture = async ({ first_name, last_name }) => {
     await createPerson({ first_name, last_name })
     refresh()
-    setActiveTab('inbox')
   }
 
   return (
@@ -79,21 +32,20 @@ export default function People() {
         className="flex items-center justify-between px-6 py-4 border-b shrink-0"
         style={{ borderColor: 'var(--border)' }}
       >
-        <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>People</h1>
+        <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
+          People
+          {people.length > 0 && (
+            <span className="ml-2 text-sm font-normal" style={{ color: 'var(--text-secondary)' }}>
+              {people.length}
+            </span>
+          )}
+        </h1>
         <Button size="sm" variant="primary" onClick={() => setShowCapture(true)}>+ Add Person</Button>
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {/* Stat cards */}
-        <div className="grid grid-cols-4 gap-3 px-6 pt-5 pb-4">
-          <StatChip label="Total"  count={stats.total}  />
-          <StatChip label="Active" count={stats.active} />
-          <StatChip label="Inbox"  count={stats.inbox}  />
-          <StatChip label="Stale"  count={stats.stale}  />
-        </div>
-
         {/* Search */}
-        <div className="px-6 pb-3">
+        <div className="px-6 pt-4 pb-3">
           <input
             type="text"
             value={search}
@@ -104,47 +56,13 @@ export default function People() {
           />
         </div>
 
-        {/* Tabs */}
-        <div
-          className="flex gap-1 px-4 pb-2 overflow-x-auto shrink-0"
-          style={{ borderBottom: '1px solid var(--border)' }}
-        >
-          {TABS.map(tab => {
-            const count = tabCount(tab.key)
-            return (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors shrink-0"
-                style={{
-                  backgroundColor: activeTab === tab.key ? 'var(--border)' : 'transparent',
-                  color: activeTab === tab.key ? 'var(--text-primary)' : 'var(--text-secondary)',
-                }}
-              >
-                {tab.label}
-                {count > 0 && (
-                  <span
-                    className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold leading-none"
-                    style={{
-                      backgroundColor: activeTab === tab.key ? 'var(--text-secondary)' : 'var(--border)',
-                      color: activeTab === tab.key ? 'var(--pane-bg)' : 'var(--text-secondary)',
-                    }}
-                  >
-                    {count}
-                  </span>
-                )}
-              </button>
-            )
-          })}
-        </div>
-
         {/* People list */}
         {loading ? (
           <EmptyState message="Loading…" />
         ) : displayed.length === 0 ? (
           <EmptyState
-            message={search ? 'No people match your search.' : `No ${activeTab === 'all' ? '' : activeTab} people.`}
-            action={activeTab === 'inbox' && !search
+            message={search ? 'No people match your search.' : 'No contacts yet.'}
+            action={!search
               ? <Button size="sm" variant="secondary" onClick={() => setShowCapture(true)}>Add someone</Button>
               : undefined}
           />

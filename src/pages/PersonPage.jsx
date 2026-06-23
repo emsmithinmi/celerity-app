@@ -2,16 +2,15 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { X } from 'lucide-react'
 import {
-  getPerson, updatePerson, activatePerson, deletePerson,
+  getPerson, updatePerson, deletePerson,
   getPersonTasks, getPersonProjects, uploadPersonAvatar,
 } from '../lib/api/people'
 import { getTasks, linkPersonToTask, unlinkPersonFromTask } from '../lib/api/tasks'
 import AvatarCircle from '../components/ui/AvatarCircle'
 import Button from '../components/ui/Button'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
-import { StatusPill, PencilBtn, TrashBtn } from '../components/ui'
+import { PencilBtn, TrashBtn } from '../components/ui'
 import PersonComments from '../components/people/PersonComments'
-import { PEOPLE_STATUSES } from '../lib/constants'
 
 const inputCls  = 'w-full px-3 py-2 rounded-lg text-sm border outline-none bg-transparent'
 const inputStyle = { borderColor: 'var(--border)', color: 'var(--text-primary)' }
@@ -174,11 +173,6 @@ export default function PersonPage() {
     }
   }
 
-  const handleActivate = async () => {
-    const updated = await activatePerson(person.id)
-    setPerson(prev => ({ ...prev, ...updated }))
-  }
-
   const handleAvatarUpload = async (file) => {
     setAvatarUploading(true)
     try {
@@ -202,8 +196,6 @@ export default function PersonPage() {
   }
 
   const d = editing ? draft : person
-  const statusConfig = PEOPLE_STATUSES[person.status] ?? {}
-  const isStale = person.is_stale || person.status === 'stale'
 
   // Format birthday for display
   const formatBirthday = (val) => {
@@ -256,22 +248,10 @@ export default function PersonPage() {
         <span className="text-sm truncate flex-1" style={{ color: 'var(--text-primary)' }}>
           {displayName(person)}
         </span>
-        <span
-          className="text-xs px-2.5 py-0.5 rounded-full font-medium"
-          style={{ backgroundColor: statusConfig.bg, color: statusConfig.text }}
-        >
-          {statusConfig.label ?? person.status}
-        </span>
+        <TrashBtn onClick={() => setShowDelete(true)} title="Remove contact" />
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
-
-        {/* ── Stale banner ── */}
-        {isStale && (
-          <div className="rounded-lg px-4 py-3 border text-sm" style={{ backgroundColor: 'var(--state-error-bg)', borderColor: 'var(--danger)', color: 'var(--state-error-text)' }}>
-            <p className="font-medium">Contact is stale</p>
-          </div>
-        )}
 
         {/* ── Identity section ── */}
         <section>
@@ -700,36 +680,6 @@ export default function PersonPage() {
           </div>
         </section>
 
-        {/* ── What's Next section ── */}
-        <section className="pb-6">
-          <h2 className="text-base font-semibold mb-4 text-center" style={{ color: 'var(--text-primary)' }}>What's Next?</h2>
-          <div className="flex flex-col gap-3 mx-auto w-full max-w-xs">
-            {(person.status === 'inbox' || person.status === 'stale' || person.is_stale) && (
-              <Button variant="outline" size="lg" fullWidth onClick={handleActivate}>
-                {person.status === 'inbox' ? 'Activate Contact' : 'Reactivate Contact'}
-              </Button>
-            )}
-            {person.email_personal && (
-              <Button variant="outline" size="lg" fullWidth onClick={() => window.open(`mailto:${person.email_personal}`)}>
-                Send Email
-              </Button>
-            )}
-            {person.email_work && !person.email_personal && (
-              <Button variant="outline" size="lg" fullWidth onClick={() => window.open(`mailto:${person.email_work}`)}>
-                Send Email
-              </Button>
-            )}
-          </div>
-          <div className="flex justify-center mt-6">
-            <button
-              onClick={() => setShowDelete(true)}
-              className="text-xs transition-opacity hover:opacity-70"
-              style={{ color: 'var(--danger)', background: 'transparent' }}
-            >
-              Remove Contact
-            </button>
-          </div>
-        </section>
 
       </div>
 
