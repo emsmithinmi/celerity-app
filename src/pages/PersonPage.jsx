@@ -702,24 +702,32 @@ export default function PersonPage() {
 
         {/* ── What's Next section ── */}
         <section className="pb-6">
-          <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>What's Next?</h2>
-          <div className="flex flex-wrap gap-2">
+          <h2 className="text-base font-semibold mb-4 text-center" style={{ color: 'var(--text-primary)' }}>What's Next?</h2>
+          <div className="flex flex-col gap-3 mx-auto w-full max-w-xs">
             {(person.status === 'inbox' || person.status === 'stale' || person.is_stale) && (
-              <Button variant="success" size="sm" onClick={handleActivate}>
+              <Button variant="outline" size="lg" fullWidth onClick={handleActivate}>
                 {person.status === 'inbox' ? 'Activate Contact' : 'Reactivate Contact'}
               </Button>
             )}
             {person.email_personal && (
-              <Button variant="secondary" size="sm" onClick={() => window.open(`mailto:${person.email_personal}`)}>
+              <Button variant="outline" size="lg" fullWidth onClick={() => window.open(`mailto:${person.email_personal}`)}>
                 Send Email
               </Button>
             )}
             {person.email_work && !person.email_personal && (
-              <Button variant="secondary" size="sm" onClick={() => window.open(`mailto:${person.email_work}`)}>
+              <Button variant="outline" size="lg" fullWidth onClick={() => window.open(`mailto:${person.email_work}`)}>
                 Send Email
               </Button>
             )}
-            <span className="ml-auto"><TrashBtn onClick={() => setShowDelete(true)} title="Remove contact" /></span>
+          </div>
+          <div className="flex justify-center mt-6">
+            <button
+              onClick={() => setShowDelete(true)}
+              className="text-xs transition-opacity hover:opacity-70"
+              style={{ color: 'var(--danger)', background: 'transparent' }}
+            >
+              Remove Contact
+            </button>
           </div>
         </section>
 

@@ -320,67 +320,60 @@ export default function ProjectPage() {
           {/* Action bar */}
           {!isCompleted && !isArchived && (
             <section className="pb-6">
-              <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>What's Next?</h2>
-              <div className="flex flex-wrap gap-2">
+              <h2 className="text-base font-semibold mb-4 text-center" style={{ color: 'var(--text-primary)' }}>What's Next?</h2>
+              <div className="flex flex-col gap-3 mx-auto w-full max-w-xs">
                 {project.status === 'inbox' && (
                   <>
-                    <Button variant="primary" size="sm" onClick={handleStartPlanning} disabled={!clarified}>
-                      {PROJECT_ACTIONS.start_planning}
-                    </Button>
-                    <Button variant="secondary" size="sm" onClick={handleDefer}>
-                      {PROJECT_ACTIONS.someday}
-                    </Button>
-                    <span className="ml-auto"><TrashBtn onClick={() => setShowDiscard(true)} /></span>
+                    <Button variant="outline" size="lg" fullWidth onClick={handleStartPlanning} disabled={!clarified}>{PROJECT_ACTIONS.start_planning}</Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={handleDefer}>{PROJECT_ACTIONS.someday}</Button>
                   </>
                 )}
                 {project.status === 'someday' && (
-                  <>
-                    <Button variant="primary" size="sm" onClick={handleStartPlanning} disabled={!clarified}
-                      title={!clarified ? `Fill in: ${missing.join(', ')}` : undefined}>
-                      {PROJECT_ACTIONS.start_planning}
-                    </Button>
-                    <span className="ml-auto"><TrashBtn onClick={() => setShowDiscard(true)} /></span>
-                  </>
+                  <Button variant="outline" size="lg" fullWidth onClick={handleStartPlanning} disabled={!clarified}
+                    title={!clarified ? `Fill in: ${missing.join(', ')}` : undefined}>
+                    {PROJECT_ACTIONS.start_planning}
+                  </Button>
                 )}
                 {project.status === 'planning' && (
                   <>
-                    <Button variant="success" size="sm" onClick={handleStartProject} disabled={!canStart} title={!canStart ? `Need ${Math.max(0, 2 - taskCount)} more task(s)` : undefined}>
-                      {PROJECT_ACTIONS.start}
-                    </Button>
-                    <Button variant="secondary" size="sm" onClick={handleComplete}>{PROJECT_ACTIONS.complete}</Button>
-                    <span className="ml-auto"><TrashBtn onClick={() => setShowDiscard(true)} /></span>
+                    <Button variant="outline" size="lg" fullWidth onClick={handleStartProject} disabled={!canStart} title={!canStart ? `Need ${Math.max(0, 2 - taskCount)} more task(s)` : undefined}>{PROJECT_ACTIONS.start}</Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={handleComplete}>{PROJECT_ACTIONS.complete}</Button>
                   </>
                 )}
                 {project.status === 'in_progress' && (
-                  <>
-                    <Button variant="success" size="sm" onClick={handleComplete} disabled={completing}>
-                      {completing ? 'Completing…' : PROJECT_ACTIONS.complete}
-                    </Button>
-                    <span className="ml-auto"><TrashBtn onClick={() => setShowDiscard(true)} /></span>
-                  </>
+                  <Button variant="outline" size="lg" fullWidth onClick={handleComplete} disabled={completing}>
+                    {completing ? 'Completing…' : PROJECT_ACTIONS.complete}
+                  </Button>
                 )}
                 {(project.status === 'stalled' || project.status === 'waiting') && (
-                  <>
-                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                      {project.status === 'stalled'
-                        ? 'Move a task to Next to un-stall this project.'
-                        : 'Clear blockers on waiting tasks to resume.'}
-                    </p>
-                    <span className="ml-auto"><TrashBtn onClick={() => setShowDiscard(true)} /></span>
-                  </>
+                  <p className="text-sm text-center" style={{ color: 'var(--text-secondary)' }}>
+                    {project.status === 'stalled'
+                      ? 'Move a task to Next to un-stall this project.'
+                      : 'Clear blockers on waiting tasks to resume.'}
+                  </p>
                 )}
+              </div>
+              <div className="flex justify-center mt-6">
+                <button
+                  onClick={() => setShowDiscard(true)}
+                  className="text-xs transition-opacity hover:opacity-70"
+                  style={{ color: 'var(--danger)', background: 'transparent' }}
+                >
+                  Scrap Project
+                </button>
               </div>
             </section>
           )}
 
           {isCompleted && (
             <section className="pb-6">
-              <div className="flex flex-wrap gap-2">
+              <h2 className="text-base font-semibold mb-4 text-center" style={{ color: 'var(--text-primary)' }}>What's Next?</h2>
+              <div className="flex flex-col gap-3 mx-auto w-full max-w-xs">
                 {!project.is_highlight && (
-                  <Button variant="secondary" size="sm" onClick={() => setShowHighlight(true)}>⭐ Add to Highlights</Button>
+                  <Button variant="outline" size="lg" fullWidth onClick={() => setShowHighlight(true)}>Add to Highlights</Button>
                 )}
                 {!isArchived && (
-                  <Button variant="ghost" size="sm" onClick={() => setShowArchive(true)}>Archive</Button>
+                  <Button variant="outline" size="lg" fullWidth onClick={() => setShowArchive(true)}>Archive</Button>
                 )}
               </div>
             </section>

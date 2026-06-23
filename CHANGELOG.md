@@ -7,8 +7,8 @@ All notable changes to Focus Flow are recorded here.
 ## 2026-06-22
 
 ### Changed
-- **TaskPage "What's Next?" actions are full-width outlined buttons** — the plain text list is back to real buttons: tall, wide, stacked vertically, all uniform. Uses the new `outline` Button variant (transparent bg, accent-colored border + text, fills on hover). Theme-aware automatically: GitHub Dark gets accent blue, Cobalt2 gets the signature gold/yellow, Catppuccin gets its lavender. Duplicate and Discard stay as small muted text below. Completed-state actions (Add to Highlights, Archive, Duplicate, Permanently Delete) got the same button treatment.
-- **Button: new `outline` variant** — transparent background, `--accent` border and text, fills to `--accent` bg with `--app-bg` text on hover. Supports `hoverText` in the variant map (new) so hover can swap text color too.
+- **All three detail pages now share the same "What's Next?" button style** — TaskPage, ProjectPage, and PersonPage all use tall, full-width stacked `outline` buttons (transparent bg, accent-colored border + text, fills on hover). Destructive actions (Discard / Scrap Project / Remove Contact) move to a small red text link below the button stack. Theme-aware: GitHub Dark = accent blue, Cobalt2 = signature gold/yellow, Catppuccin = lavender.
+- **Button: new `outline` variant** — transparent background, `--accent` border and text, fills to `--accent` bg with `--app-bg` text on hover. Added `hoverText` support to the variant map so hover can swap text color.
 
 ---
 
