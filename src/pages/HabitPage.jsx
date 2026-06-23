@@ -13,7 +13,7 @@ function buildDateMap(history) {
 function buildCalendarGrid(year, month) {
   const firstDay = new Date(year, month, 1)
   const lastDay  = new Date(year, month + 1, 0)
-  const startDow = (firstDay.getDay() + 6) % 7 // Mon=0…Sun=6
+  const startDow = firstDay.getDay() // Sun=0…Sat=6
   const days = []
   for (let i = 0; i < startDow; i++) days.push(null)
   for (let d = 1; d <= lastDay.getDate(); d++) {
@@ -92,7 +92,7 @@ function computePercent(dateMap, habitKey, timeframeKey) {
 
 // ─── Components ───────────────────────────────────────────────────────────────
 
-const DOW_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const DOW_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
 const TIMEFRAMES = [
   { key: 'today', label: 'Today'      },
