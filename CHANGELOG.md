@@ -7,6 +7,9 @@ All notable changes to Focus Flow are recorded here.
 ## 2026-06-22
 
 ### Changed
+- **"Daily" renamed to "Dashboard"** in the sidebar nav; icon swapped from Sun to LayoutDashboard.
+
+### Changed
 - **Habits system fully overhauled** — habits are now stored in a `habits` table (dynamic, add/remove) instead of being hardcoded. Each habit has a `target_days` (1–7 per week) setting. Daily page shows `target_days` progress boxes per habit (filled = completions this week, clickable to toggle today). Completions stored in `habit_history.entries` JSONB — no longer in `daily_notes` boolean columns. Habits page gets "+ Add Habit" button with name + target picker, per-card remove, and inline target editing. HabitPage detail loads habit from DB by key. HabitPage and Habits page now use correct entries-based streak/percent computation.
 
 ### Changed
