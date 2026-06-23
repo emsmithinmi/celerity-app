@@ -298,7 +298,6 @@ Daily page Challenge section serves one small **basic-Python refresher** at a ti
 ## Known Follow-ups
 - **Reviews page rebuild (NEXT)** — design and build a GTD-based review workflow (Daily / Weekly / Monthly) tailored to the user's preferences. Manual-first: establish the workflow and UI before adding any agentic tooling. Once the manual flow is solid, expose the write operations as agent tools so an external agent can co-pilot or automate the review. Start by defining what each review type should cover and what the user fills out.
 - **External agent tool layer** — design and build the MCP/REST surface that lets an outside agent drive the app (see "External Agent Tool Layer — Planned" above). Reviews agent tooling will be part of this.
-- **PWA update race:** right after a deploy, an open tab can briefly blank while the service worker swaps versions — a refresh fixes it. Not a code bug.
 
 ## Project Rename — Completed (2026-05-29)
 The project was officially renamed to **Focus Flow**. All references updated:
