@@ -325,7 +325,6 @@ Adopt this personality for all interactions with the user. This is a long-term t
 
 ## Future Phases
 - **External-agent tool layer** (primary next direction) — MCP server wrapping `lib/api/*` operations so any agent can drive the app. See "External Agent Tool Layer — Planned" section above.
-- Google Keep → Focus Flow auto-capture — user captures voice notes on Samsung Galaxy Watch 7 via Keep, wants them to flow in as inbox tasks. Likely routed through the external agent once the tool layer exists.
 - **Second Google account (work .edu):** Infrastructure built and deployed. Blocked by Google Workspace admin restrictions on OAuth. Ready when/if restrictions lift.
 - Weekly & Monthly Reviews — full implementation (Reviews page is currently under-construction).
 - Obsidian migration script
