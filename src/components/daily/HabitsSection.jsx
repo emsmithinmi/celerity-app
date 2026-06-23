@@ -1,10 +1,6 @@
 import { useMemo } from 'react'
 import { Check } from 'lucide-react'
-import { HABITS } from '../../lib/constants'
 
-const DOW_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'] // Sunday → Saturday
-
-// The 7 dates of the current week, Sunday → Saturday.
 function currentWeekDates() {
   const now = new Date()
   const sunday = new Date(now)
@@ -16,100 +12,76 @@ function currentWeekDates() {
   })
 }
 
-function WeekChecks({ weekDates, today, doneFor, onToggleDate }) {
-  return (
-    <div className="flex items-center gap-1 shrink-0">
-      {weekDates.map((date, i) => {
-        const isFuture = date > today
-        const isToday  = date === today
-        const done     = doneFor(date)
-        return (
-          <button
-            key={date}
-            disabled={isFuture}
-            onClick={() => !isFuture && onToggleDate(date, !done)}
-            title={`${date}${isToday ? ' (today)' : ''}`}
-            className="flex flex-col items-center gap-0.5"
-            style={{ cursor: isFuture ? 'default' : 'pointer' }}
-          >
-            <span className="text-[10px] leading-none" style={{ color: isToday ? 'var(--accent)' : 'var(--text-dim)' }}>
-              {DOW_LABELS[i]}
-            </span>
-            <span
-              className="flex items-center justify-center rounded transition-colors"
-              style={{
-                width: 18,
-                height: 18,
-                border: `1.5px solid ${isToday ? 'var(--accent)' : 'var(--border)'}`,
-                backgroundColor: done ? 'var(--habit-done-bg)' : 'transparent',
-                opacity: isFuture ? 0.35 : 1,
-              }}
-            >
-              {done && <Check size={10} strokeWidth={3} style={{ color: '#000' }} />}
-            </span>
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
-function HabitRow({ habit, weekDates, today, dateMap, noteToday, onToggleDate }) {
-  const doneFor = (date) =>
-    date === today ? !!noteToday : !!(dateMap[date] && dateMap[date][habit.key])
+function HabitRow({ habit, weekDoneCount, todayDone, onToggleToday }) {
+  const target = habit.target_days ?? 7
+  const filled = Math.min(weekDoneCount, target)
 
   return (
     <div className="flex items-center gap-3 px-4 py-3 border-b last:border-b-0" style={{ borderColor: 'var(--border)' }}>
       <span className="text-sm flex-1" style={{ color: 'var(--text-primary)' }}>{habit.label}</span>
 
-      {/* Week (Sun–Sat) check-offs */}
-      <WeekChecks
-        weekDates={weekDates}
-        today={today}
-        doneFor={doneFor}
-        onToggleDate={(date, val) => onToggleDate(habit.key, date, val)}
-      />
+      <div className="flex items-center gap-1 shrink-0">
+        {Array.from({ length: target }, (_, i) => {
+          const isFilled = i < filled
+          return (
+            <button
+              key={i}
+              onClick={onToggleToday}
+              title={todayDone ? 'Click to unmark today' : 'Click to mark today done'}
+              className="flex items-center justify-center rounded transition-colors"
+              style={{
+                width: 18,
+                height: 18,
+                border: `1.5px solid ${isFilled ? 'transparent' : 'var(--border)'}`,
+                backgroundColor: isFilled ? 'var(--habit-done-bg)' : 'transparent',
+                cursor: 'pointer',
+              }}
+            >
+              {isFilled && <Check size={10} strokeWidth={3} style={{ color: '#000' }} />}
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }
 
-export default function HabitsSection({ note, habitHistory = [], onToggleDate }) {
+export default function HabitsSection({ habits = [], habitHistory = [], onToggleDate }) {
   const today     = new Date().toLocaleDateString('en-CA')
   const weekDates = useMemo(currentWeekDates, [])
   const dateMap   = useMemo(
-    () => Object.fromEntries(habitHistory.map(r => [r.date, r])),
+    () => Object.fromEntries(habitHistory.map(r => [r.date, r.entries ?? {}])),
     [habitHistory]
   )
 
-  if (!note) return null
+  const displayHabits = habits.filter(h => h.key !== 'habit_code_challenge')
+  const completedToday = displayHabits.filter(h => !!dateMap[today]?.[h.key]).length
 
-  const displayHabits  = HABITS.filter(h => h.key !== 'habit_code_challenge')
-  const completedToday = displayHabits.filter(h => note[h.key]).length
+  if (!displayHabits.length) return null
 
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Habits</h3>
         <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-          {completedToday} of {displayHabits.length} completed today
+          {completedToday} of {displayHabits.length} done today
         </span>
       </div>
 
-      <div
-        className="rounded-xl border overflow-hidden"
-        style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
-      >
-        {displayHabits.map(habit => (
-          <HabitRow
-            key={habit.key}
-            habit={habit}
-            weekDates={weekDates}
-            today={today}
-            dateMap={dateMap}
-            noteToday={note[habit.key]}
-            onToggleDate={onToggleDate}
-          />
-        ))}
+      <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
+        {displayHabits.map(habit => {
+          const weekDoneCount = weekDates.filter(d => !!dateMap[d]?.[habit.key]).length
+          const todayDone = !!dateMap[today]?.[habit.key]
+          return (
+            <HabitRow
+              key={habit.id}
+              habit={habit}
+              weekDoneCount={weekDoneCount}
+              todayDone={todayDone}
+              onToggleToday={() => onToggleDate(habit.key, today, !todayDone)}
+            />
+          )
+        })}
       </div>
     </div>
   )

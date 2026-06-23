@@ -1,14 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   ensureNoteForDate,
-  getHabitHistory,
   getDailyStats,
-  toggleHabit,
-  setHabitForDate,
   addNoteEntry,
   updateNotesArray,
   updateTopOfMind,
 } from '../lib/api/daily'
+import { getHabitHistory, setHabitEntry } from '../lib/api/habits'
 import { eventBus } from '../lib/eventBus'
 
 export function useDaily(date) {
@@ -59,37 +57,26 @@ export function useDaily(date) {
     return () => unsub.forEach(fn => fn())
   }, [refreshStats])
 
-  const handleToggleHabit = async (habitKey, value) => {
-    if (!note) return
-    // Optimistic update
-    setNote(prev => ({ ...prev, [habitKey]: value }))
-    try {
-      const updated = await toggleHabit(note.id, habitKey, value)
-      setNote(updated)
-      const d = new Date(date + 'T12:00:00')
-      const sun = new Date(d)
-      sun.setDate(d.getDate() - d.getDay())
-      const history = await getHabitHistory(sun.toLocaleDateString('en-CA'))
-      setHabitHistory(history)
-    } catch {
-      // Revert on error
-      setNote(prev => ({ ...prev, [habitKey]: !value }))
-    }
-  }
+  const refreshHabitHistory = useCallback(async () => {
+    const d = new Date(date + 'T12:00:00')
+    const sun = new Date(d)
+    sun.setDate(d.getDate() - d.getDay())
+    const history = await getHabitHistory(sun.toLocaleDateString('en-CA'))
+    setHabitHistory(history)
+  }, [date])
 
-  // Toggle a habit for any day of the current week (back-fill a missed day).
+  // Toggle a habit for any date — optimistically updates habitHistory.
   const handleToggleHabitForDate = async (habitKey, dateStr, value) => {
-    if (dateStr === date) setNote(prev => prev ? { ...prev, [habitKey]: value } : prev)
+    setHabitHistory(prev => {
+      const exists = prev.some(r => r.date === dateStr)
+      return exists
+        ? prev.map(r => r.date === dateStr ? { ...r, entries: { ...r.entries, [habitKey]: value } } : r)
+        : [...prev, { date: dateStr, entries: { [habitKey]: value } }]
+    })
     try {
-      const updated = await setHabitForDate(dateStr, habitKey, value)
-      if (dateStr === date) setNote(updated)
-      const d = new Date(date + 'T12:00:00')
-      const sun = new Date(d)
-      sun.setDate(d.getDate() - d.getDay())
-      const history = await getHabitHistory(sun.toLocaleDateString('en-CA'))
-      setHabitHistory(history)
+      await setHabitEntry(dateStr, habitKey, value)
     } catch {
-      if (dateStr === date) setNote(prev => prev ? { ...prev, [habitKey]: !value } : prev)
+      refreshHabitHistory()
     }
   }
 
@@ -131,7 +118,6 @@ export function useDaily(date) {
     error,
     refresh: load,
     refreshStats,
-    toggleHabit: handleToggleHabit,
     toggleHabitForDate: handleToggleHabitForDate,
     addNote: handleAddNote,
     editNote: handleEditNote,

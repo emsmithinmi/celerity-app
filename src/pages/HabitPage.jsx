@@ -1,13 +1,12 @@
 ﻿import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getHabitHistory, setHabitForDate } from '../lib/api/daily'
-import { HABITS } from '../lib/constants'
+import { getHabits, getHabitHistory, setHabitEntry } from '../lib/api/habits'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function buildDateMap(history) {
   const map = {}
-  for (const row of history) map[row.date] = row
+  for (const row of history) map[row.date] = row.entries ?? {}
   return map
 }
 
@@ -31,8 +30,7 @@ function computeCurrentStreak(dateMap, habitKey) {
     const d = new Date(today)
     d.setDate(d.getDate() - i)
     const dateStr = d.toLocaleDateString('en-CA')
-    const row = dateMap[dateStr]
-    if (!row || !row[habitKey]) break
+    if (!dateMap[dateStr]?.[habitKey]) break
     streak++
   }
   return streak
@@ -43,7 +41,7 @@ function computeLongestStreak(history, habitKey) {
   const sorted = [...history].sort((a, b) => a.date.localeCompare(b.date))
   let prevDate = null
   for (const row of sorted) {
-    if (!row[habitKey]) { current = 0; prevDate = null; continue }
+    if (!row.entries?.[habitKey]) { current = 0; prevDate = null; continue }
     if (prevDate) {
       const diff = (new Date(row.date) - new Date(prevDate)) / 86400000
       current = diff === 1 ? current + 1 : 1
@@ -77,16 +75,16 @@ function getTimeframeRange(key) {
 function computePercent(dateMap, habitKey, timeframeKey) {
   const { start, end } = getTimeframeRange(timeframeKey)
   if (timeframeKey === 'today') {
-    const row = dateMap[start]
-    return row ? (row[habitKey] ? 100 : 0) : null
+    const entries = dateMap[start]
+    return entries !== undefined ? (entries[habitKey] ? 100 : 0) : null
   }
   let completed = 0, total = 0
   let d = new Date(start + 'T12:00:00')
   const endDate = new Date(end + 'T12:00:00')
   while (d <= endDate) {
     const dateStr = d.toLocaleDateString('en-CA')
-    const row = dateMap[dateStr]
-    if (row) { total++; if (row[habitKey]) completed++ }
+    const entries = dateMap[dateStr]
+    if (entries !== undefined) { total++; if (entries[habitKey]) completed++ }
     d.setDate(d.getDate() + 1)
   }
   return total === 0 ? 0 : Math.round((completed / total) * 100)
@@ -145,8 +143,7 @@ function HabitCalendar({ habitKey, calYear, calMonth, dateMap, onPrev, onNext, o
       <div className="grid grid-cols-7 gap-1">
         {grid.map((dateStr, idx) => {
           if (!dateStr) return <div key={`empty-${idx}`} />
-          const row      = dateMap[dateStr]
-          const done     = !!(row && row[habitKey])
+          const done     = !!dateMap[dateStr]?.[habitKey]
           const isToday  = dateStr === today
           const isFuture = dateStr > today
           const dayNum   = parseInt(dateStr.split('-')[2], 10)
@@ -200,9 +197,8 @@ export default function HabitPage() {
   const { habit: habitKey } = useParams()
   const navigate = useNavigate()
 
-  const habit = HABITS.find(h => h.key === habitKey)
-
   const today = new Date()
+  const [habit,     setHabit]     = useState(null)
   const [history,   setHistory]   = useState([])
   const [loading,   setLoading]   = useState(true)
   const [timeframe, setTimeframe] = useState('week')
@@ -212,8 +208,14 @@ export default function HabitPage() {
   useEffect(() => {
     setLoading(true)
     const yearAgo = new Date(); yearAgo.setFullYear(yearAgo.getFullYear() - 1)
-    getHabitHistory(yearAgo.toLocaleDateString('en-CA')).then(setHistory).finally(() => setLoading(false))
-  }, [])
+    Promise.all([
+      getHabits(),
+      getHabitHistory(yearAgo.toLocaleDateString('en-CA')),
+    ]).then(([habits, hist]) => {
+      setHabit(habits.find(h => h.key === habitKey) ?? null)
+      setHistory(hist)
+    }).finally(() => setLoading(false))
+  }, [habitKey])
 
   const dateMap = useMemo(() => buildDateMap(history), [history])
 
@@ -224,15 +226,14 @@ export default function HabitPage() {
   const barColor = percent === null ? 'var(--text-dim)' : percent >= 70 ? 'var(--habit-done-bg)' : percent >= 40 ? 'var(--state-warning-text)' : 'var(--danger)'
 
   const handleToggleDay = async (dateStr, value) => {
-    // Optimistic — keep streaks / % live
     setHistory(prev => {
       const exists = prev.some(r => r.date === dateStr)
       return exists
-        ? prev.map(r => r.date === dateStr ? { ...r, [habitKey]: value } : r)
-        : [...prev, { date: dateStr, [habitKey]: value }]
+        ? prev.map(r => r.date === dateStr ? { ...r, entries: { ...r.entries, [habitKey]: value } } : r)
+        : [...prev, { date: dateStr, entries: { [habitKey]: value } }]
     })
     try {
-      await setHabitForDate(dateStr, habitKey, value)
+      await setHabitEntry(dateStr, habitKey, value)
     } catch {
       const yearAgo = new Date(); yearAgo.setFullYear(yearAgo.getFullYear() - 1)
       getHabitHistory(yearAgo.toLocaleDateString('en-CA')).then(setHistory)
@@ -247,6 +248,12 @@ export default function HabitPage() {
     if (calMonth === 11) { setCalYear(y => y + 1); setCalMonth(0) }
     else setCalMonth(m => m + 1)
   }
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-full">
+      <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p>
+    </div>
+  )
 
   if (!habit) return (
     <div className="flex items-center justify-center h-full">
@@ -273,12 +280,7 @@ export default function HabitPage() {
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
-        {loading ? (
-          <div className="flex items-center justify-center h-32">
-            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading…</p>
-          </div>
-        ) : (
-          <>
+        <>
             {/* Streak stats */}
             <div className="grid grid-cols-3 gap-4">
               <div className="rounded-xl border p-4 text-center" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
@@ -332,7 +334,6 @@ export default function HabitPage() {
               Click any day to check or uncheck it · Streak = consecutive days completed · Best = longest run ever
             </p>
           </>
-        )}
       </div>
     </div>
   )

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { getHabits } from '../lib/api/habits'
 import { useDaily } from '../hooks/useDaily'
 import { useTasks } from '../hooks/useTasks'
 import { useProjects } from '../hooks/useProjects'
@@ -81,7 +82,9 @@ export default function Daily() {
   const today = todayStr()
 
   // ── Data for today ──
-  const { note, habitHistory, stats, loading, error, toggleHabit, toggleHabitForDate, addNote, editNote, deleteNote, refreshStats } = useDaily(today)
+  const { note, habitHistory, stats, loading, error, toggleHabitForDate, addNote, editNote, deleteNote, refreshStats } = useDaily(today)
+  const [habits, setHabits] = useState([])
+  useEffect(() => { getHabits().then(setHabits).catch(() => {}) }, [])
 
   // Quick capture hooks (separate so modals don't re-render sections)
   const { createTask }    = useTasksCapture({})
@@ -192,7 +195,7 @@ export default function Daily() {
 
         {/* Habits */}
         <HabitsSection
-          note={note}
+          habits={habits}
           habitHistory={habitHistory}
           onToggleDate={toggleHabitForDate}
         />
@@ -202,7 +205,7 @@ export default function Daily() {
         <ChallengeSection
           challenge={note?.code_challenge}
           onUpdate={handleChallengeUpdate}
-          onComplete={() => toggleHabit('habit_code_challenge', true)}
+          onComplete={() => toggleHabitForDate('habit_code_challenge', today, true)}
         />
       </div>
 
