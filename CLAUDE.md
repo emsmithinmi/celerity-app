@@ -66,7 +66,8 @@ src/
       tasks.js
       projects.js
       people.js
-      daily.js           # daily_notes + habits + getDailyStats(date)
+      daily.js           # daily_notes CRUD + getDailyStats(date); habit booleans here are legacy — use habits.js
+      habits.js          # CRUD for habits table + habit_history: getHabits, createHabit, updateHabit, deleteHabit, getHabitHistory, setHabitEntry
       reviews.js
       energyLevels.js    # CRUD for energy_levels table
       priorities.js      # CRUD for priorities table
@@ -122,7 +123,7 @@ src/
       PersonComments.jsx
     ui/
       AvatarCircle.jsx       # circular avatar: shows image or initials fallback; canUpload adds camera-hover + file input (sizes: sm/md/lg)
-      Button.jsx             # variants: primary|secondary|ghost|danger|success|action|warning
+      Button.jsx             # variants: primary|secondary|ghost|danger|success|action|warning|outline (accent border/text, fills on hover, hoverText swaps text color)
       Modal.jsx
       ConfirmDialog.jsx
       StatusPill.jsx
@@ -137,15 +138,15 @@ src/
   pages/
     Login.jsx              # Google OAuth + magic link; auto-redirects to /daily when a session appears
     ResetPassword.jsx      # handles Supabase PASSWORD_RECOVERY flow at /reset-password
-    Daily.jsx                # dashboard for today (no date nav), quote, stat cards, agenda, tasks, projects, notes, habits, challenge
+    Daily.jsx                # Dashboard (route /daily, nav label "Dashboard") — quote, stat cards, agenda, tasks, projects, notes, habits, challenge
     Tasks.jsx                # tabbed by status, stat row, capture modal
     TaskPage.jsx             # full detail page at /tasks/:id
     Projects.jsx             # tabbed by status, stat row, capture modal
     ProjectPage.jsx          # full detail page at /projects/:id (includes Scrap It button)
-    People.jsx               # tabbed by status, stat row
-    PersonPage.jsx           # full detail page at /people/:id
-    Habits.jsx               # calendar heatmap, streaks, % bars
-    HabitPage.jsx            # individual habit detail
+    People.jsx               # flat alphabetical list with search bar, no status tabs
+    PersonPage.jsx           # full detail page at /people/:id; delete TrashBtn in breadcrumb; no status/What's Next section
+    Habits.jsx               # habit card grid: streak, this-week pills (Sun-Sat vs target_days), Add Habit modal, per-card remove + inline target editor
+    HabitPage.jsx            # individual habit detail: streak stats, timeframe selector, Sun-first calendar heatmap
     Reviews.jsx              # Daily/Weekly/Monthly with autosave
     Settings.jsx             # manage Energy Levels, Priorities, Areas
 public/
@@ -170,8 +171,8 @@ All tables have RLS enabled with `USING (true) WITH CHECK (true)` + `GRANT ALL T
 | `energy_levels` | id, value, label, icon, bg_color, text_color, sort_order |
 | `priorities` | id, value, label, bg_color, text_color, sort_order |
 | `areas` | id, value, label, sort_order |
-| `habits` | (separate habit tracking table) |
-| `habit_history` | (per-date habit records) |
+| `habits` | id, key (unique), label, target_days (int 1-7), is_active, sort_order — dynamic habit definitions; add/remove via Habits page |
+| `habit_history` | id, user_id, date, entries (jsonb keyed by habit.key), created_at, updated_at; unique on (user_id, date) — all completions live here, NOT in daily_notes booleans |
 | `code_challenges` | id (uuid), prompt, answer, difficulty, created_at — consumable bank of small Python challenges for the Daily Challenge section |
 | `list_preferences` | list_key (text PK), sort_mode (text), manual_order (jsonb array of task ids), updated_at — per-list sort + manual order for every task list, synced across devices |
 | `context_tags` | id (uuid), value (text unique), label, bg_color, text_color, sort_order, created_at — first-class @context tags managed in Settings (no auto-create from typing); `tasks.context` text[] references tags by `value` |
@@ -186,7 +187,7 @@ All tables have RLS enabled with `USING (true) WITH CHECK (true)` + `GRANT ALL T
 ## GTD Status Lifecycles
 - **Tasks:** inbox → next_action → scheduled → queued → waiting → someday → done (archived_at for archive)
 - **Projects:** inbox → planning → in_progress → waiting → stalled → completed (archived_at for archive)
-- **People:** inbox → active → stale (is_stale flag + status)
+- **People:** no status lifecycle — flat contact list only
 
 ## React Context Pattern
 Contexts mounted at App root (outside BrowserRouter):
@@ -236,15 +237,16 @@ Contexts mounted at App root (outside BrowserRouter):
 - **Dedicated dev account:** `claude-dev@focusflow.dev` was created directly in Supabase auth (email identity, bcrypt password) for this purpose — NOT Eric's real Google/personal credentials. Since RLS is `USING(true)`, it sees the same data. The password is **only** in the gitignored `.env.local` (never in the repo). On a new machine, add `VITE_DEV_EMAIL` + `VITE_DEV_PASSWORD` to that machine's `.env.local` (or reset the password in Supabase) — the account itself already exists server-side.
 
 ## Pages — Current State
-- **Daily** — dashboard for today (no date navigation — it was dropped 2026-06-19; Daily is a live "right now" view). Daily quote (rerolls each load + on skip, 30-day dedupe, per-user blocklist via "never" button), quick capture bar, stat cards, agenda (Google Calendar events + all-day tasks/project deadlines), **Tasks section (above Projects)**, Projects section, notes log, habit toggles (7 habits shown as a Sun→Sat week of clickable check-offs; code challenge excluded from this row), Challenge section (deterministic code-challenge bank — see "Code Challenge System"). No in-app AI. The Tasks section's **Next Actions tab has a Sort dropdown** — Manual (drag-to-reorder) plus auto modes (newest/oldest, longest/shortest duration, due soonest, priority, alpha, energy, area). Sort choice + manual order persist via `list_preferences` (`daily:next_action`), syncing across devices.
+- **Dashboard** (route `/daily`, sidebar label "Dashboard", icon LayoutDashboard) — live "right now" view, not date-navigable. Daily quote (rerolls each load + on skip, 30-day dedupe, per-user blocklist via "never" button), quick capture bar, stat cards, agenda (Google Calendar events + all-day tasks/project deadlines), **Tasks section (above Projects)**, Projects section, notes log, **Habits section** (dynamic habits from DB, shows `target_days` progress boxes per habit for the current Sun-Sat week; clicking toggles today; code challenge excluded from this row), Challenge section (deterministic code-challenge bank). No in-app AI. The Tasks section's **Next Actions tab has a Sort dropdown** — Manual (drag-to-reorder) plus auto modes (newest/oldest, longest/shortest duration, due soonest, priority, alpha, energy, area). Sort choice + manual order persist via `list_preferences` (`daily:next_action`), syncing across devices.
 - **Tasks** — tabbed by status, stat summary row, capture modal, click row → `/tasks/:id`
-- **TaskPage** — full detail: title, status, priority, energy level, area, due date, duration, description, **Context Tags section** (toggleable chips + combobox input, saves immediately), subtask checklist, **Notes** (was Comments), linked people, archive/delete
+- **TaskPage** — full detail: title, status, priority, energy level, area, due date, duration, description, **Context Tags section** (toggleable chips + combobox input, saves immediately), subtask checklist, **Notes** (was Comments), linked people, archive/delete. **What's Next** buttons are tall full-width stacked `outline` variant buttons.
 - **Projects** — tabbed by status, capture modal, click row → `/projects/:id`
-- **ProjectPage** — full detail: all fields, task list by status, **Notes** (was Comments), linked people, Scrap It
-- **People** — tabbed by status, click row → `/people/:id`
-- **PersonPage** — avatar, Identity, Contact Details, Addresses, Social Media, Notes; tasks, projects, **Notes** (was Comments), What's Next
-- **Habits** — calendar heatmap, streaks, % bars. Includes Code Challenge habit (💻) auto-marked when challenge submitted.
-- **Reviews** — Under-construction shell. Daily / Weekly / Monthly tabs preserved for future use; previous AI-driven two-step flow was removed 2026-06-19 along with the rest of the in-app AI. Replacement will be driven by an external agent through the planned tool layer.
+- **ProjectPage** — full detail: all fields, task list by status, **Notes** (was Comments), linked people, Scrap It. **What's Next** buttons use same `outline` style as TaskPage.
+- **People** — flat alphabetical list with search bar and count; no status tabs, no stat chips.
+- **PersonPage** — avatar, Identity, Contact Details, Addresses, Social Media; tasks, **Notes** (was Comments). Delete TrashBtn in breadcrumb header. No status system, no What's Next section.
+- **Habits** — card grid: each card shows streak, this-week Sun-Sat progress pills (filled = completions / target_days), "X of Y this week" label, per-card remove button, inline target-days editor. "+Add Habit" opens modal (name + 1-7 target picker). Clicking a card navigates to HabitPage.
+- **HabitPage** — individual habit detail: current/best streak, timeframe % stat, timeframe selector, Sun-first monthly calendar heatmap (click any past day to toggle).
+- **Reviews** — Under-construction shell. Daily / Weekly / Monthly tabs preserved for future use; AI-driven flow removed 2026-06-19. Replacement will be agent-orchestrated.
 - **Settings** — Appearance (theme switcher: Catppuccin / GitHub Dark), Energy Levels, Priorities, Areas, Context Tags, Google Accounts.
 
 ## AI Layer — Removed (2026-06-19)
