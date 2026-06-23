@@ -503,12 +503,50 @@ export default function TaskPage() {
             {!isCompleted && (
               <>
                 <div className="flex flex-col gap-3 mx-auto w-full max-w-xs">
-                  <Button variant="outline" size="lg" fullWidth onClick={() => (task.status === 'inbox' && !clarified) ? handleClarifyRoute() : handleNextAction()}>Add to Next</Button>
-                  <Button variant="outline" size="lg" fullWidth onClick={() => setShowCompletion(true)}>Mark Done</Button>
-                  <Button variant="outline" size="lg" fullWidth onClick={() => setShowSchedule(true)}>Schedule</Button>
-                  <Button variant="outline" size="lg" fullWidth onClick={() => hasProject ? handleQueue() : setShowRoute(true)}>Add to Project Queue</Button>
-                  <Button variant="outline" size="lg" fullWidth onClick={() => setShowWaiting(true)}>Set to Waiting</Button>
-                  <Button variant="outline" size="lg" fullWidth onClick={handleSomeday}>Add to Someday/Maybe</Button>
+                  {task.status === 'inbox' && <>
+                    <Button variant="outline" size="lg" fullWidth onClick={clarified ? handleNextAction : handleClarifyRoute}>
+                      {clarified ? 'Add to Next' : 'Clarify & Add to Next'}
+                    </Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={() => setShowCompletion(true)}>Mark Done</Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={() => setShowSchedule(true)}>Schedule</Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={() => hasProject ? handleQueue() : setShowRoute(true)}>Add to Project Queue</Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={() => setShowWaiting(true)}>Set to Waiting</Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={handleSomeday}>Add to Someday/Maybe</Button>
+                  </>}
+                  {task.status === 'next_action' && <>
+                    <Button variant="outline" size="lg" fullWidth onClick={() => setShowCompletion(true)}>Mark Done</Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={() => setShowSchedule(true)}>Schedule</Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={() => hasProject ? handleQueue() : setShowRoute(true)}>Add to Project Queue</Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={() => setShowWaiting(true)}>Set to Waiting</Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={handleSomeday}>Add to Someday/Maybe</Button>
+                  </>}
+                  {task.status === 'queued' && <>
+                    <Button variant="outline" size="lg" fullWidth onClick={handleNextAction}>Add to Next</Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={() => setShowCompletion(true)}>Mark Done</Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={() => setShowSchedule(true)}>Schedule</Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={() => setShowWaiting(true)}>Set to Waiting</Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={handleSomeday}>Add to Someday/Maybe</Button>
+                  </>}
+                  {task.status === 'scheduled' && <>
+                    <Button variant="outline" size="lg" fullWidth onClick={() => setShowCompletion(true)}>Mark Done</Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={() => setShowSchedule(true)}>Reschedule</Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={handleNextAction}>Add to Next</Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={() => setShowWaiting(true)}>Set to Waiting</Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={handleSomeday}>Add to Someday/Maybe</Button>
+                  </>}
+                  {task.status === 'waiting' && <>
+                    <Button variant="outline" size="lg" fullWidth onClick={handleClearWaiting}>Clear Blocker</Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={() => setShowCompletion(true)}>Mark Done</Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={() => setShowSchedule(true)}>Schedule</Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={handleSomeday}>Add to Someday/Maybe</Button>
+                  </>}
+                  {task.status === 'someday' && <>
+                    <Button variant="outline" size="lg" fullWidth onClick={handleNextAction}>Add to Next</Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={() => setShowCompletion(true)}>Mark Done</Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={() => setShowSchedule(true)}>Schedule</Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={() => hasProject ? handleQueue() : setShowRoute(true)}>Add to Project Queue</Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={() => setShowWaiting(true)}>Set to Waiting</Button>
+                  </>}
                 </div>
                 <div className="flex items-center justify-center gap-5 mt-6">
                   <button

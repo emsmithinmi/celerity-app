@@ -4,6 +4,13 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-23
+
+### Changed
+- **TaskPage What's Next is now per-status** — each task status shows only the actions that make sense for that state. `next_action` no longer shows "Add to Next" (you're already there). `queued` drops "Add to Project Queue" (already queued). `someday` drops "Add to Someday/Maybe" (already there). `scheduled` relabels "Schedule" as "Reschedule". `waiting` replaces "Add to Next" / "Set to Waiting" with a single "Clear Blocker" button (which now actually calls the existing `handleClearWaiting` handler that previously had no UI entry point).
+
+---
+
 ## 2026-06-22
 
 ### Changed
