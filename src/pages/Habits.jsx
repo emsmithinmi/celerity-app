@@ -25,14 +25,19 @@ function computeCurrentStreak(dateMap, habitKey) {
   return streak
 }
 
-function getLast7(dateMap, habitKey) {
+function getThisWeekDates() {
   const today = new Date()
+  const sunday = new Date(today)
+  sunday.setDate(today.getDate() - today.getDay())
   return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(today)
-    d.setDate(d.getDate() - (6 - i))
-    const dateStr = d.toLocaleDateString('en-CA')
-    return { date: dateStr, done: !!dateMap[dateStr]?.[habitKey] }
+    const d = new Date(sunday)
+    d.setDate(sunday.getDate() + i)
+    return d.toLocaleDateString('en-CA')
   })
+}
+
+function computeWeekCount(dateMap, habitKey, weekDates) {
+  return weekDates.filter(d => !!dateMap[d]?.[habitKey]).length
 }
 
 function computePercent30(dateMap, habitKey) {
@@ -125,13 +130,14 @@ function AddHabitModal({ open, onClose, onAdd }) {
 
 // ─── Habit Card ───────────────────────────────────────────────────────────────
 
-function HabitCard({ habit, dateMap, onEdit, onDelete, onClick }) {
-  const streak  = computeCurrentStreak(dateMap, habit.key)
-  const percent = computePercent30(dateMap, habit.key)
-  const last7   = getLast7(dateMap, habit.key)
-  const [editingTarget, setEditingTarget] = useState(false)
+const THIS_WEEK = getThisWeekDates()
 
-  const barColor = percent >= 70 ? 'var(--habit-done-bg)' : percent >= 40 ? 'var(--state-warning-text)' : 'var(--danger)'
+function HabitCard({ habit, dateMap, onEdit, onDelete, onClick }) {
+  const streak     = computeCurrentStreak(dateMap, habit.key)
+  const target     = habit.target_days ?? 7
+  const weekCount  = computeWeekCount(dateMap, habit.key, THIS_WEEK)
+  const filled     = Math.min(weekCount, target)
+  const [editingTarget, setEditingTarget] = useState(false)
 
   return (
     <div
@@ -163,23 +169,20 @@ function HabitCard({ habit, dateMap, onEdit, onDelete, onClick }) {
         <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>day streak</p>
       </div>
 
-      {/* Last 7 days dots */}
-      <div className="flex gap-1">
-        {last7.map(({ date, done }) => (
-          <div
-            key={date}
-            className="flex-1 h-2 rounded-full"
-            style={{ backgroundColor: done ? 'var(--habit-done-bg)' : 'var(--border)' }}
-          />
-        ))}
-      </div>
-
-      {/* 30-day % bar */}
-      <div className="flex items-center gap-2">
-        <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--border)' }}>
-          <div className="h-full rounded-full transition-all" style={{ width: `${percent}%`, backgroundColor: barColor }} />
+      {/* This week: target pills */}
+      <div className="space-y-1">
+        <div className="flex gap-1">
+          {Array.from({ length: target }, (_, i) => (
+            <div
+              key={i}
+              className="flex-1 h-2 rounded-full"
+              style={{ backgroundColor: i < filled ? 'var(--habit-done-bg)' : 'var(--border)' }}
+            />
+          ))}
         </div>
-        <span className="text-xs w-8 text-right" style={{ color: 'var(--text-secondary)' }}>{percent}%</span>
+        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+          {weekCount} of {target} this week
+        </p>
       </div>
 
       {/* Target days */}
