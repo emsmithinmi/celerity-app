@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { RefreshCw } from 'lucide-react'
 import { getGoogleConnectUrl } from '../../lib/api/googleConnect'
@@ -9,6 +9,43 @@ function fmt(date) {
 
 function fmtHour(date) {
   return date.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true })
+}
+
+// Distinct palette — saturated enough to read on white text
+const PALETTE = ['#4f86f7', '#f97316', '#a855f7', '#10b981', '#ec4899', '#14b8a6', '#f59e0b', '#ef4444']
+
+// Stable calendar-name → color mapping built from the ordered event list
+function buildColorMap(events) {
+  const map = new Map()
+  let idx = 0
+  for (const e of events) {
+    const key = e.calendar_name || ''
+    if (!map.has(key)) { map.set(key, PALETTE[idx % PALETTE.length]); idx++ }
+  }
+  return map
+}
+
+// Assign column positions to handle overlapping events.
+// Returns events with _col (0-based column index) and _numCols (concurrent column count).
+function layoutEvents(sorted) {
+  const cols = [] // end-time (ms) per column
+  const result = sorted.map(e => {
+    const endMs = e.end ? e.end.getTime() : e.start.getTime() + 30 * 60 * 1000
+    let col = cols.findIndex(t => t <= e.start.getTime())
+    if (col === -1) col = cols.length
+    cols[col] = endMs
+    return { ...e, _col: col, _numCols: 1, _endMs: endMs }
+  })
+  // Second pass: find how many concurrent columns each event shares
+  result.forEach(e => {
+    let maxCol = e._col
+    result.forEach(o => {
+      if (o === e) return
+      if (e.start.getTime() < o._endMs && e._endMs > o.start.getTime()) maxCol = Math.max(maxCol, o._col)
+    })
+    e._numCols = maxCol + 1
+  })
+  return result
 }
 
 // Reconnect through the google-connect flow (NOT supabase.auth.signInWithOAuth).
@@ -60,11 +97,15 @@ export default function AgendaSection({ calendarEvents = [], dueTasks = [], endi
   }
 
   // Calendar events that overlap the window
-  const timedEvents = calendarEvents
+  const timedEvents = useMemo(() => calendarEvents
     .filter(e => !e.all_day && e.start_time)
     .map(e => ({ ...e, start: new Date(e.start_time), end: e.end_time ? new Date(e.end_time) : null }))
     .filter(e => e.start < windowEnd && (!e.end || e.end > windowStart))
     .sort((a, b) => a.start - b.start)
+  , [calendarEvents, windowStart.getTime(), windowEnd.getTime()]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const colorMap = useMemo(() => buildColorMap(timedEvents), [timedEvents])
+  const laidOut  = useMemo(() => layoutEvents(timedEvents),  [timedEvents])
 
   // Exclude scheduled tasks — they already appear as Focus Flow calendar events
   const allDayItems = [
@@ -198,29 +239,33 @@ export default function AgendaSection({ calendarEvents = [], dueTasks = [], endi
             <div className="flex-1 border-t-2" style={{ borderColor: 'var(--accent)' }} />
           </div>
 
-          {/* Calendar events */}
-          {timedEvents.map((e, i) => {
-            const startPct = pct(e.start)
-            const endPct   = e.end ? pct(e.end) : Math.min(startPct + 8, 100)
+          {/* Calendar events — column-laid-out, color-coded by calendar */}
+          {laidOut.map((e, i) => {
+            const startPct  = pct(e.start)
+            const endPct    = e.end ? pct(e.end) : Math.min(startPct + 8, 100)
             const heightPct = Math.max(endPct - startPct, 4)
+            const color     = colorMap.get(e.calendar_name || '') ?? PALETTE[0]
+            // Track occupies: left=5rem from container edge, right=1rem → trackWidth = 100% - 6rem
+            const trackW  = '(100% - 6rem)'
+            const colW    = `calc(${trackW} / ${e._numCols} - 3px)`
+            const colLeft = `calc(5rem + ${e._col} * ${trackW} / ${e._numCols})`
             return (
               <div
                 key={i}
-                className="absolute rounded-lg px-3 py-1.5 z-20"
+                className="absolute rounded-lg px-2 py-1 z-20 overflow-hidden"
                 style={{
-                  top:    `calc(${startPct}% * 0.88 + 6%)`,
-                  height: `calc(${heightPct}% * 0.88)`,
-                  left: 'calc(1rem + 3.5rem + 0.5rem)',
-                  right: '1rem',
+                  top:      `calc(${startPct}% * 0.88 + 6%)`,
+                  height:   `calc(${heightPct}% * 0.88)`,
+                  left:     colLeft,
+                  width:    colW,
                   minHeight: 28,
-                  backgroundColor: 'var(--accent)',
-                  opacity: 0.9,
+                  backgroundColor: color,
                 }}
               >
-                <p className="text-xs font-semibold truncate" style={{ color: 'var(--pane-bg)' }}>
+                <p className="text-xs font-semibold truncate" style={{ color: '#fff' }}>
                   {e.summary}
                 </p>
-                <p className="text-[10px] truncate" style={{ color: 'var(--pane-bg)', opacity: 0.8 }}>
+                <p className="text-[10px] truncate" style={{ color: 'rgba(255,255,255,0.8)' }}>
                   {fmt(e.start)}{e.end ? ` – ${fmt(e.end)}` : ''}
                 </p>
               </div>
@@ -237,6 +282,20 @@ export default function AgendaSection({ calendarEvents = [], dueTasks = [], endi
             </div>
           )}
         </div>
+
+        {/* Calendar color legend — only shown when >1 calendar is present */}
+        {colorMap.size > 1 && (
+          <div className="flex flex-wrap gap-x-3 gap-y-1 px-4 pb-2 pt-1">
+            {[...colorMap.entries()].map(([name, color]) => (
+              <div key={name} className="flex items-center gap-1">
+                <span className="shrink-0 rounded-sm" style={{ width: 8, height: 8, backgroundColor: color }} />
+                <span className="text-[10px] truncate" style={{ color: 'var(--text-dim)', maxWidth: 120 }}>
+                  {name || 'Calendar'}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

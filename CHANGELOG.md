@@ -4,6 +4,13 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-24
+
+### Changed
+- **Agenda calendar: overlap layout + color coding** — overlapping timed events now render side-by-side in columns instead of stacking on top of each other. Events are color-coded by calendar name using a distinct palette; a small legend appears below the timeline when more than one calendar is present.
+
+---
+
 ## 2026-06-23
 
 ### Changed
