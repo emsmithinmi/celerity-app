@@ -148,7 +148,7 @@ export default function Daily() {
           ].map(({ label, key }) => (
             <Button
               key={key}
-              variant="secondary"
+              variant="primary"
               size="sm"
               onClick={() => setModal(key)}
             >

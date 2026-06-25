@@ -4,6 +4,13 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-24
+
+### Changed
+- **Dashboard "New" buttons** — Quick capture buttons (New Task, New Project, New Person, New Note) changed from `secondary` to `primary` variant for better visibility.
+
+---
+
 ## 2026-06-22
 
 ### Changed
