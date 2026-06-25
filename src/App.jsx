@@ -21,6 +21,7 @@ import People from './pages/People'
 import PersonPage from './pages/PersonPage'
 import Habits from './pages/Habits'
 import HabitPage from './pages/HabitPage'
+import Notes from './pages/Notes'
 import Reviews from './pages/Reviews'
 import Settings from './pages/Settings'
 
@@ -49,6 +50,7 @@ export default function App() {
               <Route path="people/:id"    element={<PersonPage />} />
               <Route path="habits"        element={<Habits />} />
               <Route path="habits/:habit" element={<HabitPage />} />
+              <Route path="notes"         element={<Notes />} />
               <Route path="reviews"       element={<Reviews />} />
               <Route path="reviews/:type" element={<Reviews />} />
               <Route path="settings"      element={<Settings />} />

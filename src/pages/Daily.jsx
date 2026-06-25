@@ -5,13 +5,13 @@ import { useTasks } from '../hooks/useTasks'
 import { useProjects } from '../hooks/useProjects'
 import { createPerson } from '../lib/api/people'
 import { updateChallenge } from '../lib/api/daily'
+import { createNote } from '../lib/api/notes'
 
 import DailyQuote     from '../components/daily/DailyQuote'
 import StatCards      from '../components/daily/StatCards'
 import AgendaSection  from '../components/daily/AgendaSection'
 import ProjectsSection from '../components/daily/ProjectsSection'
 import TasksSection   from '../components/daily/TasksSection'
-import NotesSection   from '../components/daily/NotesSection'
 import HabitsSection  from '../components/daily/HabitsSection'
 import ChallengeSection from '../components/daily/ChallengeSection'
 import Button         from '../components/ui/Button'
@@ -82,7 +82,7 @@ export default function Daily() {
   const today = todayStr()
 
   // ── Data for today ──
-  const { note, habitHistory, stats, loading, error, toggleHabitForDate, addNote, editNote, deleteNote, refreshStats } = useDaily(today)
+  const { note, habitHistory, stats, loading, error, toggleHabitForDate, refreshStats } = useDaily(today)
   const [habits, setHabits] = useState([])
   useEffect(() => { getHabits().then(setHabits).catch(() => {}) }, [])
 
@@ -176,15 +176,6 @@ export default function Daily() {
         />
 
 
-        {/* Notes */}
-        <NotesSection
-          notes={note?.notes ?? []}
-          onAdd={addNote}
-          onEdit={editNote}
-          onDelete={deleteNote}
-        />
-
-
         {/* Tasks */}
         <TasksSection onRefreshStats={refreshStats} />
 
@@ -228,7 +219,7 @@ export default function Daily() {
       <QuickNoteModal
         open={modal === 'note'}
         onClose={() => setModal(null)}
-        onAdd={addNote}
+        onAdd={createNote}
       />
     </>
   )

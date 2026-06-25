@@ -2,8 +2,6 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   ensureNoteForDate,
   getDailyStats,
-  addNoteEntry,
-  updateNotesArray,
   updateTopOfMind,
 } from '../lib/api/daily'
 import { getHabitHistory, setHabitEntry } from '../lib/api/habits'
@@ -80,30 +78,6 @@ export function useDaily(date) {
     }
   }
 
-  const handleAddNote = async (body) => {
-    if (!note) return
-    const newEntry = { timestamp: new Date().toISOString(), body }
-    const updatedNotes = [...(note.notes ?? []), newEntry]
-    const updated = await updateNotesArray(note.id, updatedNotes)
-    setNote(updated)
-  }
-
-  const handleEditNote = async (timestamp, newBody) => {
-    if (!note) return
-    const updatedNotes = (note.notes ?? []).map(n =>
-      n.timestamp === timestamp ? { ...n, body: newBody } : n
-    )
-    const updated = await updateNotesArray(note.id, updatedNotes)
-    setNote(updated)
-  }
-
-  const handleDeleteNote = async (timestamp) => {
-    if (!note) return
-    const updatedNotes = (note.notes ?? []).filter(n => n.timestamp !== timestamp)
-    const updated = await updateNotesArray(note.id, updatedNotes)
-    setNote(updated)
-  }
-
   const handleUpdateTopOfMind = async (items) => {
     if (!note) return
     const updated = await updateTopOfMind(note.id, items)
@@ -119,9 +93,6 @@ export function useDaily(date) {
     refresh: load,
     refreshStats,
     toggleHabitForDate: handleToggleHabitForDate,
-    addNote: handleAddNote,
-    editNote: handleEditNote,
-    deleteNote: handleDeleteNote,
     updateTopOfMind: handleUpdateTopOfMind,
   }
 }
