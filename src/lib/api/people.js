@@ -43,7 +43,8 @@ export async function getPersonTasks(personId) {
     .select('tasks(*)')
     .eq('person_id', personId)
   if (error) throw error
-  return data?.map(r => r.tasks) ?? []
+  // Filter out completed/archived tasks — show only active
+  return (data?.map(r => r.tasks) ?? []).filter(t => t && t.status !== 'done' && t.status !== 'archived' && !t.archived_at)
 }
 
 export async function getPersonProjects(personId) {
@@ -52,7 +53,8 @@ export async function getPersonProjects(personId) {
     .select('projects(*)')
     .eq('person_id', personId)
   if (error) throw error
-  return data?.map(r => r.projects) ?? []
+  // Filter out completed/archived projects — show only active
+  return (data?.map(r => r.projects) ?? []).filter(p => p && p.status !== 'completed' && !p.archived_at)
 }
 
 // ─── Create ───────────────────────────────────────────────────────────────────
