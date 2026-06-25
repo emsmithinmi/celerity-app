@@ -6,7 +6,12 @@ All notable changes to Focus Flow are recorded here.
 
 ## 2026-06-24
 
+### Added
+- **Notes Dashboard** — new sidebar entry (above Reviews) at `/notes`. Full list of standalone notes with search, expand/collapse for long entries, inline edit, and delete. "New Note" button on the page opens a modal.
+- **`notes` table** — new Supabase table (`id, user_id, body, created_at, updated_at`) with RLS, replacing the JSONB notes array in `daily_notes`.
+
 ### Changed
+- **Main Dashboard** — removed the Notes section widget. The "New Note" quick-capture button now writes to the new `notes` table and the note appears on the Notes Dashboard.
 - **Agenda calendar: overlap layout + color coding** — overlapping timed events now render side-by-side in columns instead of stacking on top of each other. Events are color-coded by calendar name using a distinct palette; a small legend appears below the timeline when more than one calendar is present.
 
 ---
