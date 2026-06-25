@@ -15,6 +15,7 @@ All notable changes to Focus Flow are recorded here.
 - **Main Dashboard** — removed the Notes section widget. The "New Note" quick-capture button now writes to the new `notes` table and the note appears on the Notes Dashboard.
 - **Agenda calendar: overlap layout + color coding** — overlapping timed events now render side-by-side in columns instead of stacking on top of each other. Events are color-coded by calendar name using a distinct palette; a small legend appears below the timeline when more than one calendar is present.
 - **TaskPage What's Next is now per-status** — each task status shows only the actions that make sense for that state. `next_action` no longer shows "Add to Next" (you're already there). `queued` drops "Add to Project Queue" (already queued). `someday` drops "Add to Someday/Maybe" (already there). `scheduled` relabels "Schedule" as "Reschedule". `waiting` replaces "Add to Next" / "Set to Waiting" with a single "Clear Blocker" button (which now actually calls the existing `handleClearWaiting` handler that previously had no UI entry point).
+- **Task list default tabs across all views** — every task list (Tasks page, Daily Tasks section, Project task lists) now defaults to Inbox when there are inbox tasks, auto-switching to Next if inbox is empty. Ensures consistent behavior everywhere.
 
 ---
 

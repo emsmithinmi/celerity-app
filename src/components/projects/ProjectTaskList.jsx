@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTasks } from '../../hooks/useTasks'
 import { useTaskListSort } from '../../hooks/useListSort'
@@ -41,11 +41,19 @@ function MiniTaskRow({ task, reorderable = false, onDragStart, onDragEnd }) {
 }
 
 export default function ProjectTaskList({ projectId, onTaskCountChange }) {
-  const [tab,        setTab]        = useState('active')
+  const [tab,        setTab]        = useState('inbox')
   const [newTitle,   setNewTitle]   = useState('')
   const [addingTask, setAddingTask] = useState(false)
 
   const { tasks, loading, refresh } = useTasks({ project_id: projectId })
+
+  // Auto-switch to Next Actions if inbox is empty once data loads
+  useEffect(() => {
+    if (loading) return
+    if (tasks.filter(t => t.status === 'inbox').length === 0) {
+      setTab('next_action')
+    }
+  }, [loading, tasks])
 
   const displayed = tab === 'active'
     ? tasks.filter(t => ACTIVE.includes(t.status))
