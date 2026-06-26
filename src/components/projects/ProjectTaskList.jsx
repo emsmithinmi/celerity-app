@@ -6,15 +6,17 @@ import { createTask } from '../../lib/api/tasks'
 import { StatusPill, PriorityBadge, DragHandle, SortDropdown } from '../ui'
 
 const STATUS_TABS = [
-  { key: 'active',      label: 'Active'       },
-  { key: 'inbox',       label: 'Inbox'        },
-  { key: 'next_action', label: 'Next'         },
-  { key: 'queued',      label: 'Queued'       },
-  { key: 'waiting',     label: 'Waiting'      },
-  { key: 'done',        label: 'Done'         },
+  { key: 'active',      label: 'Active'    },
+  { key: 'inbox',       label: 'Inbox'     },
+  { key: 'next_action', label: 'Next'      },
+  { key: 'queued',      label: 'Queued'    },
+  { key: 'scheduled',   label: 'Scheduled' },
+  { key: 'waiting',     label: 'Waiting'   },
+  { key: 'someday',     label: 'Someday'   },
+  { key: 'done',        label: 'Done'      },
 ]
 
-const ACTIVE = ['inbox', 'next_action', 'queued', 'scheduled', 'waiting']
+const ACTIVE = ['inbox', 'next_action', 'queued', 'scheduled', 'waiting', 'someday']
 
 function MiniTaskRow({ task, reorderable = false, onDragStart, onDragEnd }) {
   const navigate = useNavigate()
@@ -71,7 +73,9 @@ export default function ProjectTaskList({ projectId, onTaskCountChange }) {
     inbox:       tasks.filter(t => t.status === 'inbox').length,
     next_action: tasks.filter(t => t.status === 'next_action').length,
     queued:      tasks.filter(t => t.status === 'queued').length,
+    scheduled:   tasks.filter(t => t.status === 'scheduled').length,
     waiting:     tasks.filter(t => t.status === 'waiting').length,
+    someday:     tasks.filter(t => t.status === 'someday').length,
     done:        tasks.filter(t => t.status === 'done').length,
   }
 
@@ -177,6 +181,7 @@ export default function ProjectTaskList({ projectId, onTaskCountChange }) {
         <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
           {tasks.length} total task{tasks.length !== 1 ? 's' : ''} —&nbsp;
           {counts.next_action} next action{counts.next_action !== 1 ? 's' : ''},&nbsp;
+          {counts.scheduled} scheduled,&nbsp;
           {counts.waiting} waiting,&nbsp;
           {counts.done} done
         </p>
