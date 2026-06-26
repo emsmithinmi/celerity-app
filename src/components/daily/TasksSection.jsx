@@ -15,6 +15,7 @@ const TABS = [
   { key: 'waiting',     label: 'Waiting'   },
   { key: 'scheduled',   label: 'Scheduled' },
   { key: 'someday',     label: 'Someday'   },
+  { key: 'all',         label: 'All'       },
 ]
 
 export default function TasksSection({ onRefreshStats }) {
@@ -22,18 +23,22 @@ export default function TasksSection({ onRefreshStats }) {
   const [activeTab, setActiveTab] = useState('inbox')
   const { tasks: allTasks, loading, refresh } = useTasks({ statuses: ACTIVE_STATUSES })
 
-  // Auto-switch to Next Actions if inbox is empty once data loads
+  // Auto-switch to first populated tab in GTD order
   useEffect(() => {
     if (loading) return
-    if (allTasks.filter(t => t.status === 'inbox').length === 0) {
-      setActiveTab('next_action')
-    }
+    const order = ['inbox', 'next_action', 'queued', 'scheduled', 'waiting', 'someday', 'all']
+    const first = order.find(s =>
+      s === 'all'
+        ? allTasks.length > 0
+        : allTasks.filter(t => t.status === s).length > 0
+    ) ?? 'all'
+    setActiveTab(first)
   }, [loading]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const [spinning, setSpinning] = useState(false)
   const handleRefresh = async () => { setSpinning(true); await refresh(); setSpinning(false) }
 
-  const tabCount = (key) => allTasks.filter(t => t.status === key).length
+  const tabCount = (key) => key === 'all' ? allTasks.length : allTasks.filter(t => t.status === key).length
 
   // ── Next Actions sort + drag-to-reorder, synced via list_preferences ────────
   const nextActionTasks = useMemo(
@@ -48,6 +53,7 @@ export default function TasksSection({ onRefreshStats }) {
   // ── Rendered task list ─────────────────────────────────────────────────────
   const tasks = useMemo(() => {
     if (activeTab === 'next_action') return ordered
+    if (activeTab === 'all') return allTasks
     return allTasks.filter(t => t.status === activeTab)
   }, [allTasks, activeTab, ordered])
 

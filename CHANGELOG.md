@@ -6,6 +6,11 @@ All notable changes to Focus Flow are recorded here.
 
 ## 2026-06-26
 
+### Changed
+- **"Active" / "All Active" tab renamed to "All" and moved to the end** — across all three task lists (Tasks page, Dashboard TasksSection, ProjectTaskList). The catch-all tab is now consistently the last option everywhere, not the first.
+- **Cascade auto-switch on all task lists** — on load, all three task lists now auto-select the first *populated* tab in GTD priority order: Inbox → Next → Queued → Scheduled → Waiting → Someday → Done → All. Previously they only fell back to Next if Inbox was empty; now the cascade continues all the way through so you always land on something useful.
+- **Dashboard TasksSection gains "All" tab** — was previously missing a catch-all view; now matches the other two task lists.
+
 ### Fixed
 - **All task lists now show consistent tabs** — ProjectTaskList and Dashboard TasksSection were both missing tabs present on the full Tasks page. ProjectTaskList gained Scheduled and Someday; Dashboard TasksSection gained Someday. All task lists now show: Inbox, Next, Queued, Waiting, Scheduled, Someday (ProjectTaskList also has Active and Done). ACTIVE_STATUSES buckets updated to include someday everywhere. — ProjectTaskList was missing the Scheduled and Someday status tabs that exist on the Tasks page, making it impossible to see scheduled tasks in a project without hunting through the Active tab. Both tabs added; the Active bucket now correctly includes someday tasks; the task summary line now shows scheduled count alongside next action, waiting, and done.
 

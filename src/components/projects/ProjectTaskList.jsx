@@ -6,7 +6,6 @@ import { createTask } from '../../lib/api/tasks'
 import { StatusPill, PriorityBadge, DragHandle, SortDropdown } from '../ui'
 
 const STATUS_TABS = [
-  { key: 'active',      label: 'Active'    },
   { key: 'inbox',       label: 'Inbox'     },
   { key: 'next_action', label: 'Next'      },
   { key: 'queued',      label: 'Queued'    },
@@ -14,6 +13,7 @@ const STATUS_TABS = [
   { key: 'waiting',     label: 'Waiting'   },
   { key: 'someday',     label: 'Someday'   },
   { key: 'done',        label: 'Done'      },
+  { key: 'all',         label: 'All'       },
 ]
 
 const ACTIVE = ['inbox', 'next_action', 'queued', 'scheduled', 'waiting', 'someday']
@@ -49,15 +49,19 @@ export default function ProjectTaskList({ projectId, onTaskCountChange }) {
 
   const { tasks, loading, refresh } = useTasks({ project_id: projectId })
 
-  // Auto-switch to Next Actions if inbox is empty once data loads
+  // Auto-switch to first populated tab in GTD order
   useEffect(() => {
     if (loading) return
-    if (tasks.filter(t => t.status === 'inbox').length === 0) {
-      setTab('next_action')
-    }
+    const order = ['inbox', 'next_action', 'queued', 'scheduled', 'waiting', 'someday', 'done', 'all']
+    const first = order.find(s =>
+      s === 'all'
+        ? tasks.filter(t => ACTIVE.includes(t.status)).length > 0
+        : tasks.filter(t => t.status === s).length > 0
+    ) ?? 'all'
+    setTab(first)
   }, [loading, tasks])
 
-  const displayed = tab === 'active'
+  const displayed = tab === 'all'
     ? tasks.filter(t => ACTIVE.includes(t.status))
     : tasks.filter(t => t.status === tab)
 
@@ -69,7 +73,6 @@ export default function ProjectTaskList({ projectId, onTaskCountChange }) {
 
   // Count by status for tabs
   const counts = {
-    active:      tasks.filter(t => ACTIVE.includes(t.status)).length,
     inbox:       tasks.filter(t => t.status === 'inbox').length,
     next_action: tasks.filter(t => t.status === 'next_action').length,
     queued:      tasks.filter(t => t.status === 'queued').length,
@@ -77,6 +80,7 @@ export default function ProjectTaskList({ projectId, onTaskCountChange }) {
     waiting:     tasks.filter(t => t.status === 'waiting').length,
     someday:     tasks.filter(t => t.status === 'someday').length,
     done:        tasks.filter(t => t.status === 'done').length,
+    all:         tasks.filter(t => ACTIVE.includes(t.status)).length,
   }
 
   const handleAddTask = async (e) => {

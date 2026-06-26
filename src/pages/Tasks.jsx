@@ -9,14 +9,14 @@ import { CaptureTaskModal } from '../components/daily/QuickCaptureModals'
 import { updateTask, archiveTask, permanentDeleteTask, duplicateTask } from '../lib/api/tasks'
 
 const TABS = [
-  { key: 'inbox',       label: 'Inbox'        },
-  { key: 'next_action', label: 'Next' },
-  { key: 'queued',      label: 'Queued'       },
-  { key: 'waiting',     label: 'Waiting'      },
-  { key: 'scheduled',   label: 'Scheduled'    },
-  { key: 'someday',     label: 'Someday'      },
-  { key: 'done',        label: 'Done'         },
-  { key: 'all',         label: 'All Active'   },
+  { key: 'inbox',       label: 'Inbox'     },
+  { key: 'next_action', label: 'Next'      },
+  { key: 'queued',      label: 'Queued'    },
+  { key: 'waiting',     label: 'Waiting'   },
+  { key: 'scheduled',   label: 'Scheduled' },
+  { key: 'someday',     label: 'Someday'   },
+  { key: 'done',        label: 'Done'      },
+  { key: 'all',         label: 'All'       },
 ]
 
 const ALL_ACTIVE = ['inbox', 'next_action', 'queued', 'scheduled', 'waiting', 'someday']
@@ -46,9 +46,14 @@ export default function Tasks() {
   const { tasks, loading, refresh, createTask } = useTasks({})
 
   useEffect(() => {
-    if (!loading && tasks.filter(t => t.status === 'inbox').length === 0) {
-      setActiveTab('next_action')
-    }
+    if (loading) return
+    const order = ['inbox', 'next_action', 'queued', 'scheduled', 'waiting', 'someday', 'done', 'all']
+    const counts = order.reduce((acc, s) => {
+      acc[s] = s === 'all' ? tasks.filter(t => ALL_ACTIVE.includes(t.status)).length : tasks.filter(t => t.status === s).length
+      return acc
+    }, {})
+    const first = order.find(s => counts[s] > 0) ?? 'all'
+    setActiveTab(first)
   }, [loading]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const displayed = (() => {
