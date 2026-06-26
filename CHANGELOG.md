@@ -7,7 +7,7 @@ All notable changes to Focus Flow are recorded here.
 ## 2026-06-26
 
 ### Fixed
-- **Project task list now shows Scheduled and Someday tabs** — ProjectTaskList was missing the Scheduled and Someday status tabs that exist on the Tasks page, making it impossible to see scheduled tasks in a project without hunting through the Active tab. Both tabs added; the Active bucket now correctly includes someday tasks; the task summary line now shows scheduled count alongside next action, waiting, and done.
+- **All task lists now show consistent tabs** — ProjectTaskList and Dashboard TasksSection were both missing tabs present on the full Tasks page. ProjectTaskList gained Scheduled and Someday; Dashboard TasksSection gained Someday. All task lists now show: Inbox, Next, Queued, Waiting, Scheduled, Someday (ProjectTaskList also has Active and Done). ACTIVE_STATUSES buckets updated to include someday everywhere. — ProjectTaskList was missing the Scheduled and Someday status tabs that exist on the Tasks page, making it impossible to see scheduled tasks in a project without hunting through the Active tab. Both tabs added; the Active bucket now correctly includes someday tasks; the task summary line now shows scheduled count alongside next action, waiting, and done.
 
 ---
 

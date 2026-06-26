@@ -6,14 +6,15 @@ import { useTaskListSort } from '../../hooks/useListSort'
 import { EmptyState, SortDropdown } from '../ui'
 import TaskRow from '../tasks/TaskRow'
 
-const ACTIVE_STATUSES = ['inbox', 'next_action', 'queued', 'waiting', 'scheduled']
+const ACTIVE_STATUSES = ['inbox', 'next_action', 'queued', 'waiting', 'scheduled', 'someday']
 
 const TABS = [
-  { key: 'inbox',       label: 'Inbox'        },
-  { key: 'next_action', label: 'Next'         },
-  { key: 'queued',      label: 'Queued'       },
-  { key: 'waiting',     label: 'Waiting'      },
-  { key: 'scheduled',   label: 'Scheduled'    },
+  { key: 'inbox',       label: 'Inbox'     },
+  { key: 'next_action', label: 'Next'      },
+  { key: 'queued',      label: 'Queued'    },
+  { key: 'waiting',     label: 'Waiting'   },
+  { key: 'scheduled',   label: 'Scheduled' },
+  { key: 'someday',     label: 'Someday'   },
 ]
 
 export default function TasksSection({ onRefreshStats }) {
