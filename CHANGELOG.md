@@ -22,6 +22,9 @@ All notable changes to Focus Flow are recorded here.
 - **Notes dashboard layout** — matches the other dashboards: full-height flex column, `px-6` padding, `primary` variant "+ New Note" button, standardized header. Cards stay (expand/collapse still works). Edit/delete buttons now use `PencilBtn`/`TrashBtn` from `IconBtn` component. StickyNote icon removed from empty state.
 - **Terminology** — "Daily page" is now "Main" throughout comments and docs. Sidebar label stays "Dashboard". All dashboard pages (Tasks, Projects, People, Notes, Reviews, Habits) are referred to as dashboards; individual task/project/person detail views are "pages".
 
+### Fixed
+- **FilterControl popover clipping** — the dropdown was invisible (clipped to a scrollbar sliver) because it was absolutely positioned inside an `overflow-x-auto` tab row. Switched to `position: fixed` anchored via `getBoundingClientRect` so the popover escapes all overflow containers on every page. Also added explicit `type="button"` to all buttons inside the component.
+
 ---
 
 ## 2026-06-26
