@@ -212,7 +212,7 @@ Contexts mounted at App root (outside BrowserRouter):
 - All API functions in `src/lib/api/*.js` use the static `supabase` import
 - Detail views are **full pages** (`/tasks/:id`, `/projects/:id`, `/people/:id`), not modals
 - `useDaily(date)` — accepts a date string; `ensureNoteForDate(date)` creates a note for any date on first visit
-- Day navigation on Daily page uses noon-local-time trick: `new Date(dateStr + 'T12:00:00')` to avoid DST shifts
+- Day navigation on Main uses noon-local-time trick: `new Date(dateStr + 'T12:00:00')` to avoid DST shifts
 - `getDailyStats(date)` — "Due Today" counts tasks with that due_date OR status=scheduled OR priority in (urgent, stat), plus projects with end_date on that day (all deduped via single `.or()` query)
 - Area fields use `<input list="..."> + <datalist>` — free-text with managed suggestions
 - Priority/energy dropdowns driven by context arrays, never hardcoded
@@ -278,14 +278,14 @@ Direction: thin MCP server (or REST + MCP wrapper) sitting outside the app, expo
 ## Quote System
 Static pool of ~400 quotes in `src/lib/quotes.js` (Stoicism / Science / Comedian / Movie / Software / Motivational).
 
-- **Reroll on Daily page load** (today only) — picks a fresh quote excluded from the last 30 days and the per-user blocklist, saves to `daily_notes.quote`. Past dates keep whatever was saved (deterministic day-of-year fallback for legacy days with no quote).
+- **Reroll on Main load** (today only) — picks a fresh quote excluded from the last 30 days and the per-user blocklist, saves to `daily_notes.quote`. Past dates keep whatever was saved (deterministic day-of-year fallback for legacy days with no quote).
 - **Skip** hover-button → reroll using same exclusions.
 - **Never** hover-button → adds the current quote text to `user_metadata.blocked_quotes` (syncs across devices) and rerolls.
 - API: `pickFresh(recentTexts, excludeText)` in `lib/quotes.js`; `getRecentQuoteTexts(days=30)`, `getBlockedQuoteTexts()`, `blockQuoteText(text)` in `lib/api/daily.js`.
 - StrictMode-safe: `rerolledForNoteRef` guard prevents double-fire of the on-mount reroll.
 
 ## Code Challenge System (re-added 2026-06-22, deterministic — no AI)
-Daily page Challenge section serves one small **basic-Python refresher** at a time from a **consumable bank** (the `code_challenges` table). Modeled on the quote system but the bank drains: completing a challenge **deletes** its row (one and done); skipping leaves it in the bank.
+Main Challenge section serves one small **basic-Python refresher** at a time from a **consumable bank** (the `code_challenges` table). Modeled on the quote system but the bank drains: completing a challenge **deletes** its row (one and done); skipping leaves it in the bank.
 
 - **Pin to today:** on first mount, if `daily_notes.code_challenge` has no valid snapshot, `ChallengeSection` picks a random challenge from the bank and saves a snapshot `{id, prompt, answer, difficulty, completed}` to `daily_notes.code_challenge` (so it's stable for the day and survives the row's later deletion).
 - **Skip** → `pickRandomChallenge(currentId)` swaps in a different one (stays in the bank), resets the reveal.

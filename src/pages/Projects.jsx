@@ -1,9 +1,11 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useProjects } from '../hooks/useProjects'
+import { usePriorities } from '../contexts/PrioritiesContext'
+import { useAreas }      from '../contexts/AreasContext'
 import ProjectRow from '../components/projects/ProjectRow'
 import Button from '../components/ui/Button'
-import { EmptyState } from '../components/ui'
+import { EmptyState, FilterControl } from '../components/ui'
 import { CaptureProjectModal } from '../components/daily/QuickCaptureModals'
 import { updateProject, archiveProject, scrapeProject, duplicateProject } from '../lib/api/projects'
 
@@ -19,20 +21,7 @@ const TABS = [
   { key: 'all',         label: 'All Active'      },
 ]
 
-// Someday/Maybe intentionally excluded — it's not "active" work
 const ALL_ACTIVE_STATUSES = ['inbox', 'planning', 'in_progress', 'waiting', 'stalled']
-
-function StatChip({ label, count }) {
-  return (
-    <div
-      className="flex flex-col items-center px-4 py-3 rounded-xl border"
-      style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
-    >
-      <span className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{count}</span>
-      <span className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{label}</span>
-    </div>
-  )
-}
 
 export default function Projects() {
   const navigate = useNavigate()
@@ -43,8 +32,11 @@ export default function Projects() {
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [bulkStatus,  setBulkStatus]  = useState('')
   const [bulkWorking, setBulkWorking] = useState(false)
+  const [filters,     setFilters]     = useState({})
 
   const { projects, loading, refresh, createProject } = useProjects({})
+  const { priorities } = usePriorities()
+  const { areas }      = useAreas()
 
   useEffect(() => {
     if (!loading && projects.filter(p => p.status === 'inbox' && !p.archived_at).length === 0) {
@@ -52,32 +44,53 @@ export default function Projects() {
     }
   }, [loading]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const handleFilterChange = (key, val) => setFilters(prev => ({ ...prev, [key]: val }))
+  const hasActiveFilters = Object.values(filters).some(v => Array.isArray(v) ? v.length > 0 : !!v)
+
   const displayed = (() => {
     let base
-    if (activeTab === 'all') base = projects.filter(p => ALL_ACTIVE_STATUSES.includes(p.status) && !p.archived_at)
+    if (activeTab === 'all')      base = projects.filter(p => ALL_ACTIVE_STATUSES.includes(p.status) && !p.archived_at)
     else if (activeTab === 'archived') base = projects.filter(p => !!p.archived_at)
     else if (activeTab === 'completed') base = projects.filter(p => p.status === 'completed')
     else base = projects.filter(p => p.status === activeTab && !p.archived_at)
+
     if (search) base = base.filter(p =>
       p.title.toLowerCase().includes(search.toLowerCase()) ||
       (p.area ?? '').toLowerCase().includes(search.toLowerCase())
     )
+    if (filters.priority?.length) base = base.filter(p => filters.priority.includes(p.priority))
+    if (filters.area?.length)     base = base.filter(p => filters.area.includes(p.area))
+    if (filters.endDate) {
+      const today = new Date().toLocaleDateString('en-CA')
+      const d30 = new Date(); d30.setDate(d30.getDate() + 30)
+      const month = d30.toLocaleDateString('en-CA')
+      const d90 = new Date(); d90.setDate(d90.getDate() + 90)
+      const quarter = d90.toLocaleDateString('en-CA')
+      if (filters.endDate === 'overdue')      base = base.filter(p => p.end_date && p.end_date < today)
+      if (filters.endDate === 'this_month')   base = base.filter(p => p.end_date && p.end_date >= today && p.end_date <= month)
+      if (filters.endDate === 'this_quarter') base = base.filter(p => p.end_date && p.end_date >= today && p.end_date <= quarter)
+      if (filters.endDate === 'upcoming')     base = base.filter(p => p.end_date && p.end_date >= today)
+    }
     return base
   })()
 
-  const stats = {
-    active:      projects.filter(p => ALL_ACTIVE_STATUSES.includes(p.status) && !p.archived_at).length,
-    in_progress: projects.filter(p => p.status === 'in_progress' && !p.archived_at).length,
-    stalled:     projects.filter(p => p.status === 'stalled' && !p.archived_at).length,
-    waiting:     projects.filter(p => p.status === 'waiting' && !p.archived_at).length,
-  }
-
   const tabCount = (key) => {
-    if (key === 'all') return projects.filter(p => ALL_ACTIVE_STATUSES.includes(p.status) && !p.archived_at).length
-    if (key === 'archived') return projects.filter(p => !!p.archived_at).length
+    if (key === 'all')       return projects.filter(p => ALL_ACTIVE_STATUSES.includes(p.status) && !p.archived_at).length
+    if (key === 'archived')  return projects.filter(p => !!p.archived_at).length
     if (key === 'completed') return projects.filter(p => p.status === 'completed').length
     return projects.filter(p => p.status === key && !p.archived_at).length
   }
+
+  const filterGroups = [
+    priorities.length && { key: 'priority', label: 'Priority',   type: 'multi',  options: priorities.map(p => ({ value: p.value, label: p.label })) },
+    areas.length      && { key: 'area',     label: 'Area',       type: 'multi',  options: areas.map(a => ({ value: a.value, label: a.label })) },
+    { key: 'endDate', label: 'End Date', type: 'single', options: [
+      { value: 'overdue',      label: 'Overdue'      },
+      { value: 'this_month',   label: 'This Month'   },
+      { value: 'this_quarter', label: 'This Quarter' },
+      { value: 'upcoming',     label: 'Upcoming'     },
+    ]},
+  ].filter(Boolean)
 
   const handleCapture = async (title) => {
     await createProject(title)
@@ -107,7 +120,6 @@ export default function Projects() {
     if (selectedIds.size === 0) return
     setBulkWorking(true)
     try {
-      // sequential — each duplicate is a multi-table insert
       for (const id of selectedIds) await duplicateProject(id)
       await refresh()
       exitSelectMode()
@@ -130,7 +142,6 @@ export default function Projects() {
     )) return
     setBulkWorking(true)
     try {
-      // sequential — scrapeProject cascades across several tables
       for (const id of selectedIds) await scrapeProject(id)
       await refresh()
       exitSelectMode()
@@ -154,16 +165,8 @@ export default function Projects() {
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {/* Stat cards */}
-        <div className="grid grid-cols-4 gap-3 px-6 pt-5 pb-4">
-          <StatChip label="Active"      count={stats.active}      />
-          <StatChip label="In Progress" count={stats.in_progress} />
-          <StatChip label="Stalled"     count={stats.stalled}     />
-          <StatChip label="Waiting"     count={stats.waiting}     />
-        </div>
-
         {/* Search */}
-        <div className="px-6 pb-3">
+        <div className="px-6 pt-4 pb-3">
           <input
             type="text"
             value={search}
@@ -176,38 +179,41 @@ export default function Projects() {
           />
         </div>
 
-        {/* Tabs */}
+        {/* Tabs + Filter */}
         <div
-          className="flex gap-1 px-4 pb-2 overflow-x-auto shrink-0"
+          className="flex items-center gap-1 px-4 pb-2 overflow-x-auto shrink-0"
           style={{ borderBottom: '1px solid var(--border)' }}
         >
-          {TABS.map(tab => {
-            const count = tabCount(tab.key)
-            return (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors shrink-0"
-                style={{
-                  backgroundColor: activeTab === tab.key ? 'var(--border)' : 'transparent',
-                  color: activeTab === tab.key ? 'var(--text-primary)' : 'var(--text-secondary)',
-                }}
-              >
-                {tab.label}
-                {count > 0 && (
-                  <span
-                    className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold leading-none"
-                    style={{
-                      backgroundColor: activeTab === tab.key ? 'var(--text-secondary)' : 'var(--border)',
-                      color: activeTab === tab.key ? 'var(--pane-bg)' : 'var(--text-secondary)',
-                    }}
-                  >
-                    {count}
-                  </span>
-                )}
-              </button>
-            )
-          })}
+          <div className="flex gap-1 flex-1 min-w-0 overflow-x-auto">
+            {TABS.map(tab => {
+              const count = tabCount(tab.key)
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors shrink-0"
+                  style={{
+                    backgroundColor: activeTab === tab.key ? 'var(--border)' : 'transparent',
+                    color: activeTab === tab.key ? 'var(--text-primary)' : 'var(--text-secondary)',
+                  }}
+                >
+                  {tab.label}
+                  {count > 0 && (
+                    <span
+                      className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold leading-none"
+                      style={{
+                        backgroundColor: activeTab === tab.key ? 'var(--text-secondary)' : 'var(--border)',
+                        color: activeTab === tab.key ? 'var(--pane-bg)' : 'var(--text-secondary)',
+                      }}
+                    >
+                      {count}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+          <FilterControl groups={filterGroups} values={filters} onChange={handleFilterChange} className="shrink-0 ml-1" />
         </div>
 
         {/* Project list */}
@@ -215,8 +221,8 @@ export default function Projects() {
           <EmptyState message="Loading…" />
         ) : displayed.length === 0 ? (
           <EmptyState
-            message={search ? 'No projects match your search.' : `No ${TABS.find(t => t.key === activeTab)?.label.toLowerCase()} projects.`}
-            action={activeTab === 'inbox' && !search
+            message={search || hasActiveFilters ? 'No projects match your filters.' : `No ${TABS.find(t => t.key === activeTab)?.label.toLowerCase()} projects.`}
+            action={activeTab === 'inbox' && !search && !hasActiveFilters
               ? <Button size="sm" variant="secondary" onClick={() => setShowCapture(true)}>Capture something</Button>
               : undefined}
           />

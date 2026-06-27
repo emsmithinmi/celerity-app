@@ -64,6 +64,13 @@ export default function AgendaSection({ calendarEvents = [], dueTasks = [], endi
   const [now, setNow] = useState(new Date())
   const [spinning, setSpinning] = useState(false)
   const [reconnecting, setReconnecting] = useState(false)
+  const [hiddenCalendars, setHiddenCalendars] = useState(new Set())
+
+  const toggleCalendar = (name) => setHiddenCalendars(prev => {
+    const next = new Set(prev)
+    next.has(name) ? next.delete(name) : next.add(name)
+    return next
+  })
 
   const handleReconnect = async () => {
     setReconnecting(true)
@@ -96,20 +103,25 @@ export default function AgendaSection({ calendarEvents = [], dueTasks = [], endi
     hourMarkers.push(new Date(h))
   }
 
-  // Calendar events that overlap the window
-  const timedEvents = useMemo(() => calendarEvents
+  // Build color map from ALL events (before filtering) so legend colors are stable
+  const allTimedEvents = useMemo(() => calendarEvents
     .filter(e => !e.all_day && e.start_time)
     .map(e => ({ ...e, start: new Date(e.start_time), end: e.end_time ? new Date(e.end_time) : null }))
+  , [calendarEvents])
+  const colorMap = useMemo(() => buildColorMap(allTimedEvents), [allTimedEvents])
+
+  // Calendar events that overlap the window, with hidden calendars filtered out
+  const timedEvents = useMemo(() => allTimedEvents
+    .filter(e => !hiddenCalendars.has(e.calendar_name || ''))
     .filter(e => e.start < windowEnd && (!e.end || e.end > windowStart))
     .sort((a, b) => a.start - b.start)
-  , [calendarEvents, windowStart.getTime(), windowEnd.getTime()]) // eslint-disable-line react-hooks/exhaustive-deps
+  , [allTimedEvents, hiddenCalendars, windowStart.getTime(), windowEnd.getTime()]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const colorMap = useMemo(() => buildColorMap(timedEvents), [timedEvents])
-  const laidOut  = useMemo(() => layoutEvents(timedEvents),  [timedEvents])
+  const laidOut = useMemo(() => layoutEvents(timedEvents), [timedEvents])
 
   // Exclude scheduled tasks — they already appear as Focus Flow calendar events
   const allDayItems = [
-    ...calendarEvents.filter(e => e.all_day),
+    ...calendarEvents.filter(e => e.all_day && !hiddenCalendars.has(e.calendar_name || '')),
     ...dueTasks.filter(t => t.status !== 'scheduled').map(t => ({ summary: t.title, _subtitle: t.projects?.title ?? 'Task due today', _dim: true, _href: `/tasks/${t.id}` })),
     ...endingProjects.map(p => ({ summary: p.title, _subtitle: 'Project deadline', _dim: true, _href: `/projects/${p.id}` })),
   ]
@@ -283,17 +295,26 @@ export default function AgendaSection({ calendarEvents = [], dueTasks = [], endi
           )}
         </div>
 
-        {/* Calendar color legend — only shown when >1 calendar is present */}
+        {/* Calendar legend — toggle chips when >1 calendar present */}
         {colorMap.size > 1 && (
-          <div className="flex flex-wrap gap-x-3 gap-y-1 px-4 pb-2 pt-1">
-            {[...colorMap.entries()].map(([name, color]) => (
-              <div key={name} className="flex items-center gap-1">
-                <span className="shrink-0 rounded-sm" style={{ width: 8, height: 8, backgroundColor: color }} />
-                <span className="text-[10px] truncate" style={{ color: 'var(--text-dim)', maxWidth: 120 }}>
-                  {name || 'Calendar'}
-                </span>
-              </div>
-            ))}
+          <div className="flex flex-wrap gap-x-2 gap-y-1 px-4 pb-2 pt-1">
+            {[...colorMap.entries()].map(([name, color]) => {
+              const hidden = hiddenCalendars.has(name)
+              return (
+                <button
+                  key={name}
+                  onClick={() => toggleCalendar(name)}
+                  className="flex items-center gap-1 rounded-md px-1.5 py-0.5 transition-opacity"
+                  style={{ opacity: hidden ? 0.4 : 1 }}
+                  title={hidden ? `Show ${name || 'Calendar'}` : `Hide ${name || 'Calendar'}`}
+                >
+                  <span className="shrink-0 rounded-sm" style={{ width: 8, height: 8, backgroundColor: color }} />
+                  <span className="text-[10px] truncate" style={{ color: 'var(--text-dim)', maxWidth: 120 }}>
+                    {name || 'Calendar'}
+                  </span>
+                </button>
+              )
+            })}
           </div>
         )}
       </div>

@@ -115,6 +115,12 @@ export async function uploadPersonAvatar(personId, file) {
   return updatePerson(personId, { avatar_url: publicUrl })
 }
 
+export async function duplicatePerson(id) {
+  const original = await getPerson(id)
+  const { id: _id, created_at, updated_at, avatar_url, status, ...rest } = original
+  return createPerson(rest)
+}
+
 // ─── Comments ─────────────────────────────────────────────────────────────────
 
 export async function addPersonComment(personId, body) {

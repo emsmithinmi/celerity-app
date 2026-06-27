@@ -4,6 +4,26 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-27
+
+### Added
+- **FilterControl component** (`src/components/ui/FilterControl.jsx`) — reusable popover filter with multi-select and single-select groups; shows active count badge; clear-all button; click-outside to close; fully CSS-variable-based so it works across all three themes.
+- **Filtering on Tasks dashboard** — filter by Context Tags, Priority, Area, Energy Level, and Due Date (Overdue / Today / This Week / Upcoming). Filters stack with search and tab selection. Manual drag-sort disabled while filters are active.
+- **Filtering on Projects dashboard** — filter by Priority, Area, and End Date (Overdue / This Month / This Quarter / Upcoming).
+- **Filtering on People dashboard** — filter by Relationship and Contact Type; options derived from actual contact data so only populated values appear.
+- **Filtering on Main Tasks section** — filter by Context Tags, Priority, Area.
+- **Filtering on Main Projects section** — filter by Priority, Area.
+- **Agenda calendar toggles** — calendar legend chips in the Agenda section are now interactive; click to hide/show individual calendars. Hidden calendars are dimmed; their events are removed from the timeline and all-day list.
+- **Bulk duplicate on People dashboard** — Select mode now available; select multiple contacts and duplicate them all at once.
+- **Bulk duplicate on Notes dashboard** — Select mode now available; select multiple notes and duplicate them all at once.
+
+### Changed
+- **Removed stat card rows** on Tasks dashboard and Projects dashboard. The counts are already visible in the tab badges; the cards were redundant.
+- **Notes dashboard layout** — matches the other dashboards: full-height flex column, `px-6` padding, `primary` variant "+ New Note" button, standardized header. Cards stay (expand/collapse still works). Edit/delete buttons now use `PencilBtn`/`TrashBtn` from `IconBtn` component. StickyNote icon removed from empty state.
+- **Terminology** — "Daily page" is now "Main" throughout comments and docs. Sidebar label stays "Dashboard". All dashboard pages (Tasks, Projects, People, Notes, Reviews, Habits) are referred to as dashboards; individual task/project/person detail views are "pages".
+
+---
+
 ## 2026-06-26
 
 ### Changed

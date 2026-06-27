@@ -3,7 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { RefreshCw } from 'lucide-react'
 import { useTasks } from '../../hooks/useTasks'
 import { useTaskListSort } from '../../hooks/useListSort'
-import { EmptyState, SortDropdown } from '../ui'
+import { useContextTags } from '../../contexts/ContextTagsContext'
+import { usePriorities }   from '../../contexts/PrioritiesContext'
+import { useAreas }        from '../../contexts/AreasContext'
+import { EmptyState, SortDropdown, FilterControl } from '../ui'
 import TaskRow from '../tasks/TaskRow'
 
 const ACTIVE_STATUSES = ['inbox', 'next_action', 'queued', 'waiting', 'scheduled', 'someday']
@@ -21,9 +24,12 @@ const TABS = [
 export default function TasksSection({ onRefreshStats }) {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('inbox')
+  const [filters,   setFilters]   = useState({})
   const { tasks: allTasks, loading, refresh } = useTasks({ statuses: ACTIVE_STATUSES })
+  const { tags }      = useContextTags()
+  const { priorities } = usePriorities()
+  const { areas }     = useAreas()
 
-  // Auto-switch to first populated tab in GTD order
   useEffect(() => {
     if (loading) return
     const order = ['inbox', 'next_action', 'queued', 'scheduled', 'waiting', 'someday', 'all']
@@ -38,24 +44,36 @@ export default function TasksSection({ onRefreshStats }) {
   const [spinning, setSpinning] = useState(false)
   const handleRefresh = async () => { setSpinning(true); await refresh(); setSpinning(false) }
 
+  const handleFilterChange = (key, val) => setFilters(prev => ({ ...prev, [key]: val }))
+  const hasActiveFilters = Object.values(filters).some(v => Array.isArray(v) ? v.length > 0 : !!v)
+
   const tabCount = (key) => key === 'all' ? allTasks.length : allTasks.filter(t => t.status === key).length
 
-  // ── Next Actions sort + drag-to-reorder, synced via list_preferences ────────
-  const nextActionTasks = useMemo(
-    () => allTasks.filter(t => t.status === 'next_action'),
-    [allTasks]
-  )
+  const filterGroups = [
+    tags.length       && { key: 'tags',     label: 'Context Tags', type: 'multi', options: tags.map(t => ({ value: t.value, label: t.label })) },
+    priorities.length && { key: 'priority', label: 'Priority',     type: 'multi', options: priorities.map(p => ({ value: p.value, label: p.label })) },
+    areas.length      && { key: 'area',     label: 'Area',         type: 'multi', options: areas.map(a => ({ value: a.value, label: a.label })) },
+  ].filter(Boolean)
+
+  // Next Actions sort + drag-to-reorder
+  const nextActionTasks = useMemo(() => allTasks.filter(t => t.status === 'next_action'), [allTasks])
+  const sortEnabled = !hasActiveFilters && activeTab === 'next_action'
   const {
     ordered, sortMode, setSortMode, isReorderable, dragOverId,
     handleDragStart, handleDragOver, handleDrop, handleDragEnd,
-  } = useTaskListSort('daily:next_action', nextActionTasks)
+  } = useTaskListSort('daily:next_action', nextActionTasks, { enabled: sortEnabled })
 
-  // ── Rendered task list ─────────────────────────────────────────────────────
   const tasks = useMemo(() => {
-    if (activeTab === 'next_action') return ordered
-    if (activeTab === 'all') return allTasks
-    return allTasks.filter(t => t.status === activeTab)
-  }, [allTasks, activeTab, ordered])
+    let base
+    if (activeTab === 'next_action') base = ordered
+    else if (activeTab === 'all')    base = allTasks
+    else                             base = allTasks.filter(t => t.status === activeTab)
+
+    if (filters.tags?.length)     base = base.filter(t => filters.tags.some(tag => (t.context ?? []).includes(tag)))
+    if (filters.priority?.length) base = base.filter(t => filters.priority.includes(t.priority))
+    if (filters.area?.length)     base = base.filter(t => filters.area.includes(t.area))
+    return base
+  }, [allTasks, activeTab, ordered, filters])
 
   return (
     <div>
@@ -66,44 +84,43 @@ export default function TasksSection({ onRefreshStats }) {
         </button>
       </div>
 
-      {/* Filter tabs + sort */}
-      <div className="flex items-center gap-2 mb-3">
+      {/* Tabs + Filter + Sort */}
+      <div className="flex items-center gap-1 mb-3">
         <div className="flex gap-1 flex-wrap flex-1 min-w-0">
-        {TABS.map(tab => {
-          const count = tabCount(tab.key)
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
-              style={{
-                backgroundColor: activeTab === tab.key ? 'var(--border)' : 'transparent',
-                color: activeTab === tab.key ? 'var(--text-primary)' : 'var(--text-secondary)',
-              }}
-            >
-              {tab.label}
-              {count > 0 && (
-                <span
-                  className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold leading-none"
-                  style={{
-                    backgroundColor: activeTab === tab.key ? 'var(--text-secondary)' : 'var(--border)',
-                    color: activeTab === tab.key ? 'var(--pane-bg)' : 'var(--text-secondary)',
-                  }}
-                >
-                  {count}
-                </span>
-              )}
-            </button>
-          )
-        })}
+          {TABS.map(tab => {
+            const count = tabCount(tab.key)
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                style={{
+                  backgroundColor: activeTab === tab.key ? 'var(--border)' : 'transparent',
+                  color: activeTab === tab.key ? 'var(--text-primary)' : 'var(--text-secondary)',
+                }}
+              >
+                {tab.label}
+                {count > 0 && (
+                  <span
+                    className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold leading-none"
+                    style={{
+                      backgroundColor: activeTab === tab.key ? 'var(--text-secondary)' : 'var(--border)',
+                      color: activeTab === tab.key ? 'var(--pane-bg)' : 'var(--text-secondary)',
+                    }}
+                  >
+                    {count}
+                  </span>
+                )}
+              </button>
+            )
+          })}
         </div>
-        {activeTab === 'next_action' && (
-          <SortDropdown
-            value={sortMode}
-            onChange={setSortMode}
-            className="shrink-0"
-          />
-        )}
+        <div className="flex items-center gap-1 shrink-0">
+          <FilterControl groups={filterGroups} values={filters} onChange={handleFilterChange} />
+          {activeTab === 'next_action' && (
+            <SortDropdown value={sortMode} onChange={setSortMode} disabled={!sortEnabled} />
+          )}
+        </div>
       </div>
 
       <div
@@ -138,7 +155,7 @@ export default function TasksSection({ onRefreshStats }) {
             )
           ))
         ) : (
-          <EmptyState message={`No ${TABS.find(t => t.key === activeTab)?.label.toLowerCase()} tasks.`} />
+          <EmptyState message={hasActiveFilters ? 'No tasks match your filters.' : `No ${TABS.find(t => t.key === activeTab)?.label.toLowerCase()} tasks.`} />
         )}
       </div>
     </div>

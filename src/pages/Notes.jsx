@@ -1,14 +1,15 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Pencil, Trash2, ChevronDown, ChevronUp, Search, StickyNote } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { getNotes, createNote, updateNote, deleteNote } from '../lib/api/notes'
 import Button from '../components/ui/Button'
+import { PencilBtn, TrashBtn } from '../components/ui/IconBtn'
 import Modal from '../components/ui/Modal'
 import EmptyState from '../components/ui/EmptyState'
 
 const PREVIEW_CHARS = 300
 const PREVIEW_LINES = 5
 
-function NoteCard({ note, onEdit, onDelete }) {
+function NoteCard({ note, onEdit, onDelete, selectable, selected, onToggle }) {
   const [expanded, setExpanded] = useState(false)
   const [editing,  setEditing]  = useState(false)
   const [draft,    setDraft]    = useState(note.body)
@@ -36,41 +37,51 @@ function NoteCard({ note, onEdit, onDelete }) {
 
   const handleCancel = () => { setDraft(note.body); setEditing(false) }
 
+  const handleCardClick = () => {
+    if (selectable) { onToggle?.(); return }
+  }
+
   return (
     <div
+      onClick={handleCardClick}
       className="rounded-xl border p-4"
-      style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
+      style={{
+        backgroundColor: 'var(--pane-bg)',
+        borderColor: selected ? 'var(--accent)' : 'var(--border)',
+        cursor: selectable ? 'pointer' : 'default',
+        transition: 'border-color 150ms',
+      }}
     >
       <div className="flex items-center justify-between mb-2">
-        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{timeStr}</p>
-        {!editing && (
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => { setDraft(note.body); setEditing(true); setExpanded(true) }}
-              title="Edit note"
-              className="flex items-center justify-center rounded transition-colors duration-150"
-              style={{ width: 24, height: 24, color: 'var(--text-dim)' }}
-              onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }}
-              onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-dim)' }}
+        <div className="flex items-center gap-2">
+          {selectable && (
+            <span
+              className="flex items-center justify-center rounded-full border shrink-0 transition-colors"
+              style={{
+                width: 16, height: 16,
+                backgroundColor: selected ? 'var(--accent)' : 'transparent',
+                borderColor: selected ? 'var(--accent)' : 'var(--text-dim)',
+              }}
             >
-              <Pencil size={12} />
-            </button>
-            <button
-              onClick={() => onDelete(note.id)}
-              title="Delete note"
-              className="flex items-center justify-center rounded transition-colors duration-150"
-              style={{ width: 24, height: 24, color: 'var(--text-dim)' }}
-              onMouseEnter={e => e.currentTarget.style.color = 'var(--danger)'}
-              onMouseLeave={e => e.currentTarget.style.color = 'var(--text-dim)'}
-            >
-              <Trash2 size={12} />
-            </button>
+              {selected && (
+                <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+                  <path d="M1.5 4L3.5 6L6.5 2" stroke="var(--app-bg)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+            </span>
+          )}
+          <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{timeStr}</p>
+        </div>
+        {!editing && !selectable && (
+          <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+            <PencilBtn onClick={() => { setDraft(note.body); setEditing(true); setExpanded(true) }} />
+            <TrashBtn onClick={() => onDelete(note.id)} />
           </div>
         )}
       </div>
 
       {editing ? (
-        <div className="space-y-2">
+        <div className="space-y-2" onClick={e => e.stopPropagation()}>
           <textarea
             value={draft}
             onChange={e => setDraft(e.target.value)}
@@ -96,15 +107,15 @@ function NoteCard({ note, onEdit, onDelete }) {
             {display}
             {!expanded && isLong && <span style={{ color: 'var(--text-secondary)' }}>…</span>}
           </p>
-          {isLong && (
+          {isLong && !selectable && (
             <button
-              onClick={() => setExpanded(v => !v)}
+              onClick={e => { e.stopPropagation(); setExpanded(v => !v) }}
               className="flex items-center gap-1 mt-2 text-xs transition-colors"
               style={{ color: 'var(--text-secondary)' }}
               onMouseEnter={e => e.currentTarget.style.color = 'var(--accent)'}
               onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}
             >
-              {expanded ? <><ChevronUp size={12} /> Show less</> : <><ChevronDown size={12} /> Show more</>}
+              {expanded ? '↑ Show less' : '↓ Show more'}
             </button>
           )}
         </>
@@ -166,6 +177,9 @@ export default function Notes() {
   const [loading,     setLoading]     = useState(true)
   const [search,      setSearch]      = useState('')
   const [modalOpen,   setModalOpen]   = useState(false)
+  const [selectMode,  setSelectMode]  = useState(false)
+  const [selectedIds, setSelectedIds] = useState(new Set())
+  const [bulkWorking, setBulkWorking] = useState(false)
 
   useEffect(() => {
     getNotes().then(setNotes).finally(() => setLoading(false))
@@ -192,73 +206,119 @@ export default function Notes() {
     setNotes(prev => prev.filter(n => n.id !== id))
   }
 
+  const toggleSelect = (id) => setSelectedIds(prev => {
+    const next = new Set(prev)
+    next.has(id) ? next.delete(id) : next.add(id)
+    return next
+  })
+
+  const exitSelectMode = () => { setSelectMode(false); setSelectedIds(new Set()) }
+
+  const handleBulkDuplicate = async () => {
+    if (selectedIds.size === 0) return
+    setBulkWorking(true)
+    try {
+      const selected = notes.filter(n => selectedIds.has(n.id))
+      const dupes = await Promise.all(selected.map(n => createNote(n.body)))
+      setNotes(prev => [...dupes, ...prev])
+      exitSelectMode()
+    } finally { setBulkWorking(false) }
+  }
+
   return (
-    <div className="px-10 py-8 max-w-3xl mx-auto">
+    <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Notes</h1>
-          {!loading && (
-            <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              {notes.length} {notes.length === 1 ? 'note' : 'notes'}
+      <div
+        className="flex items-center justify-between px-6 py-4 border-b shrink-0"
+        style={{ borderColor: 'var(--border)' }}
+      >
+        <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
+          Notes
+          {!loading && notes.length > 0 && (
+            <span className="ml-2 text-sm font-normal" style={{ color: 'var(--text-secondary)' }}>
+              {notes.length}
             </span>
           )}
+        </h1>
+        <div className="flex items-center gap-2">
+          <Button size="sm" variant={selectMode ? 'secondary' : 'ghost'} onClick={() => selectMode ? exitSelectMode() : setSelectMode(true)}>
+            {selectMode ? `Cancel (${selectedIds.size} selected)` : 'Select'}
+          </Button>
+          <Button variant="primary" size="sm" onClick={() => setModalOpen(true)}>+ New Note</Button>
         </div>
-        <Button variant="secondary" size="sm" onClick={() => setModalOpen(true)}>
-          New Note
-        </Button>
       </div>
 
-      {/* Search */}
-      <div className="relative mb-6">
-        <Search
-          size={14}
-          className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
-          style={{ color: 'var(--text-dim)' }}
-        />
-        <input
-          type="text"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Search notes…"
-          className="w-full pl-9 pr-4 py-2 rounded-lg text-sm border outline-none"
-          style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
-          onFocus={e => e.target.style.borderColor = 'var(--accent)'}
-          onBlur={e => e.target.style.borderColor = 'var(--border)'}
-        />
-      </div>
+      <div className="flex-1 overflow-y-auto">
+        {/* Search */}
+        <div className="relative px-6 pt-4 pb-3">
+          <Search
+            size={14}
+            className="absolute left-9 top-1/2 -translate-y-1/2 pointer-events-none"
+            style={{ color: 'var(--text-dim)', top: 'calc(50% + 2px)' }}
+          />
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search notes…"
+            className="w-full pl-9 pr-4 py-2 rounded-xl text-sm border outline-none bg-transparent"
+            style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+            onFocus={e => e.target.style.borderColor = 'var(--accent)'}
+            onBlur={e => e.target.style.borderColor = 'var(--border)'}
+          />
+        </div>
 
-      {/* Notes list */}
-      {loading ? (
-        <p className="text-sm text-center py-8" style={{ color: 'var(--text-secondary)' }}>Loading…</p>
-      ) : filtered.length === 0 ? (
-        search ? (
-          <EmptyState variant="card">
-            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              No notes match <span style={{ color: 'var(--text-primary)' }}>"{search}"</span>
-            </p>
-          </EmptyState>
-        ) : (
-          <EmptyState variant="card">
-            <StickyNote size={24} style={{ color: 'var(--text-dim)', margin: '0 auto 8px' }} />
-            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>No notes yet. Hit New Note to start.</p>
-          </EmptyState>
-        )
-      ) : (
-        <div className="space-y-3">
-          {filtered.map(note => (
-            <NoteCard
-              key={note.id}
-              note={note}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-          ))}
-          {search && filtered.length < notes.length && (
-            <p className="text-xs text-center pt-1" style={{ color: 'var(--text-secondary)' }}>
-              Showing {filtered.length} of {notes.length} notes
-            </p>
+        {/* Notes list */}
+        <div className="px-6 pb-6">
+          {loading ? (
+            <EmptyState message="Loading…" />
+          ) : filtered.length === 0 ? (
+            search ? (
+              <EmptyState variant="card">
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  No notes match <span style={{ color: 'var(--text-primary)' }}>"{search}"</span>
+                </p>
+              </EmptyState>
+            ) : (
+              <EmptyState variant="card">
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>No notes yet. Hit New Note to start.</p>
+              </EmptyState>
+            )
+          ) : (
+            <div className="space-y-3">
+              {filtered.map(note => (
+                <NoteCard
+                  key={note.id}
+                  note={note}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  selectable={selectMode}
+                  selected={selectedIds.has(note.id)}
+                  onToggle={() => toggleSelect(note.id)}
+                />
+              ))}
+              {search && filtered.length < notes.length && (
+                <p className="text-xs text-center pt-1" style={{ color: 'var(--text-secondary)' }}>
+                  Showing {filtered.length} of {notes.length} notes
+                </p>
+              )}
+            </div>
           )}
+        </div>
+      </div>
+
+      {/* Bulk action bar */}
+      {selectMode && (
+        <div
+          className="shrink-0 flex items-center gap-3 px-6 py-3 border-t"
+          style={{ borderColor: 'var(--border)', backgroundColor: 'var(--pane-bg)' }}
+        >
+          <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+            {selectedIds.size} selected
+          </span>
+          <Button size="sm" variant="secondary" onClick={handleBulkDuplicate} disabled={selectedIds.size === 0 || bulkWorking}>
+            {bulkWorking ? '…' : '⧉ Duplicate'}
+          </Button>
         </div>
       )}
 

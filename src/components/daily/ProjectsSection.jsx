@@ -2,7 +2,9 @@ import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { RefreshCw } from 'lucide-react'
 import { useProjects } from '../../hooks/useProjects'
-import { StatusPill, PriorityBadge } from '../ui'
+import { usePriorities } from '../../contexts/PrioritiesContext'
+import { useAreas }      from '../../contexts/AreasContext'
+import { StatusPill, PriorityBadge, FilterControl } from '../ui'
 
 const ACTIVE_STATUSES = ['inbox', 'planning', 'in_progress', 'waiting', 'stalled']
 
@@ -47,20 +49,37 @@ function ProjectRow({ project }) {
 
 export default function ProjectsSection() {
   const [activeTab, setActiveTab] = useState('inbox')
+  const [filters,   setFilters]   = useState({})
   const { projects: allProjects, loading, refresh } = useProjects({ statuses: ACTIVE_STATUSES, archived: false })
+  const { priorities } = usePriorities()
+  const { areas }      = useAreas()
 
-  // Auto-switch to In Progress if inbox is empty once data loads
   useEffect(() => {
     if (loading) return
     if (allProjects.filter(p => p.status === 'inbox').length === 0) {
       setActiveTab('in_progress')
     }
   }, [loading]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const [spinning, setSpinning] = useState(false)
   const handleRefresh = async () => { setSpinning(true); await refresh(); setSpinning(false) }
 
-  const projects = useMemo(() => allProjects.filter(p => p.status === activeTab), [allProjects, activeTab])
+  const handleFilterChange = (key, val) => setFilters(prev => ({ ...prev, [key]: val }))
+  const hasActiveFilters = Object.values(filters).some(v => Array.isArray(v) ? v.length > 0 : !!v)
+
   const tabCount = (key) => allProjects.filter(p => p.status === key).length
+
+  const filterGroups = [
+    priorities.length && { key: 'priority', label: 'Priority', type: 'multi', options: priorities.map(p => ({ value: p.value, label: p.label })) },
+    areas.length      && { key: 'area',     label: 'Area',     type: 'multi', options: areas.map(a => ({ value: a.value, label: a.label })) },
+  ].filter(Boolean)
+
+  const projects = useMemo(() => {
+    let base = allProjects.filter(p => p.status === activeTab)
+    if (filters.priority?.length) base = base.filter(p => filters.priority.includes(p.priority))
+    if (filters.area?.length)     base = base.filter(p => filters.area.includes(p.area))
+    return base
+  }, [allProjects, activeTab, filters])
 
   return (
     <div>
@@ -71,35 +90,40 @@ export default function ProjectsSection() {
         </button>
       </div>
 
-      {/* Filter tabs */}
-      <div className="flex gap-1 mb-3">
-        {TABS.map(tab => {
-          const count = tabCount(tab.key)
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
-              style={{
-                backgroundColor: activeTab === tab.key ? 'var(--border)' : 'transparent',
-                color: activeTab === tab.key ? 'var(--text-primary)' : 'var(--text-secondary)',
-              }}
-            >
-              {tab.label}
-              {count > 0 && (
-                <span
-                  className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold leading-none"
-                  style={{
-                    backgroundColor: activeTab === tab.key ? 'var(--text-secondary)' : 'var(--border)',
-                    color: activeTab === tab.key ? 'var(--pane-bg)' : 'var(--text-secondary)',
-                  }}
-                >
-                  {count}
-                </span>
-              )}
-            </button>
-          )
-        })}
+      {/* Tabs + Filter */}
+      <div className="flex items-center gap-1 mb-3">
+        <div className="flex gap-1 flex-wrap flex-1 min-w-0">
+          {TABS.map(tab => {
+            const count = tabCount(tab.key)
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                style={{
+                  backgroundColor: activeTab === tab.key ? 'var(--border)' : 'transparent',
+                  color: activeTab === tab.key ? 'var(--text-primary)' : 'var(--text-secondary)',
+                }}
+              >
+                {tab.label}
+                {count > 0 && (
+                  <span
+                    className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold leading-none"
+                    style={{
+                      backgroundColor: activeTab === tab.key ? 'var(--text-secondary)' : 'var(--border)',
+                      color: activeTab === tab.key ? 'var(--pane-bg)' : 'var(--text-secondary)',
+                    }}
+                  >
+                    {count}
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+        {filterGroups.length > 0 && (
+          <FilterControl groups={filterGroups} values={filters} onChange={handleFilterChange} className="shrink-0" />
+        )}
       </div>
 
       <div
@@ -112,7 +136,7 @@ export default function ProjectsSection() {
           projects.map(p => <ProjectRow key={p.id} project={p} />)
         ) : (
           <p className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
-            No {TABS.find(t => t.key === activeTab)?.label.toLowerCase()} projects.
+            {hasActiveFilters ? 'No projects match your filters.' : `No ${TABS.find(t => t.key === activeTab)?.label.toLowerCase()} projects.`}
           </p>
         )}
       </div>

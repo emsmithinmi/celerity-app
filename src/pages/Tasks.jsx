@@ -1,10 +1,14 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTasks } from '../hooks/useTasks'
 import { useTaskListSort } from '../hooks/useListSort'
+import { useContextTags } from '../contexts/ContextTagsContext'
+import { usePriorities }   from '../contexts/PrioritiesContext'
+import { useAreas }        from '../contexts/AreasContext'
+import { useEnergyLevels } from '../contexts/EnergyLevelsContext'
 import TaskRow from '../components/tasks/TaskRow'
 import Button from '../components/ui/Button'
-import { EmptyState, SortDropdown } from '../components/ui'
+import { EmptyState, SortDropdown, FilterControl } from '../components/ui'
 import { CaptureTaskModal } from '../components/daily/QuickCaptureModals'
 import { updateTask, archiveTask, permanentDeleteTask, duplicateTask } from '../lib/api/tasks'
 
@@ -21,18 +25,6 @@ const TABS = [
 
 const ALL_ACTIVE = ['inbox', 'next_action', 'queued', 'scheduled', 'waiting', 'someday']
 
-function StatChip({ label, count }) {
-  return (
-    <div
-      className="flex flex-col items-center px-4 py-3 rounded-xl border"
-      style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}
-    >
-      <span className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{count}</span>
-      <span className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{label}</span>
-    </div>
-  )
-}
-
 export default function Tasks() {
   const navigate = useNavigate()
   const [activeTab,    setActiveTab]    = useState('inbox')
@@ -42,8 +34,13 @@ export default function Tasks() {
   const [selectedIds,  setSelectedIds]  = useState(new Set())
   const [bulkStatus,   setBulkStatus]   = useState('')
   const [bulkWorking,  setBulkWorking]  = useState(false)
+  const [filters,      setFilters]      = useState({})
 
   const { tasks, loading, refresh, createTask } = useTasks({})
+  const { tags }      = useContextTags()
+  const { priorities } = usePriorities()
+  const { areas }     = useAreas()
+  const { levels }    = useEnergyLevels()
 
   useEffect(() => {
     if (loading) return
@@ -56,35 +53,54 @@ export default function Tasks() {
     setActiveTab(first)
   }, [loading]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const handleFilterChange = (key, val) => setFilters(prev => ({ ...prev, [key]: val }))
+  const hasActiveFilters = Object.values(filters).some(v => Array.isArray(v) ? v.length > 0 : !!v)
+
   const displayed = (() => {
     let base = activeTab === 'all'
       ? tasks.filter(t => ALL_ACTIVE.includes(t.status))
       : tasks.filter(t => t.status === activeTab)
     if (search) base = base.filter(t => t.title.toLowerCase().includes(search.toLowerCase()))
+    if (filters.tags?.length)     base = base.filter(t => filters.tags.some(tag => (t.context ?? []).includes(tag)))
+    if (filters.priority?.length) base = base.filter(t => filters.priority.includes(t.priority))
+    if (filters.area?.length)     base = base.filter(t => filters.area.includes(t.area))
+    if (filters.energy?.length)   base = base.filter(t => filters.energy.includes(t.energy_level))
+    if (filters.dueDate) {
+      const today = new Date().toLocaleDateString('en-CA')
+      const d7 = new Date(); d7.setDate(d7.getDate() + 7)
+      const weekEnd = d7.toLocaleDateString('en-CA')
+      if (filters.dueDate === 'today')     base = base.filter(t => t.due_date === today)
+      if (filters.dueDate === 'this_week') base = base.filter(t => t.due_date && t.due_date <= weekEnd)
+      if (filters.dueDate === 'overdue')   base = base.filter(t => t.due_date && t.due_date < today)
+      if (filters.dueDate === 'upcoming')  base = base.filter(t => t.due_date && t.due_date > today && t.due_date <= weekEnd)
+    }
     return base
   })()
 
-  // Per-status-tab sort preference, synced via list_preferences. Manual mode
-  // = drag-to-reorder; auto modes ignore manual_order. Disabled while
-  // selecting, searching, or on the mixed "All Active" tab.
-  const sortEnabled = !selectMode && !search && activeTab !== 'all'
+  const sortEnabled = !selectMode && !search && !hasActiveFilters && activeTab !== 'all'
   const {
     ordered, sortMode, setSortMode, isReorderable, dragOverId,
     handleDragStart, handleDragOver, handleDrop, handleDragEnd,
   } = useTaskListSort(`tasks:${activeTab}`, displayed, { enabled: sortEnabled })
   const rows = sortEnabled ? ordered : displayed
 
-  const stats = {
-    active:  tasks.filter(t => ALL_ACTIVE.includes(t.status)).length,
-    inbox:   tasks.filter(t => t.status === 'inbox').length,
-    next:    tasks.filter(t => t.status === 'next_action').length,
-    waiting: tasks.filter(t => t.status === 'waiting').length,
-  }
-
   const tabCount = (key) => {
     if (key === 'all') return tasks.filter(t => ALL_ACTIVE.includes(t.status)).length
     return tasks.filter(t => t.status === key).length
   }
+
+  const filterGroups = [
+    tags.length       && { key: 'tags',     label: 'Context Tags', type: 'multi',  options: tags.map(t => ({ value: t.value, label: t.label })) },
+    priorities.length && { key: 'priority', label: 'Priority',     type: 'multi',  options: priorities.map(p => ({ value: p.value, label: p.label })) },
+    areas.length      && { key: 'area',     label: 'Area',         type: 'multi',  options: areas.map(a => ({ value: a.value, label: a.label })) },
+    levels.length     && { key: 'energy',   label: 'Energy',       type: 'multi',  options: levels.map(e => ({ value: e.value, label: e.label })) },
+    { key: 'dueDate', label: 'Due Date', type: 'single', options: [
+      { value: 'overdue',   label: 'Overdue'   },
+      { value: 'today',     label: 'Today'     },
+      { value: 'this_week', label: 'This Week' },
+      { value: 'upcoming',  label: 'Upcoming'  },
+    ]},
+  ].filter(Boolean)
 
   const handleCapture = async (title) => {
     await createTask(title)
@@ -157,16 +173,8 @@ export default function Tasks() {
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {/* Stat cards */}
-        <div className="grid grid-cols-4 gap-3 px-6 pt-5 pb-4">
-          <StatChip label="Active"  count={stats.active}  />
-          <StatChip label="Inbox"   count={stats.inbox}   />
-          <StatChip label="Next"    count={stats.next}    />
-          <StatChip label="Waiting" count={stats.waiting} />
-        </div>
-
         {/* Search */}
-        <div className="px-6 pb-3">
+        <div className="px-6 pt-4 pb-3">
           <input
             type="text"
             value={search}
@@ -179,46 +187,44 @@ export default function Tasks() {
           />
         </div>
 
-        {/* Tabs */}
+        {/* Tabs + Filter + Sort */}
         <div
           className="flex items-center gap-1 px-4 pb-2 overflow-x-auto shrink-0"
           style={{ borderBottom: '1px solid var(--border)' }}
         >
           <div className="flex gap-1 flex-1 min-w-0 overflow-x-auto">
-          {TABS.map(tab => {
-            const count = tabCount(tab.key)
-            return (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors shrink-0"
-                style={{
-                  backgroundColor: activeTab === tab.key ? 'var(--border)' : 'transparent',
-                  color: activeTab === tab.key ? 'var(--text-primary)' : 'var(--text-secondary)',
-                }}
-              >
-                {tab.label}
-                {count > 0 && (
-                  <span
-                    className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold leading-none"
-                    style={{
-                      backgroundColor: activeTab === tab.key ? 'var(--text-secondary)' : 'var(--border)',
-                      color: activeTab === tab.key ? 'var(--pane-bg)' : 'var(--text-secondary)',
-                    }}
-                  >
-                    {count}
-                  </span>
-                )}
-              </button>
-            )
-          })}
+            {TABS.map(tab => {
+              const count = tabCount(tab.key)
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors shrink-0"
+                  style={{
+                    backgroundColor: activeTab === tab.key ? 'var(--border)' : 'transparent',
+                    color: activeTab === tab.key ? 'var(--text-primary)' : 'var(--text-secondary)',
+                  }}
+                >
+                  {tab.label}
+                  {count > 0 && (
+                    <span
+                      className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold leading-none"
+                      style={{
+                        backgroundColor: activeTab === tab.key ? 'var(--text-secondary)' : 'var(--border)',
+                        color: activeTab === tab.key ? 'var(--pane-bg)' : 'var(--text-secondary)',
+                      }}
+                    >
+                      {count}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
           </div>
-          <SortDropdown
-            value={sortMode}
-            onChange={setSortMode}
-            disabled={!sortEnabled}
-            className="ml-2 shrink-0"
-          />
+          <div className="flex items-center gap-1 shrink-0 ml-1">
+            <FilterControl groups={filterGroups} values={filters} onChange={handleFilterChange} />
+            <SortDropdown value={sortMode} onChange={setSortMode} disabled={!sortEnabled} />
+          </div>
         </div>
 
         {/* Task list */}
@@ -226,8 +232,8 @@ export default function Tasks() {
           <EmptyState message="Loading…" />
         ) : displayed.length === 0 ? (
           <EmptyState
-            message={search ? 'No tasks match your search.' : `No ${TABS.find(t => t.key === activeTab)?.label.toLowerCase()} tasks.`}
-            action={activeTab === 'inbox' && !search
+            message={search || hasActiveFilters ? 'No tasks match your filters.' : `No ${TABS.find(t => t.key === activeTab)?.label.toLowerCase()} tasks.`}
+            action={activeTab === 'inbox' && !search && !hasActiveFilters
               ? <Button size="sm" variant="secondary" onClick={() => setShowCapture(true)}>Capture something</Button>
               : undefined}
           />
