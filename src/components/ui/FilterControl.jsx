@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { SlidersHorizontal, X } from 'lucide-react'
 
 /**
@@ -10,16 +10,39 @@ import { SlidersHorizontal, X } from 'lucide-react'
  */
 export default function FilterControl({ groups = [], values = {}, onChange, className = '' }) {
   const [open, setOpen] = useState(false)
-  const ref = useRef(null)
+  const [pos, setPos] = useState({ top: 0, right: 0 })
+  const btnRef = useRef(null)
+  const dropRef = useRef(null)
+
+  const reposition = useCallback(() => {
+    if (btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect()
+      setPos({ top: r.bottom + 4, right: window.innerWidth - r.right })
+    }
+  }, [])
+
+  const handleToggle = () => {
+    if (!open) reposition()
+    setOpen(v => !v)
+  }
 
   useEffect(() => {
     if (!open) return
     function onDown(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+      if (
+        dropRef.current && !dropRef.current.contains(e.target) &&
+        btnRef.current && !btnRef.current.contains(e.target)
+      ) setOpen(false)
     }
     document.addEventListener('mousedown', onDown)
-    return () => document.removeEventListener('mousedown', onDown)
-  }, [open])
+    window.addEventListener('scroll', reposition, true)
+    window.addEventListener('resize', reposition)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      window.removeEventListener('scroll', reposition, true)
+      window.removeEventListener('resize', reposition)
+    }
+  }, [open, reposition])
 
   const activeCount = groups.reduce((sum, g) => {
     const v = values[g.key]
@@ -37,9 +60,11 @@ export default function FilterControl({ groups = [], values = {}, onChange, clas
   const toggleSingle = (key, val) => onChange(key, values[key] === val ? null : val)
 
   return (
-    <div className={`relative ${className}`} ref={ref}>
+    <div className={className}>
       <button
-        onClick={() => setOpen(v => !v)}
+        ref={btnRef}
+        type="button"
+        onClick={handleToggle}
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors"
         style={{
           backgroundColor: (open || activeCount > 0) ? 'var(--border)' : 'transparent',
@@ -61,13 +86,15 @@ export default function FilterControl({ groups = [], values = {}, onChange, clas
 
       {open && (
         <div
-          className="absolute right-0 z-50 mt-1 rounded-xl border shadow-xl"
-          style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)', minWidth: 240, maxWidth: 320 }}
+          ref={dropRef}
+          className="fixed z-[9999] rounded-xl border shadow-xl"
+          style={{ top: pos.top, right: pos.right, backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)', minWidth: 240, maxWidth: 320 }}
         >
           <div className="flex items-center justify-between px-3 py-2 border-b" style={{ borderColor: 'var(--border)' }}>
             <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>Filters</span>
             {activeCount > 0 && (
               <button
+                type="button"
                 onClick={clearAll}
                 className="flex items-center gap-1 text-[10px] transition-colors"
                 style={{ color: 'var(--text-dim)' }}
@@ -92,6 +119,7 @@ export default function FilterControl({ groups = [], values = {}, onChange, clas
                     return (
                       <button
                         key={opt.value}
+                        type="button"
                         onClick={() => g.type === 'multi' ? toggleMulti(g.key, opt.value) : toggleSingle(g.key, opt.value)}
                         className="px-2 py-1 rounded-md text-xs border transition-colors"
                         style={{
