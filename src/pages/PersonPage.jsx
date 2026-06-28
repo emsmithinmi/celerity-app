@@ -12,6 +12,7 @@ import ConfirmDialog from '../components/ui/ConfirmDialog'
 import { PencilBtn, TrashBtn } from '../components/ui'
 import PersonComments from '../components/people/PersonComments'
 import { useContextTags } from '../contexts/ContextTagsContext'
+import { getPersonNotes } from '../lib/api/notes'
 
 const inputCls  = 'w-full px-3 py-2 rounded-lg text-sm border outline-none bg-transparent'
 const inputStyle = { borderColor: 'var(--border)', color: 'var(--text-primary)' }
@@ -71,6 +72,7 @@ export default function PersonPage() {
   const [allTasks,    setAllTasks]    = useState([])
   const [taskSearch,  setTaskSearch]  = useState('')
   const [tasksOpen,   setTasksOpen]   = useState(false)
+  const [linkedNotes, setLinkedNotes] = useState([])
 
   const [socialPlatform, setSocialPlatform] = useState('')
   const [socialHandle,   setSocialHandle]   = useState('')
@@ -104,6 +106,7 @@ export default function PersonPage() {
 
   useEffect(() => { load() }, [id])
   useEffect(() => { getTasks().then(setAllTasks).catch(() => {}) }, [])
+  useEffect(() => { getPersonNotes(id).then(setLinkedNotes).catch(() => {}) }, [id])
 
   if (loading) return (
     <div className="flex items-center justify-center h-full">
@@ -593,7 +596,7 @@ export default function PersonPage() {
               >
                 <option value="">Pick a tag…</option>
                 {contextTagPool.filter(t => !(person.context ?? []).includes(t.value)).map(t => (
-                  <option key={t.id} value={t.value}>@{t.label}</option>
+                  <option key={t.id} value={t.value}>#{t.label}</option>
                 ))}
               </select>
               <Button size="sm" variant="secondary" onClick={addTag} disabled={!tagPick}>Add</Button>
@@ -610,7 +613,7 @@ export default function PersonPage() {
                   return (
                     <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
                       style={{ backgroundColor: def?.bg_color ?? 'var(--context-tag-bg)', color: def?.text_color ?? 'var(--context-tag-text)' }}>
-                      @{def?.label ?? tag}
+                      #{def?.label ?? tag}
                       <button onClick={() => removeTag(tag)} className="ml-0.5 hover:opacity-70 leading-none" aria-label={`Remove ${tag}`}>×</button>
                     </span>
                   )
@@ -720,6 +723,33 @@ export default function PersonPage() {
                   <span className="text-sm flex-1 truncate" style={{ color: 'var(--text-primary)' }}>{project.title}</span>
                 </div>
               ))}
+            </div>
+          </section>
+        )}
+
+        {/* ── Linked Notes section ── */}
+        {linkedNotes.length > 0 && (
+          <section>
+            <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
+              Notes <span className="text-sm font-normal" style={{ color: 'var(--text-secondary)' }}>({linkedNotes.length})</span>
+            </h2>
+            <div className="rounded-xl border overflow-hidden" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
+              {linkedNotes.filter(Boolean).map(note => {
+                const firstLine = note.body.split('\n').find(l => l.trim()) ?? ''
+                const preview = firstLine.length > 80 ? firstLine.slice(0, 80) + '…' : firstLine
+                const dateStr = new Date(note.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                return (
+                  <div
+                    key={note.id}
+                    className="flex items-center gap-3 px-4 py-3 border-b last:border-b-0 cursor-pointer hover:opacity-80"
+                    style={{ borderColor: 'var(--border)' }}
+                    onClick={() => navigate(`/notes/${note.id}`)}
+                  >
+                    <span className="text-sm flex-1 truncate" style={{ color: 'var(--text-primary)' }}>{preview || 'Untitled note'}</span>
+                    <span className="text-xs shrink-0" style={{ color: 'var(--text-secondary)' }}>{dateStr}</span>
+                  </div>
+                )
+              })}
             </div>
           </section>
         )}

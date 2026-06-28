@@ -679,7 +679,7 @@ function ContextTagRow({ item, onSaved, onDelete, onDragStart, onDragEnd }) {
             </>
           ) : (
             <>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: bgColor, color: textColor }}>@{label}</span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: bgColor, color: textColor }}>#{label}</span>
               <span className="flex-1" />
               <div className="flex items-center gap-1 shrink-0">
                 <PencilBtn onClick={() => setEditing(true)} />
@@ -706,12 +706,12 @@ function ContextTagRow({ item, onSaved, onDelete, onDragStart, onDragEnd }) {
             </div>
             <div className="col-span-2">
               <p className="text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>Preview</p>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: bgColor, color: textColor }}>@{label || 'tag'}</span>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: bgColor, color: textColor }}>#{label || 'tag'}</span>
             </div>
           </div>
         )}
       </div>
-      <ConfirmDialog open={showDel} onClose={() => setShowDel(false)} onConfirm={handleDelete} title="Remove Context Tag?" message={`"@${item.label}" will be removed from the list. Tasks that already use it keep the stored value but it won't appear in the picker.`} confirmLabel="Remove" variant="danger" />
+      <ConfirmDialog open={showDel} onClose={() => setShowDel(false)} onConfirm={handleDelete} title="Remove Context Tag?" message={`"#${item.label}" will be removed from the list. Tasks that already use it keep the stored value but it won't appear in the picker.`} confirmLabel="Remove" variant="danger" />
     </>
   )
 }
@@ -765,7 +765,7 @@ function AddContextTagForm({ onAdded, nextSortOrder }) {
       </div>
       <div>
         <p className="text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>Preview</p>
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: bgColor, color: textColor }}>@{label || 'tag'}</span>
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: bgColor, color: textColor }}>#{label || 'tag'}</span>
       </div>
       <div className="flex gap-2 pt-1">
         <Button size="sm" variant="primary" onClick={submit} disabled={saving}>{saving ? 'Adding…' : 'Add'}</Button>

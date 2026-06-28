@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getNote, updateNote, updateNoteContext, deleteNote } from '../lib/api/notes'
+import { X } from 'lucide-react'
+import { getNote, updateNote, updateNoteContext, deleteNote, getNotepeople, linkPersonToNote, unlinkPersonFromNote } from '../lib/api/notes'
+import { getPeople } from '../lib/api/people'
 import { useContextTags } from '../contexts/ContextTagsContext'
+import { parseHashtags, parseMentions, resolveHashtags, resolveMentions } from '../lib/mentions'
+import MentionDisambiguationModal from '../components/ui/MentionDisambiguationModal'
 import Button from '../components/ui/Button'
 import { TrashBtn } from '../components/ui/IconBtn'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
@@ -33,11 +37,23 @@ export default function NotePage() {
   const [showDelete, setShowDelete] = useState(false)
   const [deleting,   setDeleting]   = useState(false)
 
+  const [linkedPeople,    setLinkedPeople]    = useState([])
+  const [allPeople,       setAllPeople]       = useState([])
+  const [peopleSearch,    setPeopleSearch]    = useState('')
+  const [peopleOpen,      setPeopleOpen]      = useState(false)
+  const [pendingAmbiguous, setPendingAmbiguous] = useState([])
+  const [showDisambiguate, setShowDisambiguate] = useState(false)
+
   useEffect(() => {
-    getNote(id)
-      .then(n => { setNote(n); setBody(n.body) })
-      .catch(() => setNote(null))
-      .finally(() => setLoading(false))
+    Promise.all([
+      getNote(id),
+      getNotepeople(id),
+      getPeople(),
+    ]).then(([n, np, all]) => {
+      setNote(n); setBody(n.body)
+      setLinkedPeople(np.map(r => r.people))
+      setAllPeople(all)
+    }).catch(() => setNote(null)).finally(() => setLoading(false))
   }, [id])
 
   if (loading) return (
@@ -57,8 +73,33 @@ export default function NotePage() {
     const updated = await updateNote(note.id, body.trim())
     setNote(updated)
     setBody(updated.body)
-    setSaving(false)
     setEditing(false)
+
+    // Auto-detect #tags and @people
+    const newTags = resolveHashtags(parseHashtags(body), contextTagPool, updated.context ?? [])
+    if (newTags.length > 0) await saveContext([...(updated.context ?? []), ...newTags])
+
+    const linkedIds = new Set(linkedPeople.map(p => p.id))
+    const { resolved, ambiguous } = resolveMentions(parseMentions(body), allPeople, linkedIds)
+    for (const { person } of resolved) {
+      await linkPersonToNote(note.id, person.id)
+      setLinkedPeople(prev => [...prev, person])
+    }
+    if (ambiguous.length > 0) { setPendingAmbiguous(ambiguous); setShowDisambiguate(true) }
+    setSaving(false)
+  }
+
+  const handleLinkPerson = async (personId) => {
+    const person = allPeople.find(p => p.id === personId)
+    if (!person) return
+    await linkPersonToNote(note.id, personId)
+    setLinkedPeople(prev => [...prev, person])
+    setPeopleSearch(''); setPeopleOpen(false)
+  }
+
+  const handleUnlinkPerson = async (personId) => {
+    await unlinkPersonFromNote(note.id, personId)
+    setLinkedPeople(prev => prev.filter(p => p.id !== personId))
   }
 
   const handleCancel = () => { setBody(note.body); setEditing(false) }
@@ -159,7 +200,7 @@ export default function NotePage() {
               >
                 <option value="">Pick a tag…</option>
                 {contextTagPool.filter(t => !(note.context ?? []).includes(t.value)).map(t => (
-                  <option key={t.id} value={t.value}>@{t.label}</option>
+                  <option key={t.id} value={t.value}>#{t.label}</option>
                 ))}
               </select>
               <Button size="sm" variant="secondary" onClick={addTag} disabled={!tagPick}>Add</Button>
@@ -176,7 +217,7 @@ export default function NotePage() {
                   return (
                     <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
                       style={{ backgroundColor: def?.bg_color ?? 'var(--context-tag-bg)', color: def?.text_color ?? 'var(--context-tag-text)' }}>
-                      @{def?.label ?? tag}
+                      #{def?.label ?? tag}
                       <button onClick={() => removeTag(tag)} className="ml-0.5 hover:opacity-70 leading-none" aria-label={`Remove ${tag}`}>×</button>
                     </span>
                   )
@@ -186,7 +227,80 @@ export default function NotePage() {
           </div>
         </section>
 
+        {/* People */}
+        <section>
+          <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>People</h2>
+          <div className="rounded-xl border p-4 space-y-3" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
+            <div className="relative">
+              <input
+                type="text"
+                value={peopleSearch}
+                onChange={e => { setPeopleSearch(e.target.value); setPeopleOpen(true) }}
+                onFocus={() => setPeopleOpen(true)}
+                onBlur={() => setTimeout(() => setPeopleOpen(false), 150)}
+                placeholder="Search people…"
+                className="w-full px-3 py-2 rounded-lg text-sm border outline-none bg-transparent"
+                style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+              />
+              {peopleOpen && (() => {
+                const linkedIds = new Set(linkedPeople.map(p => p.id))
+                const q = peopleSearch.trim().toLowerCase()
+                const options = allPeople
+                  .filter(p => !linkedIds.has(p.id))
+                  .filter(p => !q || `${p.first_name ?? ''} ${p.last_name ?? ''}`.toLowerCase().includes(q))
+                  .slice(0, 8)
+                return options.length > 0 ? (
+                  <div className="absolute z-10 left-0 right-0 mt-1 rounded-lg border shadow-lg overflow-hidden"
+                    style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
+                    {options.map(p => (
+                      <button key={p.id} onMouseDown={e => e.preventDefault()} onClick={() => handleLinkPerson(p.id)}
+                        className="w-full text-left px-3 py-2 text-sm hover:opacity-80 border-t first:border-t-0"
+                        style={{ borderColor: 'var(--border)', color: 'var(--text-primary)', backgroundColor: 'transparent' }}>
+                        {[p.preferred_name ?? p.first_name, p.last_name].filter(Boolean).join(' ')}
+                        {p.relationship && <span className="ml-2 text-xs" style={{ color: 'var(--text-secondary)' }}>{p.relationship}</span>}
+                      </button>
+                    ))}
+                  </div>
+                ) : null
+              })()}
+            </div>
+            {linkedPeople.length > 0 && (
+              <div className="space-y-1.5">
+                {linkedPeople.filter(Boolean).map(p => (
+                  <div key={p.id} className="flex items-center gap-3 px-3 py-2 rounded-lg border"
+                    style={{ backgroundColor: 'var(--app-bg)', borderColor: 'var(--border)' }}>
+                    <span
+                      className="text-sm flex-1 truncate cursor-pointer hover:underline"
+                      style={{ color: 'var(--text-primary)' }}
+                      onClick={() => navigate(`/people/${p.id}`)}
+                    >
+                      {[p.preferred_name ?? p.first_name, p.last_name].filter(Boolean).join(' ')}
+                    </span>
+                    <button onClick={() => handleUnlinkPerson(p.id)} className="hover:opacity-60 shrink-0"
+                      style={{ color: 'var(--text-secondary)' }}>
+                      <X size={13} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+
       </div>
+
+      <MentionDisambiguationModal
+        open={showDisambiguate}
+        mentions={pendingAmbiguous}
+        onClose={() => setShowDisambiguate(false)}
+        onResolve={async (people) => {
+          setShowDisambiguate(false)
+          for (const p of people) {
+            await linkPersonToNote(note.id, p.id)
+            setLinkedPeople(prev => [...prev, p])
+          }
+        }}
+      />
 
       <ConfirmDialog
         open={showDelete}

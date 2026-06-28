@@ -62,7 +62,7 @@ export default function TaskRow({ task, onClick, selectable = false, selected = 
               return (
                 <ContextTag
                   key={tag}
-                  tag={`@${def?.label ?? tag}`}
+                  tag={`#${def?.label ?? tag}`}
                   bgColor={def?.bg_color}
                   textColor={def?.text_color}
                 />

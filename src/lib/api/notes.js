@@ -55,3 +55,31 @@ export async function deleteNote(id) {
   const { error } = await supabase.from('notes').delete().eq('id', id)
   if (error) throw error
 }
+
+export async function getNotepeople(noteId) {
+  const { data, error } = await supabase
+    .from('note_people')
+    .select('person_id, people(*)')
+    .eq('note_id', noteId)
+  if (error) throw error
+  return data ?? []
+}
+
+export async function getPersonNotes(personId) {
+  const { data, error } = await supabase
+    .from('note_people')
+    .select('note_id, notes(*)')
+    .eq('person_id', personId)
+  if (error) throw error
+  return (data ?? []).map(row => row.notes)
+}
+
+export async function linkPersonToNote(noteId, personId) {
+  const { error } = await supabase.from('note_people').insert({ note_id: noteId, person_id: personId })
+  if (error && error.code !== '23505') throw error
+}
+
+export async function unlinkPersonFromNote(noteId, personId) {
+  const { error } = await supabase.from('note_people').delete().eq('note_id', noteId).eq('person_id', personId)
+  if (error) throw error
+}

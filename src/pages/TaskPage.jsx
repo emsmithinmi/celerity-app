@@ -1,5 +1,7 @@
 ﻿import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { parseHashtags, parseMentions, resolveHashtags, resolveMentions } from '../lib/mentions'
+import MentionDisambiguationModal from '../components/ui/MentionDisambiguationModal'
 import {
   getTask, updateTask, completeTaskWithOptions, archiveTask, permanentDeleteTask,
   moveToNextAction, moveToQueued, moveToWaiting,
@@ -69,6 +71,8 @@ export default function TaskPage() {
   const [showRoute,      setShowRoute]      = useState(false)
   const [showDiscard,    setShowDiscard]    = useState(false)
   const [tagPick,       setTagPick]       = useState('')
+  const [pendingAmbiguous,  setPendingAmbiguous]  = useState([])
+  const [showDisambiguate,  setShowDisambiguate]  = useState(false)
 
   const [allPeople,        setAllPeople]        = useState([])
   const [peopleSearch,     setPeopleSearch]     = useState('')
@@ -141,6 +145,20 @@ export default function TaskPage() {
       setTask(prev => ({ ...prev, ...updated }))
       setEditing(false)
       setDraft(null)
+
+      // Auto-detect #tags and @people from title + description
+      const combined = `${draft.title ?? ''} ${draft.description ?? ''}`
+      const newTags = resolveHashtags(parseHashtags(combined), contextTagPool, updated.context ?? [])
+      if (newTags.length > 0) await saveContext([...(updated.context ?? []), ...newTags])
+
+      const linkedIds = new Set(updated.task_people?.map(tp => tp.person_id) ?? [])
+      const { resolved, ambiguous } = resolveMentions(parseMentions(combined), allPeople, linkedIds)
+      for (const { person } of resolved) await linkPersonToTask(id, person.id)
+      if (resolved.length > 0 || ambiguous.length > 0) {
+        const refreshed = await getTask(id)
+        setTask(refreshed)
+      }
+      if (ambiguous.length > 0) { setPendingAmbiguous(ambiguous); setShowDisambiguate(true) }
     } catch (err) {
       console.error('Save failed:', err)
       setSaveError(err.message ?? 'Save failed — check console for details')
@@ -441,7 +459,7 @@ export default function TaskPage() {
                   {contextTagPool
                     .filter(t => !task.context?.includes(t.value))
                     .map(t => (
-                      <option key={t.id} value={t.value}>@{t.label}</option>
+                      <option key={t.id} value={t.value}>#{t.label}</option>
                     ))}
                 </select>
                 <Button size="sm" variant="secondary" onClick={addTag} disabled={!tagPick}>
@@ -464,7 +482,7 @@ export default function TaskPage() {
                         className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
                         style={{ backgroundColor: def?.bg_color ?? 'var(--context-tag-bg)', color: def?.text_color ?? 'var(--context-tag-text)' }}
                       >
-                        @{def?.label ?? tag}
+                        #{def?.label ?? tag}
                         <button
                           onClick={() => removeTag(tag)}
                           className="ml-0.5 hover:opacity-70 leading-none"
@@ -606,6 +624,16 @@ export default function TaskPage() {
       />
       <HighlightModal open={showHighlight} onClose={() => setShowHighlight(false)} onConfirm={handleHighlight} />
       <RouteModal     open={showRoute}     onClose={() => setShowRoute(false)}     onAssign={handleAssignProject} />
+      <MentionDisambiguationModal
+        open={showDisambiguate}
+        mentions={pendingAmbiguous}
+        onClose={() => setShowDisambiguate(false)}
+        onResolve={async (people) => {
+          setShowDisambiguate(false)
+          for (const p of people) await linkPersonToTask(id, p.id)
+          if (people.length > 0) { const r = await getTask(id); setTask(r) }
+        }}
+      />
 
       {/* Details edit modal */}
       <Modal

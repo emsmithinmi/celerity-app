@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search } from 'lucide-react'
 import { getNotes, createNote, updateNote, updateNoteContext, deleteNote } from '../lib/api/notes'
+import { parseHashtags, resolveHashtags } from '../lib/mentions'
 import Button from '../components/ui/Button'
 import { PencilBtn, TrashBtn } from '../components/ui/IconBtn'
 import Modal from '../components/ui/Modal'
@@ -46,6 +47,8 @@ function NoteCard({ note, onEdit, onDelete, onUpdateContext, contextTagPool, tag
     if (!draft.trim() || draft === note.body) { setEditing(false); return }
     setSaving(true)
     await onEdit(note.id, draft.trim())
+    const newTags = resolveHashtags(parseHashtags(draft), contextTagPool, note.context ?? [])
+    if (newTags.length > 0) await onUpdateContext(note.id, [...(note.context ?? []), ...newTags])
     setSaving(false)
     setEditing(false)
   }
@@ -123,7 +126,7 @@ function NoteCard({ note, onEdit, onDelete, onUpdateContext, contextTagPool, tag
               >
                 <option value="">Add tag…</option>
                 {contextTagPool.filter(t => !(note.context ?? []).includes(t.value)).map(t => (
-                  <option key={t.id} value={t.value}>@{t.label}</option>
+                  <option key={t.id} value={t.value}>#{t.label}</option>
                 ))}
               </select>
               <Button size="sm" variant="secondary" onClick={addTag} disabled={!tagPick}>Add</Button>
@@ -136,7 +139,7 @@ function NoteCard({ note, onEdit, onDelete, onUpdateContext, contextTagPool, tag
                 return (
                   <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
                     style={{ backgroundColor: def?.bg_color ?? 'var(--context-tag-bg)', color: def?.text_color ?? 'var(--context-tag-text)' }}>
-                    @{def?.label ?? tag}
+                    #{def?.label ?? tag}
                     <button onClick={() => removeTag(tag)} className="ml-0.5 hover:opacity-70 leading-none" aria-label={`Remove ${tag}`}>×</button>
                   </span>
                 )
@@ -175,7 +178,7 @@ function NoteCard({ note, onEdit, onDelete, onUpdateContext, contextTagPool, tag
                 return (
                   <span key={tag} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
                     style={{ backgroundColor: def?.bg_color ?? 'var(--context-tag-bg)', color: def?.text_color ?? 'var(--context-tag-text)' }}>
-                    @{def?.label ?? tag}
+                    #{def?.label ?? tag}
                   </span>
                 )
               })}
