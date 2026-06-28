@@ -298,7 +298,7 @@ export default function Notes() {
         style={{ borderColor: 'var(--border)' }}
       >
         <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
-          Notes
+          Notes Dashboard
           {!loading && notes.length > 0 && (
             <span className="ml-2 text-sm font-normal" style={{ color: 'var(--text-secondary)' }}>
               {notes.length}
