@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Search } from 'lucide-react'
 import { getNotes, createNote, updateNote, updateNoteContext, deleteNote } from '../lib/api/notes'
 import Button from '../components/ui/Button'
@@ -51,8 +52,11 @@ function NoteCard({ note, onEdit, onDelete, onUpdateContext, contextTagPool, tag
 
   const handleCancel = () => { setDraft(note.body); setEditing(false) }
 
+  const navigate = useNavigate()
+
   const handleCardClick = () => {
     if (selectable) { onToggle?.(); return }
+    navigate(`/notes/${note.id}`)
   }
 
   return (
@@ -62,7 +66,7 @@ function NoteCard({ note, onEdit, onDelete, onUpdateContext, contextTagPool, tag
       style={{
         backgroundColor: 'var(--pane-bg)',
         borderColor: selected ? 'var(--accent)' : 'var(--border)',
-        cursor: selectable ? 'pointer' : 'default',
+        cursor: 'pointer',
         transition: 'border-color 150ms',
       }}
     >

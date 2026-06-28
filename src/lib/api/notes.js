@@ -1,5 +1,15 @@
 import { supabase } from '../supabase'
 
+export async function getNote(id) {
+  const { data, error } = await supabase
+    .from('notes')
+    .select('*')
+    .eq('id', id)
+    .single()
+  if (error) throw error
+  return data
+}
+
 export async function getNotes() {
   const { data, error } = await supabase
     .from('notes')

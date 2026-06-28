@@ -7,6 +7,7 @@ All notable changes to Focus Flow are recorded here.
 ## [Unreleased]
 
 ### Added
+- **Note detail page** (`/notes/:id`) — click any note card to open a full-page view showing created/edited timestamps, the full body (editable inline), and context tags. Delete button in the breadcrumb header.
 - **Context Tags on People** — PersonPage now has a Context Tags section (same chip picker as Tasks). Tags save immediately without entering edit mode. Backed by a new `context text[]` column on the `people` table.
 - **Context Tags on Notes** — NoteCard in the Notes Dashboard now shows context tag chips in read mode and a tag picker in edit mode. Backed by a new `context text[]` column on the `notes` table.
 
