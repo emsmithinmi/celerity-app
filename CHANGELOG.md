@@ -4,6 +4,11 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-06-28
+
+### Changed
+- **Habit detail page — timeframe-aware calendar** — switching timeframes now changes the calendar view to match: "Today" shows a single large day card (day name + date number + done dot); "This Week" shows a 7-day Sun–Sat strip; "This Month" shows the full monthly grid locked to current month (no nav arrows); "This Year" shows all 12 months of the year in a horizontally scrollable strip.
+
 ## [Unreleased]
 
 ### Added

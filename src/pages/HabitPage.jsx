@@ -101,92 +101,214 @@ const TIMEFRAMES = [
   { key: 'year',  label: 'This Year'  },
 ]
 
-function HabitCalendar({ habitKey, calYear, calMonth, dateMap, onPrev, onNext, onToggle }) {
-  const grid  = useMemo(() => buildCalendarGrid(calYear, calMonth), [calYear, calMonth])
-  const today = new Date().toLocaleDateString('en-CA')
+function buildWeekDates() {
+  const today = new Date()
+  const dow = today.getDay()
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today)
+    d.setDate(today.getDate() - dow + i)
+    return d.toLocaleDateString('en-CA')
+  })
+}
+
+function CalendarCell({ dateStr, habitKey, dateMap, today, timeframe, onToggle }) {
+  const done     = !!dateMap[dateStr]?.[habitKey]
+  const isToday  = dateStr === today
+  const isFuture = dateStr > today
+  const isOutOfScope = timeframe === 'today' && !isToday
+  const dayNum   = parseInt(dateStr.split('-')[2], 10)
+  const disabled = isFuture || isOutOfScope
 
   return (
-    <div className="rounded-xl border p-4" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
-      {/* Month nav */}
-      <div className="flex items-center justify-between mb-4">
-        <button
-          onClick={onPrev}
-          className="px-3 py-1.5 rounded-lg text-sm transition-colors"
-          style={{ color: 'var(--text-secondary)' }}
-          onMouseEnter={e => e.target.style.color = 'var(--text-primary)'}
-          onMouseLeave={e => e.target.style.color = 'var(--text-secondary)'}
-        >
-          ← Prev
-        </button>
-        <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-          {MONTHS[calMonth]} {calYear}
-        </h3>
-        <button
-          onClick={onNext}
-          className="px-3 py-1.5 rounded-lg text-sm transition-colors"
-          style={{ color: 'var(--text-secondary)' }}
-          onMouseEnter={e => e.target.style.color = 'var(--text-primary)'}
-          onMouseLeave={e => e.target.style.color = 'var(--text-secondary)'}
-        >
-          Next →
-        </button>
-      </div>
+    <button
+      disabled={disabled}
+      onClick={() => !disabled && onToggle(dateStr, !done)}
+      title={disabled ? '' : done ? 'Done — click to clear' : 'Click to mark done'}
+      className="flex flex-col items-center justify-center rounded-lg py-1.5 gap-0.5 transition-colors"
+      style={{
+        backgroundColor: isToday ? 'var(--card-task-bg)' : 'transparent',
+        outline: isToday ? '1px solid var(--accent)' : 'none',
+        minHeight: '48px',
+        cursor: disabled ? 'default' : 'pointer',
+        opacity: isOutOfScope ? 0.3 : 1,
+      }}
+    >
+      <span className="text-xs" style={{ color: isToday ? 'var(--accent)' : (isFuture || isOutOfScope) ? 'var(--text-dim)' : 'var(--text-primary)' }}>
+        {dayNum}
+      </span>
+      {!isFuture && (
+        <div
+          className="w-4 h-4 rounded-full"
+          style={{ backgroundColor: done ? 'var(--habit-done-bg)' : isOutOfScope ? 'transparent' : 'var(--border)' }}
+        />
+      )}
+    </button>
+  )
+}
 
-      {/* DOW header */}
+function HabitCalendar({ habitKey, calYear, calMonth, dateMap, timeframe, onPrev, onNext, onToggle }) {
+  const grid    = useMemo(() => buildCalendarGrid(calYear, calMonth), [calYear, calMonth])
+  const weekDates = useMemo(() => buildWeekDates(), [])
+  const today   = new Date().toLocaleDateString('en-CA')
+  const isYearView = timeframe === 'year'
+
+  const legend = (
+    <div className="flex items-center gap-4 mt-3 pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
+      <div className="flex items-center gap-1.5">
+        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--habit-done-bg)' }} />
+        <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Done</span>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--border)' }} />
+        <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Missed</span>
+      </div>
+    </div>
+  )
+
+  // Today view — single day card
+  if (timeframe === 'today') {
+    const done = !!dateMap[today]?.[habitKey]
+    const dowLabel = DOW_LABELS[new Date(today + 'T12:00:00').getDay()]
+    const [, , dd] = today.split('-')
+    const monthIdx = parseInt(today.split('-')[1], 10) - 1
+    return (
+      <div className="rounded-xl border p-4" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
+        <h3 className="text-sm font-semibold text-center mb-4" style={{ color: 'var(--text-primary)' }}>
+          {MONTHS[monthIdx]} {today.slice(0, 4)}
+        </h3>
+        <div className="flex justify-center">
+          <button
+            onClick={() => onToggle(today, !done)}
+            className="flex flex-col items-center justify-center rounded-xl gap-2 transition-colors"
+            style={{
+              backgroundColor: 'var(--card-task-bg)',
+              outline: '1px solid var(--accent)',
+              width: '120px',
+              height: '120px',
+              cursor: 'pointer',
+            }}
+          >
+            <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{dowLabel}</span>
+            <span className="text-4xl font-bold" style={{ color: 'var(--accent)' }}>{parseInt(dd, 10)}</span>
+            <div
+              className="w-5 h-5 rounded-full"
+              style={{ backgroundColor: done ? 'var(--habit-done-bg)' : 'var(--border)' }}
+            />
+          </button>
+        </div>
+        {legend}
+      </div>
+    )
+  }
+
+  // Week view
+  if (timeframe === 'week') {
+    const rangeStart = weekDates[0]
+    const rangeEnd   = weekDates[6]
+    const monthLabel = rangeStart.slice(0, 7) === rangeEnd.slice(0, 7)
+      ? `${MONTHS[parseInt(rangeStart.slice(5, 7), 10) - 1]} ${rangeStart.slice(0, 4)}`
+      : `${MONTHS[parseInt(rangeStart.slice(5, 7), 10) - 1]} – ${MONTHS[parseInt(rangeEnd.slice(5, 7), 10) - 1]} ${rangeEnd.slice(0, 4)}`
+
+    return (
+      <div className="rounded-xl border p-4" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
+        <h3 className="text-sm font-semibold text-center mb-4" style={{ color: 'var(--text-primary)' }}>
+          {monthLabel}
+        </h3>
+        <div className="grid grid-cols-7 mb-2">
+          {DOW_LABELS.map(d => (
+            <div key={d} className="text-center text-xs font-medium py-1" style={{ color: 'var(--text-secondary)' }}>{d}</div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-1">
+          {weekDates.map(dateStr => (
+            <CalendarCell key={dateStr} dateStr={dateStr} habitKey={habitKey} dateMap={dateMap} today={today} timeframe={timeframe} onToggle={onToggle} />
+          ))}
+        </div>
+        {legend}
+      </div>
+    )
+  }
+
+  // Year view — horizontally scrollable strip of all 12 months
+  if (timeframe === 'year') {
+    const year = calYear
+    return (
+      <div className="rounded-xl border" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
+        <div className="px-4 pt-4 pb-2">
+          <h3 className="text-sm font-semibold text-center" style={{ color: 'var(--text-primary)' }}>{year}</h3>
+        </div>
+        <div className="overflow-x-auto pb-4 px-4">
+          <div className="flex gap-6" style={{ minWidth: 'max-content' }}>
+            {Array.from({ length: 12 }, (_, m) => {
+              const monthGrid = buildCalendarGrid(year, m)
+              return (
+                <div key={m} style={{ width: '220px', flexShrink: 0 }}>
+                  <p className="text-xs font-semibold text-center mb-2" style={{ color: 'var(--text-secondary)' }}>
+                    {MONTHS[m]}
+                  </p>
+                  <div className="grid grid-cols-7 mb-1">
+                    {DOW_LABELS.map(d => (
+                      <div key={d} className="text-center py-0.5" style={{ color: 'var(--text-dim)', fontSize: '10px' }}>{d[0]}</div>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-7 gap-0.5">
+                    {monthGrid.map((dateStr, idx) => {
+                      if (!dateStr) return <div key={`e-${idx}`} />
+                      const done     = !!dateMap[dateStr]?.[habitKey]
+                      const isToday  = dateStr === today
+                      const isFuture = dateStr > today
+                      const dayNum   = parseInt(dateStr.split('-')[2], 10)
+                      return (
+                        <button
+                          key={dateStr}
+                          disabled={isFuture}
+                          onClick={() => !isFuture && onToggle(dateStr, !done)}
+                          title={isFuture ? '' : done ? 'Done — click to clear' : 'Click to mark done'}
+                          className="flex flex-col items-center justify-center rounded gap-0.5 transition-colors"
+                          style={{
+                            backgroundColor: isToday ? 'var(--card-task-bg)' : 'transparent',
+                            outline: isToday ? '1px solid var(--accent)' : 'none',
+                            minHeight: '36px',
+                            cursor: isFuture ? 'default' : 'pointer',
+                          }}
+                        >
+                          <span style={{ fontSize: '10px', color: isToday ? 'var(--accent)' : isFuture ? 'var(--text-dim)' : 'var(--text-primary)' }}>
+                            {dayNum}
+                          </span>
+                          {!isFuture && (
+                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: done ? 'var(--habit-done-bg)' : 'var(--border)' }} />
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+        {legend && <div className="px-4 pb-4">{legend}</div>}
+      </div>
+    )
+  }
+
+  // Month view — full grid locked to current month, no nav
+  const monthLabel = `${MONTHS[calMonth]} ${calYear}`
+  return (
+    <div className="rounded-xl border p-4" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
+      <h3 className="text-sm font-semibold text-center mb-4" style={{ color: 'var(--text-primary)' }}>{monthLabel}</h3>
       <div className="grid grid-cols-7 mb-2">
         {DOW_LABELS.map(d => (
           <div key={d} className="text-center text-xs font-medium py-1" style={{ color: 'var(--text-secondary)' }}>{d}</div>
         ))}
       </div>
-
-      {/* Calendar cells */}
       <div className="grid grid-cols-7 gap-1">
         {grid.map((dateStr, idx) => {
           if (!dateStr) return <div key={`empty-${idx}`} />
-          const done     = !!dateMap[dateStr]?.[habitKey]
-          const isToday  = dateStr === today
-          const isFuture = dateStr > today
-          const dayNum   = parseInt(dateStr.split('-')[2], 10)
-
-          return (
-            <button
-              key={dateStr}
-              disabled={isFuture}
-              onClick={() => !isFuture && onToggle(dateStr, !done)}
-              title={isFuture ? '' : done ? 'Done — click to clear' : 'Click to mark done'}
-              className="flex flex-col items-center justify-center rounded-lg py-1.5 gap-0.5 transition-colors"
-              style={{
-                backgroundColor: isToday ? 'var(--card-task-bg)' : 'transparent',
-                outline: isToday ? '1px solid var(--accent)' : 'none',
-                minHeight: '48px',
-                cursor: isFuture ? 'default' : 'pointer',
-              }}
-            >
-              <span className="text-xs" style={{ color: isToday ? 'var(--accent)' : isFuture ? 'var(--text-dim)' : 'var(--text-primary)' }}>
-                {dayNum}
-              </span>
-              {!isFuture && (
-                <div
-                  className="w-4 h-4 rounded-full"
-                  style={{ backgroundColor: done ? 'var(--habit-done-bg)' : 'var(--border)' }}
-                />
-              )}
-            </button>
-          )
+          return <CalendarCell key={dateStr} dateStr={dateStr} habitKey={habitKey} dateMap={dateMap} today={today} timeframe={timeframe} onToggle={onToggle} />
         })}
       </div>
-
-      {/* Legend */}
-      <div className="flex items-center gap-4 mt-3 pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--habit-done-bg)' }} />
-          <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Done</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--border)' }} />
-          <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>Missed</span>
-        </div>
-      </div>
+      {legend}
     </div>
   )
 }
@@ -307,7 +429,10 @@ export default function HabitPage() {
               {TIMEFRAMES.map(tf => (
                 <button
                   key={tf.key}
-                  onClick={() => setTimeframe(tf.key)}
+                  onClick={() => {
+                    setTimeframe(tf.key)
+                    if (tf.key !== 'year') { setCalYear(today.getFullYear()); setCalMonth(today.getMonth()) }
+                  }}
                   className="px-2.5 py-1 rounded-lg text-xs font-medium transition-colors"
                   style={{
                     backgroundColor: timeframe === tf.key ? 'var(--border)' : 'transparent',
@@ -325,6 +450,7 @@ export default function HabitPage() {
               calYear={calYear}
               calMonth={calMonth}
               dateMap={dateMap}
+              timeframe={timeframe}
               onPrev={handlePrevMonth}
               onNext={handleNextMonth}
               onToggle={handleToggleDay}
