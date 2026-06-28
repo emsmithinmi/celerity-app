@@ -269,7 +269,7 @@ export default function Habits() {
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between px-6 py-4 border-b shrink-0" style={{ borderColor: 'var(--border)' }}>
-        <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>Habits</h1>
+        <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>Habits Dashboard</h1>
         <Button size="sm" variant="primary" onClick={() => setShowAdd(true)}>+ Add Habit</Button>
       </div>
 

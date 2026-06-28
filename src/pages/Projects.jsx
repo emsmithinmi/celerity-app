@@ -155,7 +155,7 @@ export default function Projects() {
         className="flex items-center justify-between px-6 py-4 border-b shrink-0"
         style={{ borderColor: 'var(--border)' }}
       >
-        <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>Projects</h1>
+        <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>Projects Dashboard</h1>
         <div className="flex items-center gap-2">
           <Button size="sm" variant={selectMode ? 'secondary' : 'ghost'} onClick={() => selectMode ? exitSelectMode() : setSelectMode(true)}>
             {selectMode ? `Cancel (${selectedIds.size} selected)` : 'Select'}

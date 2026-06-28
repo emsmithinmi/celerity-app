@@ -4,6 +4,14 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## [Unreleased]
+
+### Changed
+- Sidebar nav label for the Main page changed from "Dashboard" to "Main" — all nav items are dashboards, so the noun alone is cleaner.
+- Page `<h1>` titles on list/overview pages now include "Dashboard" (e.g. "Tasks Dashboard", "Projects Dashboard") to visually distinguish them from individual record detail pages (TaskPage, ProjectPage, PersonPage, HabitPage).
+
+---
+
 ## 2026-06-27
 
 ### Added

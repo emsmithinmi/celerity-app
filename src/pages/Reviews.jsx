@@ -22,7 +22,7 @@ export default function Reviews() {
     <div className="h-full flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b shrink-0" style={{ borderColor: 'var(--border)' }}>
-        <h1 className="text-xl font-semibold" style={S.text}>Reviews</h1>
+        <h1 className="text-xl font-semibold" style={S.text}>Reviews Dashboard</h1>
         <p className="text-sm" style={S.muted}>
           {new Date(today + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
         </p>

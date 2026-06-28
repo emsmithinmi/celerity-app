@@ -8,7 +8,7 @@ import AvatarCircle from '../ui/AvatarCircle'
 import { uploadUserAvatar } from '../../lib/api/user'
 
 const NAV_ITEMS = [
-  { to: '/daily',    label: 'Dashboard', Icon: LayoutDashboard },
+  { to: '/daily',    label: 'Main', Icon: LayoutDashboard },
   { to: '/projects', label: 'Projects', Icon: FolderKanban },
   { to: '/tasks',    label: 'Tasks',    Icon: Zap          },
   { to: '/people',   label: 'People',   Icon: Users        },

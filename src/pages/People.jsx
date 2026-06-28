@@ -78,7 +78,7 @@ export default function People() {
         style={{ borderColor: 'var(--border)' }}
       >
         <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
-          People
+          People Dashboard
           {people.length > 0 && (
             <span className="ml-2 text-sm font-normal" style={{ color: 'var(--text-secondary)' }}>
               {people.length}
