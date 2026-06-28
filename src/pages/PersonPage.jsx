@@ -11,6 +11,7 @@ import Button from '../components/ui/Button'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import { PencilBtn, TrashBtn } from '../components/ui'
 import PersonComments from '../components/people/PersonComments'
+import { useContextTags } from '../contexts/ContextTagsContext'
 
 const inputCls  = 'w-full px-3 py-2 rounded-lg text-sm border outline-none bg-transparent'
 const inputStyle = { borderColor: 'var(--border)', color: 'var(--text-primary)' }
@@ -74,6 +75,16 @@ export default function PersonPage() {
   const [socialPlatform, setSocialPlatform] = useState('')
   const [socialHandle,   setSocialHandle]   = useState('')
   const [socialSaving,   setSocialSaving]   = useState(false)
+  const [tagPick,        setTagPick]        = useState('')
+
+  const { tags: contextTagPool, tagMap: contextTagMap } = useContextTags()
+
+  const saveContext = async (context) => {
+    setPerson(prev => ({ ...prev, context }))
+    await updatePerson(person?.id, { context })
+  }
+  const addTag    = () => { if (tagPick) { saveContext([...(person.context ?? []), tagPick]); setTagPick('') } }
+  const removeTag = (tag) => saveContext((person.context ?? []).filter(t => t !== tag))
 
   const load = async () => {
     setLoading(true)
@@ -162,6 +173,7 @@ export default function PersonPage() {
         notes:                draft.notes                || null,
         icon:                 draft.icon                 || null,
         color:                draft.color                || null,
+        context:              draft.context              ?? [],
       })
       setPerson(prev => ({ ...prev, ...updated }))
       setEditing(false)
@@ -567,6 +579,46 @@ export default function PersonPage() {
             </SectionCard>
           </section>
         )}
+
+        {/* ── Context Tags section ── */}
+        <section>
+          <h2 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Context Tags</h2>
+          <div className="rounded-xl border p-4 space-y-3" style={{ backgroundColor: 'var(--pane-bg)', borderColor: 'var(--border)' }}>
+            <div className="flex gap-2">
+              <select
+                value={tagPick}
+                onChange={e => setTagPick(e.target.value)}
+                className={`${inputCls} flex-1`}
+                style={inputStyle}
+              >
+                <option value="">Pick a tag…</option>
+                {contextTagPool.filter(t => !(person.context ?? []).includes(t.value)).map(t => (
+                  <option key={t.id} value={t.value}>@{t.label}</option>
+                ))}
+              </select>
+              <Button size="sm" variant="secondary" onClick={addTag} disabled={!tagPick}>Add</Button>
+            </div>
+            {contextTagPool.length === 0 && (
+              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                No tags defined yet — add some in Settings → Context Tags.
+              </p>
+            )}
+            {(person.context ?? []).length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {(person.context ?? []).map(tag => {
+                  const def = contextTagMap[tag]
+                  return (
+                    <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
+                      style={{ backgroundColor: def?.bg_color ?? 'var(--context-tag-bg)', color: def?.text_color ?? 'var(--context-tag-text)' }}>
+                      @{def?.label ?? tag}
+                      <button onClick={() => removeTag(tag)} className="ml-0.5 hover:opacity-70 leading-none" aria-label={`Remove ${tag}`}>×</button>
+                    </span>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </section>
 
         {/* ── Tasks section ── */}
         <section>

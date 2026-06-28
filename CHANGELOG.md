@@ -6,9 +6,14 @@ All notable changes to Focus Flow are recorded here.
 
 ## [Unreleased]
 
+### Added
+- **Context Tags on People** — PersonPage now has a Context Tags section (same chip picker as Tasks). Tags save immediately without entering edit mode. Backed by a new `context text[]` column on the `people` table.
+- **Context Tags on Notes** — NoteCard in the Notes Dashboard now shows context tag chips in read mode and a tag picker in edit mode. Backed by a new `context text[]` column on the `notes` table.
+
 ### Changed
 - Sidebar nav label for the Main page changed from "Dashboard" to "Main" — all nav items are dashboards, so the noun alone is cleaner.
 - Page `<h1>` titles on list/overview pages now include "Dashboard" (e.g. "Tasks Dashboard", "Projects Dashboard") to visually distinguish them from individual record detail pages (TaskPage, ProjectPage, PersonPage, HabitPage).
+- **Sidebar expand/collapse** — hover-to-expand removed. Sidebar now expands/collapses by clicking the avatar. Hovering the avatar shows a "Expand sidebar" / "Collapse sidebar" tooltip. Avatar photo upload only works when the sidebar is pinned open (locked).
 
 ---
 

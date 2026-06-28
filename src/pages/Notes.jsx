@@ -1,19 +1,33 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Search } from 'lucide-react'
-import { getNotes, createNote, updateNote, deleteNote } from '../lib/api/notes'
+import { getNotes, createNote, updateNote, updateNoteContext, deleteNote } from '../lib/api/notes'
 import Button from '../components/ui/Button'
 import { PencilBtn, TrashBtn } from '../components/ui/IconBtn'
 import Modal from '../components/ui/Modal'
 import EmptyState from '../components/ui/EmptyState'
+import { useContextTags } from '../contexts/ContextTagsContext'
 
 const PREVIEW_CHARS = 300
 const PREVIEW_LINES = 5
 
-function NoteCard({ note, onEdit, onDelete, selectable, selected, onToggle }) {
+function NoteCard({ note, onEdit, onDelete, onUpdateContext, contextTagPool, tagMap, selectable, selected, onToggle }) {
   const [expanded, setExpanded] = useState(false)
   const [editing,  setEditing]  = useState(false)
   const [draft,    setDraft]    = useState(note.body)
   const [saving,   setSaving]   = useState(false)
+  const [tagPick,  setTagPick]  = useState('')
+
+  const addTag = async () => {
+    if (!tagPick) return
+    const next = [...(note.context ?? []), tagPick]
+    setTagPick('')
+    await onUpdateContext(note.id, next)
+  }
+
+  const removeTag = async (tag) => {
+    const next = (note.context ?? []).filter(t => t !== tag)
+    await onUpdateContext(note.id, next)
+  }
 
   const lines   = note.body.split('\n')
   const isLong  = lines.length > PREVIEW_LINES || note.body.length > PREVIEW_CHARS
@@ -94,6 +108,37 @@ function NoteCard({ note, onEdit, onDelete, selectable, selected, onToggle }) {
             className="w-full bg-transparent border rounded-lg px-3 py-2 text-sm outline-none resize-none"
             style={{ borderColor: 'var(--accent)', color: 'var(--text-primary)' }}
           />
+          {/* Tag picker in edit mode */}
+          {contextTagPool.length > 0 && (
+            <div className="flex gap-2">
+              <select
+                value={tagPick}
+                onChange={e => setTagPick(e.target.value)}
+                className="flex-1 px-2 py-1 rounded-lg text-xs border outline-none bg-transparent"
+                style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}
+              >
+                <option value="">Add tag…</option>
+                {contextTagPool.filter(t => !(note.context ?? []).includes(t.value)).map(t => (
+                  <option key={t.id} value={t.value}>@{t.label}</option>
+                ))}
+              </select>
+              <Button size="sm" variant="secondary" onClick={addTag} disabled={!tagPick}>Add</Button>
+            </div>
+          )}
+          {(note.context ?? []).length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {(note.context ?? []).map(tag => {
+                const def = tagMap[tag]
+                return (
+                  <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium"
+                    style={{ backgroundColor: def?.bg_color ?? 'var(--context-tag-bg)', color: def?.text_color ?? 'var(--context-tag-text)' }}>
+                    @{def?.label ?? tag}
+                    <button onClick={() => removeTag(tag)} className="ml-0.5 hover:opacity-70 leading-none" aria-label={`Remove ${tag}`}>×</button>
+                  </span>
+                )
+              })}
+            </div>
+          )}
           <div className="flex gap-2">
             <Button size="sm" variant="primary" onClick={handleSave} disabled={saving || !draft.trim()}>
               {saving ? 'Saving…' : 'Save'}
@@ -117,6 +162,20 @@ function NoteCard({ note, onEdit, onDelete, selectable, selected, onToggle }) {
             >
               {expanded ? '↑ Show less' : '↓ Show more'}
             </button>
+          )}
+          {/* Tags in read mode */}
+          {(note.context ?? []).length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {(note.context ?? []).map(tag => {
+                const def = tagMap[tag]
+                return (
+                  <span key={tag} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                    style={{ backgroundColor: def?.bg_color ?? 'var(--context-tag-bg)', color: def?.text_color ?? 'var(--context-tag-text)' }}>
+                    @{def?.label ?? tag}
+                  </span>
+                )
+              })}
+            </div>
           )}
         </>
       )}
@@ -173,6 +232,7 @@ function NewNoteModal({ open, onClose, onSave }) {
 }
 
 export default function Notes() {
+  const { tags: contextTagPool, tagMap } = useContextTags()
   const [notes,       setNotes]       = useState([])
   const [loading,     setLoading]     = useState(true)
   const [search,      setSearch]      = useState('')
@@ -204,6 +264,11 @@ export default function Notes() {
   const handleDelete = async (id) => {
     await deleteNote(id)
     setNotes(prev => prev.filter(n => n.id !== id))
+  }
+
+  const handleUpdateContext = async (id, context) => {
+    const updated = await updateNoteContext(id, context)
+    setNotes(prev => prev.map(n => n.id === id ? updated : n))
   }
 
   const toggleSelect = (id) => setSelectedIds(prev => {
@@ -292,6 +357,9 @@ export default function Notes() {
                   note={note}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
+                  onUpdateContext={handleUpdateContext}
+                  contextTagPool={contextTagPool}
+                  tagMap={tagMap}
                   selectable={selectMode}
                   selected={selectedIds.has(note.id)}
                   onToggle={() => toggleSelect(note.id)}

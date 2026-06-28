@@ -30,6 +30,17 @@ export async function updateNote(id, body) {
   return data
 }
 
+export async function updateNoteContext(id, context) {
+  const { data, error } = await supabase
+    .from('notes')
+    .update({ context, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
 export async function deleteNote(id) {
   const { error } = await supabase.from('notes').delete().eq('id', id)
   if (error) throw error

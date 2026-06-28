@@ -24,19 +24,23 @@ const BOTTOM_NAV = [
 export default function Layout() {
   const { user, signOut } = useAuth()
   const [locked, setLocked] = useState(() => localStorage.getItem('sidebar-locked') !== 'false')
-  const [hovered, setHovered] = useState(false)
+  const [clicked, setClicked] = useState(false)
   const [avatarUploading, setAvatarUploading] = useState(false)
 
-  const expanded = locked || hovered
-  const overlaying = !locked && hovered
+  const expanded = locked || clicked
+  const overlaying = !locked && clicked
 
   function toggleLock() {
     setLocked(l => {
       const next = !l
       localStorage.setItem('sidebar-locked', String(next))
-      if (!next) setHovered(false)
+      if (!next) setClicked(false)
       return next
     })
+  }
+
+  function toggleClicked() {
+    if (!locked) setClicked(v => !v)
   }
 
   const handleUserAvatarUpload = async (file) => {
@@ -69,8 +73,6 @@ export default function Layout() {
       <div
         className="relative shrink-0 h-full"
         style={{ width: locked ? '224px' : '56px' }}
-        onMouseEnter={() => !locked && setHovered(true)}
-        onMouseLeave={() => !locked && setHovered(false)}
       >
         <aside
           className="absolute inset-y-0 left-0 flex flex-col border-r overflow-hidden"
@@ -96,14 +98,20 @@ export default function Layout() {
           >
             {user && (
               <div className={`flex items-center min-w-0 ${expanded ? 'flex-1 gap-2' : ''}`}>
-                <AvatarCircle
-                  src={user.user_metadata?.avatar_url}
-                  name={user.email ?? ''}
-                  size="sm"
-                  canUpload
-                  uploading={avatarUploading}
-                  onFileSelect={handleUserAvatarUpload}
-                />
+                <div
+                  onClick={toggleClicked}
+                  title={!expanded ? 'Expand sidebar' : !locked ? 'Collapse sidebar' : undefined}
+                  style={{ cursor: !locked ? 'pointer' : 'default', flexShrink: 0 }}
+                >
+                  <AvatarCircle
+                    src={user.user_metadata?.avatar_url}
+                    name={user.email ?? ''}
+                    size="sm"
+                    canUpload={locked}
+                    uploading={avatarUploading}
+                    onFileSelect={handleUserAvatarUpload}
+                  />
+                </div>
                 {expanded && (
                   <p
                     className="text-xs truncate flex-1"
@@ -113,7 +121,7 @@ export default function Layout() {
                     {user.email}
                   </p>
                 )}
-              </div>
+                </div>
             )}
             {expanded && (
               <button
