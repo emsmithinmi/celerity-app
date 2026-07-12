@@ -9,23 +9,21 @@ All notable changes to Focus Flow are recorded here.
 ### Changed
 - **Habit detail page — timeframe-aware calendar** — switching timeframes now changes the calendar view to match: "Today" shows a single large day card (day name + date number + done dot); "This Week" shows a 7-day Sun–Sat strip; "This Month" shows the full monthly grid locked to current month (no nav arrows); "This Year" shows all 12 months of the year in a horizontally scrollable strip.
 
-## [Unreleased]
+## 2026-07-12
 
 ### Added
 - **`scheduled_date` replaces the `scheduled` task status** — "Scheduled" is gone as a GTD lifecycle stage (removed from all tabs, sort/filter logic, and stat queries). Scheduling a task now attaches a separate `scheduled_date` + `scheduled_time` to whatever status it's already in (promoting to Next Action), fully decoupled from `due_date` and project `start_date`/`end_date`. A "Jul 15, 2:30 PM" placard badge shows on scheduled tasks in every task list row; TaskPage shows a Scheduled field, swaps the button to "Reschedule" once set, and gains a "Clear Schedule" action. Google Calendar sync (`googleActions.js`) now reads `scheduled_date` instead of overloading `due_date`. No data migration needed — no tasks had `status='scheduled'` at time of change.
 - **Select All in bulk-select mode** — Tasks, Projects, People, and Notes dashboards all gained a "Select All" / "Deselect All" toggle next to Cancel when in Select mode, selecting every currently-visible row (respects active tab/search/filters).
 - **Calendar selection on Main Dashboard Agenda** — the `google-calendar` edge function now fetches both the Focus Flow and Work Hours calendars for the personal Google account (previously only fetched Focus Flow, so the toggle-chip legend had nothing to differentiate). Legend now shows whenever at least one calendar has events today, and hide/show picks persist across reloads via localStorage. Work Hours events render white background / black text (matching its actual Google Calendar color) instead of the auto-assigned palette color, which was too visually loud next to Focus Flow's blue.
-
-### Fixed
-- **Phantom "1" stuck in Dashboard Inbox stat card** — the Inbox count was including `people` rows with `status='inbox'`, but People has no status lifecycle in the UI (flat contact list only), so any newly created contact silently got stuck counting toward Inbox forever with no way to clear it. `getDailyStats` now only counts tasks and projects toward Inbox. Also normalized the one stray `people` row from `inbox` to `active`.
-- **Daily quote reroll firing on every Main visit** — the quote was rerolling on every mount of the Main dashboard (every nav-away-and-back, every refresh), not just once a day, so multiple independent random draws got squished into a single day and made repeats feel far more frequent than the "fresh quote per day" design intended. Now it only rerolls when today doesn't have a quote saved yet; once set, it sticks across revisits for the rest of the day. Skip/Never still reroll manually within the day.
-
-### Added
 - **`@mention` / `#tag` auto-detection** — typing `@firstname` in a task title, task description, or note body automatically links the matching person on save. Typing `#tagname` automatically adds the matching context tag. Ambiguous `@mentions` (multiple people match) pop a disambiguation modal so you can pick who you meant.
 - **Notes ↔ People linking** — notes and people are now linked via a `note_people` junction table. Linked people appear on NotePage with a search-to-add picker. Linked notes appear on PersonPage.
 - **Note detail page** (`/notes/:id`) — click any note card to open a full-page view showing created/edited timestamps, the full body (editable inline), and context tags. Delete button in the breadcrumb header.
 - **Context Tags on People** — PersonPage now has a Context Tags section (same chip picker as Tasks). Tags save immediately without entering edit mode. Backed by a new `context text[]` column on the `people` table.
 - **Context Tags on Notes** — NoteCard in the Notes Dashboard now shows context tag chips in read mode and a tag picker in edit mode. Backed by a new `context text[]` column on the `notes` table.
+
+### Fixed
+- **Phantom "1" stuck in Dashboard Inbox stat card** — the Inbox count was including `people` rows with `status='inbox'`, but People has no status lifecycle in the UI (flat contact list only), so any newly created contact silently got stuck counting toward Inbox forever with no way to clear it. `getDailyStats` now only counts tasks and projects toward Inbox. Also normalized the one stray `people` row from `inbox` to `active`.
+- **Daily quote reroll firing on every Main visit** — the quote was rerolling on every mount of the Main dashboard (every nav-away-and-back, every refresh), not just once a day, so multiple independent random draws got squished into a single day and made repeats feel far more frequent than the "fresh quote per day" design intended. Now it only rerolls when today doesn't have a quote saved yet; once set, it sticks across revisits for the rest of the day. Skip/Never still reroll manually within the day.
 
 ### Changed
 - **Context tag sigil changed from `@` to `#`** — `@` is now reserved for people mentions; context tags display and are typed as `#tagname` everywhere (chips, pickers, Settings).

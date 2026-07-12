@@ -26,18 +26,29 @@ App supports multiple users via RLS (scoped per `auth.uid()`). Primary user: ema
 Google sign-in requests Calendar + Gmail scopes at login (`access_type: offline, prompt: consent`).
 Tokens stored in `user_integrations` table. Edge function `google-calendar` fetches live events.
 
-**Focus Flow Calendar ID (hardcoded):**
-`858f646b41576c785a734cbe4e63df27da29487b4b59ce8f1ed435e9cd7f3d7a@group.calendar.google.com`
+**Calendars actively fetched for the Main Dashboard Agenda (personal integration, `PERSONAL_CALENDARS` in `supabase/functions/google-calendar/index.ts`):**
+| Calendar | ID | Notes |
+|---|---|---|
+| Focus Flow | `858f646b41576c785a734cbe4e63df27da29487b4b59ce8f1ed435e9cd7f3d7a@group.calendar.google.com` | App's dedicated calendar — scheduled tasks (`tasks.scheduled_date`) sync here as events via `googleActions.js` |
+| Work Hours | `b940ae44f30d11a5c110374086e4884b77a70a1c4bf1845f05021281bbe54252@group.calendar.google.com` | Added 2026-07-12; rendered white bg/black text in the Agenda to match its real Google Calendar color |
 
-**Other Calendar IDs (for reference/manual sync):**
+Each surfaces as an independently toggleable chip in the Agenda's calendar legend (click to hide/show); the hidden set persists across reloads via localStorage key `agenda-hidden-calendars`. To fetch an additional calendar, add `{ id, name }` to `PERSONAL_CALENDARS` and redeploy the edge function.
+
+**Other calendars on the account — not fetched, reference only (current as of 2026-07-12):**
 | Calendar | ID |
 |---|---|
 | Primary | `emailemsmith@gmail.com` |
-| Time Management | `6ea50d30fb9e21ca0e3794c2093541465c39add90e42f36571728ca5e65efb45@group.calendar.google.com` |
+| Holidays in United States | `en.usa#holiday@group.v.calendar.google.com` |
 | Family | `family15217148776896169650@group.calendar.google.com` |
-| US Holidays | `en.usa#holiday@group.v.calendar.google.com` |
+| Lucas | `c289016efb726bdb35e9857ee883dd8f7508cb525f9c20ce1899df16f01ec39b@group.calendar.google.com` |
+| Lisa | `80d8c05702801edd2ef5311380a53e24f6eaf715115e157538b73fd5bf16f867@group.calendar.google.com` |
+| Olivia | `3303f095f4b5533bba338443990e69c8d8c2642405869a1fb55de071121bbff2@group.calendar.google.com` |
+| Subscriptions | `b311b4480679be978f8a9fbe6a72e72a786275dbfed17774cc5933ca2438b6bf@group.calendar.google.com` |
+| Southwestern Michigan College | `esmith21@swmich.edu` |
 
-When syncing, fetch all four calendars for the target date range and upsert into `calendar_events (id, date, summary, start_time, end_time, all_day, calendar_name, notes)`. Use `ON CONFLICT (id) DO UPDATE` so reruns are safe.
+Note: "Time Management" (previously documented here) no longer exists on the account — it was removed at some point before 2026-07-12. If the calendar list changes again, re-derive it live via the account's `access_token` against `GET /calendar/v3/users/me/calendarList` rather than trusting this table blindly.
+
+**Separate/legacy mechanism:** the `calendar_events` table + "sync all four calendars" flow described in older docs is unrelated to the live Agenda above — it's a different, currently-stale (last synced 2026-06-02) sync path, not read by Main's Agenda.
 
 ## Changelog
 
@@ -76,6 +87,7 @@ src/
       contextTags.js     # CRUD for context_tags table
       listPreferences.js # per-list sort + manual order: getListPreference, setListSortMode, setListManualOrder
       user.js            # uploadUserAvatar — uploads to avatars bucket, saves URL in auth user_metadata
+      googleActions.js   # scheduleTaskOnCalendar / deleteTaskCalendarEvent — syncs tasks.scheduled_date to a Focus Flow Google Calendar event via the google-actions edge function
   contexts/
     AuthContext.jsx
     EnergyLevelsContext.jsx   # provides levels[], levelMap{}, reload()
@@ -106,13 +118,14 @@ src/
       TasksSection.jsx
       TopOfMind.jsx
     tasks/
-      TaskRow.jsx
+      TaskRow.jsx             # list row; shows scheduled-date/time placard badge when task.scheduled_date is set
       TaskComments.jsx
       TaskChecklist.jsx      # subtask checklist — JSONB steps scoped to the task, not real tasks
       DurationInput.jsx
       HighlightModal.jsx
       RouteModal.jsx
       WaitingModal.jsx
+      ScheduleModal.jsx       # date+time picker, writes scheduled_date/scheduled_time (not due_date)
     projects/
       ProjectRow.jsx
       ProjectDetail.jsx      # inline edit component (used inside ProjectPage)
@@ -162,7 +175,7 @@ All tables have RLS enabled with `USING (true) WITH CHECK (true)` + `GRANT ALL T
 
 | Table | Key columns |
 |-------|-------------|
-| `tasks` | id, title, status, priority, due_date, project_id, area, energy_level, waiting_for, archived_at, subtasks (jsonb), context (text[]) |
+| `tasks` | id, title, status, priority, due_date, deadline, scheduled_date, scheduled_time (text "HH:MM"), gcal_event_id, project_id, area, energy_level, waiting_for, archived_at, subtasks (jsonb), context (text[]) |
 | `projects` | id, title, slug, status, priority, area, start_date, end_date, is_highlight, archived_at |
 | `people` | id, first_name, last_name, preferred_name, professional_title, relationship, contact_type, occupation, company, email_personal, email_work, phone_personal, phone_work, birthday, address_street, address_city, address_state, address_zip, address_work_street, address_work_city, address_work_state, address_work_zip, social_media (jsonb), notes, is_stale, status, avatar_url |
 | `daily_notes` | id, date, top_of_mind[], agenda jsonb, notes jsonb, habit_morning_meds, habit_evening_meds, habit_journal, habit_meditation, habit_breathwork, habit_stretching, habit_health_tracking, habit_code_challenge, code_challenge jsonb, quote text, quote_author text |
@@ -185,7 +198,7 @@ All tables have RLS enabled with `USING (true) WITH CHECK (true)` + `GRANT ALL T
 **Dropped constraints:** `tasks_priority_check`, `projects_priority_check`, `people_contact_type_check` — all removed so new values can be added freely via Settings.
 
 ## GTD Status Lifecycles
-- **Tasks:** inbox → next_action → scheduled → queued → waiting → someday → done (archived_at for archive)
+- **Tasks:** inbox → next_action → queued → waiting → someday → done (archived_at for archive). "Scheduled" is **not** a status (removed 2026-07-12) — any task can independently carry a `scheduled_date` + `scheduled_time`, decoupled from `due_date`/`deadline`/project dates. See "Scheduling" under Key Patterns.
 - **Projects:** inbox → planning → in_progress → waiting → stalled → completed (archived_at for archive)
 - **People:** no status lifecycle — flat contact list only
 
@@ -213,11 +226,13 @@ Contexts mounted at App root (outside BrowserRouter):
 - Detail views are **full pages** (`/tasks/:id`, `/projects/:id`, `/people/:id`), not modals
 - `useDaily(date)` — accepts a date string; `ensureNoteForDate(date)` creates a note for any date on first visit
 - Day navigation on Main uses noon-local-time trick: `new Date(dateStr + 'T12:00:00')` to avoid DST shifts
-- `getDailyStats(date)` — "Due Today" counts tasks with that due_date OR status=scheduled OR priority in (urgent, stat), plus projects with end_date on that day (all deduped via single `.or()` query)
+- `getDailyStats(date)` — "Due Today" counts tasks with that due_date OR scheduled_date OR priority in (urgent, stat), plus projects with end_date on that day (all deduped via single `.or()` query)
 - Area fields use `<input list="..."> + <datalist>` — free-text with managed suggestions
 - Priority/energy dropdowns driven by context arrays, never hardcoded
 - `updatePerson` strips legacy field names (`phone`, `email`, `last_contact_at`) to prevent DB errors
 - Cascade delete order: junction tables → comments → children → parent
+- **Scheduling** (`ScheduleModal.jsx`) sets `scheduled_date` + `scheduled_time` on a task and promotes it to `next_action` — it does not touch `due_date`/`deadline`. A task row shows a "Jul 15, 2:30 PM"-style placard (`TaskRow.jsx`) whenever `scheduled_date` is set. TaskPage's What's Next button reads "Schedule" or "Reschedule" based on whether `task.scheduled_date` is already set, plus a "Clear Schedule" action that also deletes the synced Google Calendar event.
+- **Select mode / bulk actions** (Tasks, Projects, People, Notes dashboards) all share the same pattern: `selectMode`/`selectedIds` state + a "Select All"/"Deselect All" toggle next to Cancel, scoped to whatever's currently visible (active tab/search/filters).
 
 ## Deployment Pipeline
 - Push to `main` → GitHub Actions → `npm run build` → `wrangler pages deploy dist`
@@ -237,9 +252,9 @@ Contexts mounted at App root (outside BrowserRouter):
 - **Dedicated dev account:** `claude-dev@focusflow.dev` was created directly in Supabase auth (email identity, bcrypt password) for this purpose — NOT Eric's real Google/personal credentials. Since RLS is `USING(true)`, it sees the same data. The password is **only** in the gitignored `.env.local` (never in the repo). On a new machine, add `VITE_DEV_EMAIL` + `VITE_DEV_PASSWORD` to that machine's `.env.local` (or reset the password in Supabase) — the account itself already exists server-side.
 
 ## Pages — Current State
-- **Dashboard** (route `/daily`, sidebar label "Dashboard", icon LayoutDashboard) — live "right now" view, not date-navigable. Daily quote (rerolls each load + on skip, 30-day dedupe, per-user blocklist via "never" button), quick capture bar, stat cards, agenda (Google Calendar events + all-day tasks/project deadlines), **Tasks section (above Projects)**, Projects section, notes log, **Habits section** (dynamic habits from DB, shows `target_days` progress boxes per habit for the current Sun-Sat week; clicking toggles today; code challenge excluded from this row), Challenge section (deterministic code-challenge bank). No in-app AI. The Tasks section's **Next Actions tab has a Sort dropdown** — Manual (drag-to-reorder) plus auto modes (newest/oldest, longest/shortest duration, due soonest, priority, alpha, energy, area). Sort choice + manual order persist via `list_preferences` (`daily:next_action`), syncing across devices.
+- **Dashboard** (route `/daily`, sidebar label "Dashboard", icon LayoutDashboard) — live "right now" view, not date-navigable. Daily quote (rerolls once per calendar day, not on every visit — plus manual reroll via Skip, 30-day dedupe, per-user blocklist via "never" button), quick capture bar, stat cards, agenda (Google Calendar events from Focus Flow + Work Hours, toggleable per-calendar + all-day tasks/project deadlines), **Tasks section (above Projects)**, Projects section, notes log, **Habits section** (dynamic habits from DB, shows `target_days` progress boxes per habit for the current Sun-Sat week; clicking toggles today; code challenge excluded from this row), Challenge section (deterministic code-challenge bank). No in-app AI. The Tasks section's **Next Actions tab has a Sort dropdown** — Manual (drag-to-reorder) plus auto modes (newest/oldest, longest/shortest duration, due soonest, priority, alpha, energy, area). Sort choice + manual order persist via `list_preferences` (`daily:next_action`), syncing across devices.
 - **Tasks** — tabbed by status, stat summary row, capture modal, click row → `/tasks/:id`
-- **TaskPage** — full detail: title, status, priority, energy level, area, due date, duration, description, **Context Tags section** (toggleable chips + combobox input, saves immediately), subtask checklist, **Notes** (was Comments), linked people, archive/delete. **What's Next** buttons are tall full-width stacked `outline` variant buttons.
+- **TaskPage** — full detail: title, status, priority, energy level, area, due date, deadline, **scheduled date/time** (independent of due date — set via Schedule/Reschedule, cleared via "Clear Schedule"), duration, description, **Context Tags section** (toggleable chips + combobox input, saves immediately), subtask checklist, **Notes** (was Comments), linked people, archive/delete. **What's Next** buttons are tall full-width stacked `outline` variant buttons.
 - **Projects** — tabbed by status, capture modal, click row → `/projects/:id`
 - **ProjectPage** — full detail: all fields, task list by status, **Notes** (was Comments), linked people, Scrap It. **What's Next** buttons use same `outline` style as TaskPage.
 - **People** — flat alphabetical list with search bar and count; no status tabs, no stat chips.
