@@ -11,6 +11,9 @@ All notable changes to Focus Flow are recorded here.
 
 ## [Unreleased]
 
+### Fixed
+- **Phantom "1" stuck in Dashboard Inbox stat card** — the Inbox count was including `people` rows with `status='inbox'`, but People has no status lifecycle in the UI (flat contact list only), so any newly created contact silently got stuck counting toward Inbox forever with no way to clear it. `getDailyStats` now only counts tasks and projects toward Inbox. Also normalized the one stray `people` row from `inbox` to `active`.
+
 ### Added
 - **`@mention` / `#tag` auto-detection** — typing `@firstname` in a task title, task description, or note body automatically links the matching person on save. Typing `#tagname` automatically adds the matching context tag. Ambiguous `@mentions` (multiple people match) pop a disambiguation modal so you can pick who you meant.
 - **Notes ↔ People linking** — notes and people are now linked via a `note_people` junction table. Linked people appear on NotePage with a search-to-add picker. Linked notes appear on PersonPage.
