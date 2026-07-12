@@ -11,6 +11,9 @@ All notable changes to Focus Flow are recorded here.
 
 ## [Unreleased]
 
+### Added
+- **Calendar selection on Main Dashboard Agenda** — the `google-calendar` edge function now fetches both the Focus Flow and Work Hours calendars for the personal Google account (previously only fetched Focus Flow, so the toggle-chip legend had nothing to differentiate). Legend now shows whenever at least one calendar has events today, and hide/show picks persist across reloads via localStorage. Work Hours events render white background / black text (matching its actual Google Calendar color) instead of the auto-assigned palette color, which was too visually loud next to Focus Flow's blue.
+
 ### Fixed
 - **Phantom "1" stuck in Dashboard Inbox stat card** — the Inbox count was including `people` rows with `status='inbox'`, but People has no status lifecycle in the UI (flat contact list only), so any newly created contact silently got stuck counting toward Inbox forever with no way to clear it. `getDailyStats` now only counts tasks and projects toward Inbox. Also normalized the one stray `people` row from `inbox` to `active`.
 - **Daily quote reroll firing on every Main visit** — the quote was rerolling on every mount of the Main dashboard (every nav-away-and-back, every refresh), not just once a day, so multiple independent random draws got squished into a single day and made repeats feel far more frequent than the "fresh quote per day" design intended. Now it only rerolls when today doesn't have a quote saved yet; once set, it sticks across revisits for the rest of the day. Skip/Never still reroll manually within the day.

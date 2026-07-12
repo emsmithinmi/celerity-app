@@ -14,6 +14,17 @@ function fmtHour(date) {
 // Distinct palette — saturated enough to read on white text
 const PALETTE = ['#4f86f7', '#f97316', '#a855f7', '#10b981', '#ec4899', '#14b8a6', '#f59e0b', '#ef4444']
 
+// Per-calendar color overrides — takes precedence over the auto-assigned palette
+const CALENDAR_COLOR_OVERRIDES = {
+  'Work Hours': { bg: '#ffffff', text: '#000000' },
+}
+
+function eventColors(calendarName, paletteColor) {
+  const override = CALENDAR_COLOR_OVERRIDES[calendarName]
+  if (override) return { bg: override.bg, text: override.text, textDim: override.text }
+  return { bg: paletteColor, text: '#fff', textDim: 'rgba(255,255,255,0.8)' }
+}
+
 // Stable calendar-name → color mapping built from the ordered event list
 function buildColorMap(events) {
   const map = new Map()
@@ -59,16 +70,28 @@ async function reconnectGoogle() {
   window.location.href = url
 }
 
+const HIDDEN_CALENDARS_KEY = 'agenda-hidden-calendars'
+
+function loadHiddenCalendars() {
+  try {
+    const raw = localStorage.getItem(HIDDEN_CALENDARS_KEY)
+    return raw ? new Set(JSON.parse(raw)) : new Set()
+  } catch {
+    return new Set()
+  }
+}
+
 export default function AgendaSection({ calendarEvents = [], dueTasks = [], endingProjects = [], onRefresh, authRequired = false }) {
   const navigate = useNavigate()
   const [now, setNow] = useState(new Date())
   const [spinning, setSpinning] = useState(false)
   const [reconnecting, setReconnecting] = useState(false)
-  const [hiddenCalendars, setHiddenCalendars] = useState(new Set())
+  const [hiddenCalendars, setHiddenCalendars] = useState(loadHiddenCalendars)
 
   const toggleCalendar = (name) => setHiddenCalendars(prev => {
     const next = new Set(prev)
     next.has(name) ? next.delete(name) : next.add(name)
+    localStorage.setItem(HIDDEN_CALENDARS_KEY, JSON.stringify([...next]))
     return next
   })
 
@@ -103,12 +126,14 @@ export default function AgendaSection({ calendarEvents = [], dueTasks = [], endi
     hourMarkers.push(new Date(h))
   }
 
-  // Build color map from ALL events (before filtering) so legend colors are stable
+  // Build color map from ALL events, timed and all-day (before filtering), so
+  // the legend/toggle shows every calendar present today — not just ones with
+  // a timed event in the current window.
   const allTimedEvents = useMemo(() => calendarEvents
     .filter(e => !e.all_day && e.start_time)
     .map(e => ({ ...e, start: new Date(e.start_time), end: e.end_time ? new Date(e.end_time) : null }))
   , [calendarEvents])
-  const colorMap = useMemo(() => buildColorMap(allTimedEvents), [allTimedEvents])
+  const colorMap = useMemo(() => buildColorMap(calendarEvents), [calendarEvents])
 
   // Calendar events that overlap the window, with hidden calendars filtered out
   const timedEvents = useMemo(() => allTimedEvents
@@ -256,7 +281,8 @@ export default function AgendaSection({ calendarEvents = [], dueTasks = [], endi
             const startPct  = pct(e.start)
             const endPct    = e.end ? pct(e.end) : Math.min(startPct + 8, 100)
             const heightPct = Math.max(endPct - startPct, 4)
-            const color     = colorMap.get(e.calendar_name || '') ?? PALETTE[0]
+            const paletteColor = colorMap.get(e.calendar_name || '') ?? PALETTE[0]
+            const { bg, text, textDim } = eventColors(e.calendar_name || '', paletteColor)
             // Track occupies: left=5rem from container edge, right=1rem → trackWidth = 100% - 6rem
             const trackW  = '(100% - 6rem)'
             const colW    = `calc(${trackW} / ${e._numCols} - 3px)`
@@ -271,13 +297,14 @@ export default function AgendaSection({ calendarEvents = [], dueTasks = [], endi
                   left:     colLeft,
                   width:    colW,
                   minHeight: 28,
-                  backgroundColor: color,
+                  backgroundColor: bg,
+                  border: bg === '#ffffff' ? '1px solid var(--border)' : 'none',
                 }}
               >
-                <p className="text-xs font-semibold truncate" style={{ color: '#fff' }}>
+                <p className="text-xs font-semibold truncate" style={{ color: text }}>
                   {e.summary}
                 </p>
-                <p className="text-[10px] truncate" style={{ color: 'rgba(255,255,255,0.8)' }}>
+                <p className="text-[10px] truncate" style={{ color: textDim }}>
                   {fmt(e.start)}{e.end ? ` – ${fmt(e.end)}` : ''}
                 </p>
               </div>
@@ -295,11 +322,12 @@ export default function AgendaSection({ calendarEvents = [], dueTasks = [], endi
           )}
         </div>
 
-        {/* Calendar legend — toggle chips when >1 calendar present */}
-        {colorMap.size > 1 && (
+        {/* Calendar legend — toggle chips for every calendar present today */}
+        {colorMap.size > 0 && (
           <div className="flex flex-wrap gap-x-2 gap-y-1 px-4 pb-2 pt-1">
             {[...colorMap.entries()].map(([name, color]) => {
               const hidden = hiddenCalendars.has(name)
+              const swatchBg = eventColors(name, color).bg
               return (
                 <button
                   key={name}
@@ -308,7 +336,13 @@ export default function AgendaSection({ calendarEvents = [], dueTasks = [], endi
                   style={{ opacity: hidden ? 0.4 : 1 }}
                   title={hidden ? `Show ${name || 'Calendar'}` : `Hide ${name || 'Calendar'}`}
                 >
-                  <span className="shrink-0 rounded-sm" style={{ width: 8, height: 8, backgroundColor: color }} />
+                  <span
+                    className="shrink-0 rounded-sm"
+                    style={{
+                      width: 8, height: 8, backgroundColor: swatchBg,
+                      border: swatchBg === '#ffffff' ? '1px solid var(--border)' : 'none',
+                    }}
+                  />
                   <span className="text-[10px] truncate" style={{ color: 'var(--text-dim)', maxWidth: 120 }}>
                     {name || 'Calendar'}
                   </span>

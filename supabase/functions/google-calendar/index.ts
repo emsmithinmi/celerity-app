@@ -1,6 +1,6 @@
 // Google Calendar edge function
 // Fetches events from all connected Google accounts.
-// - Personal account: pulls from the Focus Flow calendar
+// - Personal account: pulls from the Focus Flow + Work Hours calendars
 // - Additional accounts (work, etc.): pulls from their primary calendar
 // Automatically refreshes access tokens when expired.
 
@@ -12,8 +12,16 @@ const corsHeaders = {
 }
 
 const FOCUS_FLOW_CALENDAR_ID = '858f646b41576c785a734cbe4e63df27da29487b4b59ce8f1ed435e9cd7f3d7a@group.calendar.google.com'
+const WORK_HOURS_CALENDAR_ID = 'b940ae44f30d11a5c110374086e4884b77a70a1c4bf1845f05021281bbe54252@group.calendar.google.com'
 const GOOGLE_CLIENT_ID       = Deno.env.get('GOOGLE_CLIENT_ID')!
 const GOOGLE_CLIENT_SECRET   = Deno.env.get('GOOGLE_CLIENT_SECRET')!
+
+// Calendars fetched for the 'personal' integration — each surfaces as its own
+// toggleable entry in the Main Dashboard Agenda legend.
+const PERSONAL_CALENDARS = [
+  { id: FOCUS_FLOW_CALENDAR_ID, name: 'Focus Flow' },
+  { id: WORK_HOURS_CALENDAR_ID, name: 'Work Hours' },
+]
 
 async function refreshAccessToken(refreshToken: string): Promise<string | null> {
   const res = await fetch('https://oauth2.googleapis.com/token', {
@@ -97,6 +105,27 @@ interface IntegrationResult {
   events: CalendarEvent[]
 }
 
+// Personal account → Focus Flow + Work Hours calendars (each tagged separately
+// so they show as distinct toggleable entries). All others → primary calendar.
+async function fetchCalendarsForIntegration(
+  accessToken: string,
+  integration: { email: string; label: string },
+  dateStr: string,
+  endDateStr?: string,
+  timeMinOverride?: string,
+  timeMaxOverride?: string,
+): Promise<CalendarEvent[]> {
+  if (integration.label === 'personal') {
+    const results = await Promise.all(
+      PERSONAL_CALENDARS.map(cal =>
+        fetchCalendarEvents(accessToken, cal.id, dateStr, endDateStr, timeMinOverride, timeMaxOverride, cal.name)
+      )
+    )
+    return results.flat()
+  }
+  return fetchCalendarEvents(accessToken, 'primary', dateStr, endDateStr, timeMinOverride, timeMaxOverride, integration.email)
+}
+
 async function fetchEventsForIntegration(
   serviceClient: ReturnType<typeof createClient>,
   integration: { access_token: string; refresh_token: string | null; email: string; label: string; user_id: string },
@@ -105,14 +134,10 @@ async function fetchEventsForIntegration(
   timeMinOverride?: string,
   timeMaxOverride?: string,
 ): Promise<IntegrationResult> {
-  // Personal account → Focus Flow calendar. All others → primary calendar.
-  const calendarId   = integration.label === 'personal' ? FOCUS_FLOW_CALENDAR_ID : 'primary'
-  const calendarName = integration.label === 'personal' ? 'Focus Flow' : integration.email
-
   const base = { email: integration.email, label: integration.label }
 
   try {
-    const events = await fetchCalendarEvents(integration.access_token, calendarId, dateStr, endDateStr, timeMinOverride, timeMaxOverride, calendarName)
+    const events = await fetchCalendarsForIntegration(integration.access_token, integration, dateStr, endDateStr, timeMinOverride, timeMaxOverride)
     return { ...base, events, eventCount: events.length, error: null, auth_required: false }
   } catch (err) {
     const errStr = String(err)
@@ -135,7 +160,7 @@ async function fetchEventsForIntegration(
         .eq('email', integration.email)
 
       try {
-        const events = await fetchCalendarEvents(newToken, calendarId, dateStr, endDateStr, timeMinOverride, timeMaxOverride, calendarName)
+        const events = await fetchCalendarsForIntegration(newToken, integration, dateStr, endDateStr, timeMinOverride, timeMaxOverride)
         return { ...base, events, eventCount: events.length, error: null, auth_required: false }
       } catch (retryErr) {
         console.warn(`Calendar fetch failed after refresh for ${integration.email}:`, retryErr)
