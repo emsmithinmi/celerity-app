@@ -5,7 +5,6 @@ import { useTasks } from '../hooks/useTasks'
 import { useProjects } from '../hooks/useProjects'
 import { createPerson } from '../lib/api/people'
 import { updateChallenge } from '../lib/api/daily'
-import { createNote } from '../lib/api/notes'
 
 import DailyQuote     from '../components/daily/DailyQuote'
 import StatCards      from '../components/daily/StatCards'
@@ -46,7 +45,6 @@ import {
   CaptureTaskModal,
   CaptureProjectModal,
   CapturePersonModal,
-  QuickNoteModal,
 } from '../components/daily/QuickCaptureModals'
 
 import { useTasks as useTasksCapture } from '../hooks/useTasks'
@@ -144,7 +142,6 @@ export default function Daily() {
             { label: 'New Task',    key: 'task'    },
             { label: 'New Project', key: 'project' },
             { label: 'New Person',  key: 'person'  },
-            { label: 'New Note',    key: 'note'    },
           ].map(({ label, key }) => (
             <Button
               key={key}
@@ -215,11 +212,6 @@ export default function Daily() {
         open={modal === 'person'}
         onClose={() => setModal(null)}
         onCreate={createPerson}
-      />
-      <QuickNoteModal
-        open={modal === 'note'}
-        onClose={() => setModal(null)}
-        onAdd={createNote}
       />
     </>
   )

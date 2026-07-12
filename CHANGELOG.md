@@ -31,6 +31,10 @@ All notable changes to Focus Flow are recorded here.
 - Page `<h1>` titles on list/overview pages now include "Dashboard" (e.g. "Tasks Dashboard", "Projects Dashboard") to visually distinguish them from individual record detail pages (TaskPage, ProjectPage, PersonPage, HabitPage).
 - **Sidebar expand/collapse** — hover-to-expand removed. Sidebar now expands/collapses by clicking the avatar. Hovering the avatar shows a "Expand sidebar" / "Collapse sidebar" tooltip. Avatar photo upload only works when the sidebar is pinned open (locked).
 
+### Removed
+- **Reviews page, route, nav, and `reviews` table** — pulled out of the app entirely, not stubbed. The Daily/Weekly/Monthly review workflow moves to an external AI-driven skill connected through the MCP tool layer instead of living as an in-app page. The `reviews` table (including its pre-AI-removal historical content) was dropped outright — nothing in-app reads or writes it anymore.
+- **Notes system, end to end** — `Notes.jsx`, `NotePage.jsx`, `lib/api/notes.js`, the already-dead `NotesSection.jsx`, the "New Note" quick-capture button, and the Linked Notes section on PersonPage are all gone, along with the `/notes` routes, sidebar nav entry, and the `notes` + `note_people` tables (dropped, data not exported). Notes are moving to a dedicated system built for that job, not staying bolted onto a GTD tool. `@mention`/`#tag` auto-detection is unaffected — it still works on Tasks and Projects.
+
 ---
 
 ## 2026-06-27

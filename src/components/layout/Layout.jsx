@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import {
-  Pin, PinOff, LayoutDashboard, FolderKanban, Zap, Users, Target, StickyNote, NotebookText, Settings, LogOut,
+  Pin, PinOff, LayoutDashboard, FolderKanban, Zap, Users, Target, Settings, LogOut,
 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import AvatarCircle from '../ui/AvatarCircle'
@@ -13,8 +13,6 @@ const NAV_ITEMS = [
   { to: '/tasks',    label: 'Tasks',    Icon: Zap          },
   { to: '/people',   label: 'People',   Icon: Users        },
   { to: '/habits',   label: 'Habits',   Icon: Target       },
-  { to: '/notes',    label: 'Notes',    Icon: StickyNote   },
-  { to: '/reviews',  label: 'Reviews',  Icon: NotebookText },
 ]
 
 const BOTTOM_NAV = [

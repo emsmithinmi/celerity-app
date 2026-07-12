@@ -79,7 +79,6 @@ src/
       people.js
       daily.js           # daily_notes CRUD + getDailyStats(date); habit booleans here are legacy — use habits.js
       habits.js          # CRUD for habits table + habit_history: getHabits, createHabit, updateHabit, deleteHabit, getHabitHistory, setHabitEntry
-      reviews.js
       energyLevels.js    # CRUD for energy_levels table
       priorities.js      # CRUD for priorities table
       areas.js           # CRUD for areas table
@@ -110,9 +109,8 @@ src/
       ChallengeSection.jsx
       DailyQuote.jsx         # seeded by day-of-year, accepts dateStr prop
       HabitsSection.jsx
-      NotesSection.jsx
       ProjectsSection.jsx
-      QuickCaptureModals.jsx # CaptureTaskModal, CaptureProjectModal, CapturePersonModal, QuickNoteModal
+      QuickCaptureModals.jsx # CaptureTaskModal, CaptureProjectModal, CapturePersonModal
       QuoteBlock.jsx
       StatCards.jsx          # 5 stat cards: Projects in Progress, Next Actions, Due Today, Tasks Waiting, Stalled Projects
       TasksSection.jsx
@@ -151,7 +149,7 @@ src/
   pages/
     Login.jsx              # Google OAuth + magic link; auto-redirects to /daily when a session appears
     ResetPassword.jsx      # handles Supabase PASSWORD_RECOVERY flow at /reset-password
-    Daily.jsx                # Dashboard (route /daily, nav label "Dashboard") — quote, stat cards, agenda, tasks, projects, notes, habits, challenge
+    Daily.jsx                # Dashboard (route /daily, nav label "Dashboard") — quote, stat cards, agenda, tasks, projects, habits, challenge
     Tasks.jsx                # tabbed by status, stat row, capture modal
     TaskPage.jsx             # full detail page at /tasks/:id
     Projects.jsx             # tabbed by status, stat row, capture modal
@@ -160,7 +158,6 @@ src/
     PersonPage.jsx           # full detail page at /people/:id; delete TrashBtn in breadcrumb; no status/What's Next section
     Habits.jsx               # habit card grid: streak, this-week pills (Sun-Sat vs target_days), Add Habit modal, per-card remove + inline target editor
     HabitPage.jsx            # individual habit detail: streak stats, timeframe selector, Sun-first calendar heatmap
-    Reviews.jsx              # Daily/Weekly/Monthly with autosave
     Settings.jsx             # manage Energy Levels, Priorities, Areas
 public/
   icon.svg
@@ -179,7 +176,6 @@ All tables have RLS enabled with `USING (true) WITH CHECK (true)` + `GRANT ALL T
 | `projects` | id, title, slug, status, priority, area, start_date, end_date, is_highlight, archived_at |
 | `people` | id, first_name, last_name, preferred_name, professional_title, relationship, contact_type, occupation, company, email_personal, email_work, phone_personal, phone_work, birthday, address_street, address_city, address_state, address_zip, address_work_street, address_work_city, address_work_state, address_work_zip, social_media (jsonb), notes, is_stale, status, avatar_url |
 | `daily_notes` | id, date, top_of_mind[], agenda jsonb, notes jsonb, habit_morning_meds, habit_evening_meds, habit_journal, habit_meditation, habit_breathwork, habit_stretching, habit_health_tracking, habit_code_challenge, code_challenge jsonb, quote text, quote_author text |
-| `reviews` | id, type, date, status, completed_at, content jsonb ({conversation, plan, completed_at}), suggestions jsonb, insights jsonb, summary text, updated_at |
 | `calendar_events` | id (text PK), date, summary, start_time (timestamptz), end_time (timestamptz), all_day (bool), calendar_name, notes, synced_at |
 | `energy_levels` | id, value, label, icon, bg_color, text_color, sort_order |
 | `priorities` | id, value, label, bg_color, text_color, sort_order |
@@ -232,7 +228,7 @@ Contexts mounted at App root (outside BrowserRouter):
 - `updatePerson` strips legacy field names (`phone`, `email`, `last_contact_at`) to prevent DB errors
 - Cascade delete order: junction tables → comments → children → parent
 - **Scheduling** (`ScheduleModal.jsx`) sets `scheduled_date` + `scheduled_time` on a task and promotes it to `next_action` — it does not touch `due_date`/`deadline`. A task row shows a "Jul 15, 2:30 PM"-style placard (`TaskRow.jsx`) whenever `scheduled_date` is set. TaskPage's What's Next button reads "Schedule" or "Reschedule" based on whether `task.scheduled_date` is already set, plus a "Clear Schedule" action that also deletes the synced Google Calendar event.
-- **Select mode / bulk actions** (Tasks, Projects, People, Notes dashboards) all share the same pattern: `selectMode`/`selectedIds` state + a "Select All"/"Deselect All" toggle next to Cancel, scoped to whatever's currently visible (active tab/search/filters).
+- **Select mode / bulk actions** (Tasks, Projects, People dashboards) all share the same pattern: `selectMode`/`selectedIds` state + a "Select All"/"Deselect All" toggle next to Cancel, scoped to whatever's currently visible (active tab/search/filters).
 
 ## Deployment Pipeline
 - Push to `main` → GitHub Actions → `npm run build` → `wrangler pages deploy dist`
@@ -252,7 +248,7 @@ Contexts mounted at App root (outside BrowserRouter):
 - **Dedicated dev account:** `claude-dev@focusflow.dev` was created directly in Supabase auth (email identity, bcrypt password) for this purpose — NOT Eric's real Google/personal credentials. Since RLS is `USING(true)`, it sees the same data. The password is **only** in the gitignored `.env.local` (never in the repo). On a new machine, add `VITE_DEV_EMAIL` + `VITE_DEV_PASSWORD` to that machine's `.env.local` (or reset the password in Supabase) — the account itself already exists server-side.
 
 ## Pages — Current State
-- **Dashboard** (route `/daily`, sidebar label "Dashboard", icon LayoutDashboard) — live "right now" view, not date-navigable. Daily quote (rerolls once per calendar day, not on every visit — plus manual reroll via Skip, 30-day dedupe, per-user blocklist via "never" button), quick capture bar, stat cards, agenda (Google Calendar events from Focus Flow + Work Hours, toggleable per-calendar + all-day tasks/project deadlines), **Tasks section (above Projects)**, Projects section, notes log, **Habits section** (dynamic habits from DB, shows `target_days` progress boxes per habit for the current Sun-Sat week; clicking toggles today; code challenge excluded from this row), Challenge section (deterministic code-challenge bank). No in-app AI. The Tasks section's **Next Actions tab has a Sort dropdown** — Manual (drag-to-reorder) plus auto modes (newest/oldest, longest/shortest duration, due soonest, priority, alpha, energy, area). Sort choice + manual order persist via `list_preferences` (`daily:next_action`), syncing across devices.
+- **Dashboard** (route `/daily`, sidebar label "Dashboard", icon LayoutDashboard) — live "right now" view, not date-navigable. Daily quote (rerolls once per calendar day, not on every visit — plus manual reroll via Skip, 30-day dedupe, per-user blocklist via "never" button), quick capture bar (New Task / New Project / New Person), stat cards, agenda (Google Calendar events from Focus Flow + Work Hours, toggleable per-calendar + all-day tasks/project deadlines), **Tasks section (above Projects)**, Projects section, **Habits section** (dynamic habits from DB, shows `target_days` progress boxes per habit for the current Sun-Sat week; clicking toggles today; code challenge excluded from this row), Challenge section (deterministic code-challenge bank). No in-app AI. The Tasks section's **Next Actions tab has a Sort dropdown** — Manual (drag-to-reorder) plus auto modes (newest/oldest, longest/shortest duration, due soonest, priority, alpha, energy, area). Sort choice + manual order persist via `list_preferences` (`daily:next_action`), syncing across devices.
 - **Tasks** — tabbed by status, stat summary row, capture modal, click row → `/tasks/:id`
 - **TaskPage** — full detail: title, status, priority, energy level, area, due date, deadline, **scheduled date/time** (independent of due date — set via Schedule/Reschedule, cleared via "Clear Schedule"), duration, description, **Context Tags section** (toggleable chips + combobox input, saves immediately), subtask checklist, **Notes** (was Comments), linked people, archive/delete. **What's Next** buttons are tall full-width stacked `outline` variant buttons.
 - **Projects** — tabbed by status, capture modal, click row → `/projects/:id`
@@ -261,7 +257,6 @@ Contexts mounted at App root (outside BrowserRouter):
 - **PersonPage** — avatar, Identity, Contact Details, Addresses, Social Media; tasks, **Notes** (was Comments). Delete TrashBtn in breadcrumb header. No status system, no What's Next section.
 - **Habits** — card grid: each card shows streak, this-week Sun-Sat progress pills (filled = completions / target_days), "X of Y this week" label, per-card remove button, inline target-days editor. "+Add Habit" opens modal (name + 1-7 target picker). Clicking a card navigates to HabitPage.
 - **HabitPage** — individual habit detail: current/best streak, timeframe % stat, timeframe selector, Sun-first monthly calendar heatmap (click any past day to toggle).
-- **Reviews** — Under-construction shell. Daily / Weekly / Monthly tabs preserved for future use; AI-driven flow removed 2026-06-19. Replacement will be agent-orchestrated.
 - **Settings** — Appearance (theme switcher: Catppuccin / GitHub Dark), Energy Levels, Priorities, Areas, Context Tags, Google Accounts.
 
 ## AI Layer — Removed (2026-06-19)
@@ -275,10 +270,20 @@ All in-app AI was removed. The plan: the app stays a clean, deterministic GTD to
 - AI-related buttons & flows: "I'm Stuck", Refresh Brief, "↺ different one" challenge refresh, Daily Review button, the entire Reviews chat flow, the Settings → AI Assistant panel
 
 **Kept on purpose (write targets for the future external agent):**
-- DB columns: `daily_notes.daily_brief`, `daily_notes.code_challenge`, `reviews.content/summary/suggestions`, and the legacy `ai_provider/ai_model/ai_base_url/ai_api_key` fields on `user_metadata` (unused for now but harmless).
-- API primitives in `src/lib/api/*` (`updateDailyBrief`, `getResumableReview`, every CRUD function for tasks/projects/people/reviews/daily) — these are the operations the upcoming tool layer will wrap.
+- DB columns: `daily_notes.daily_brief`, `daily_notes.code_challenge`, and the legacy `ai_provider/ai_model/ai_base_url/ai_api_key` fields on `user_metadata` (unused for now but harmless).
+- API primitives in `src/lib/api/*` (`updateDailyBrief`, every CRUD function for tasks/projects/people/daily) — these are the operations the upcoming tool layer will wrap.
 
 **Multi-account Google (not AI — kept):** `supabase/functions/google-connect` handles secondary OAuth. `google-calendar` and `gmail-context` edge functions fetch from ALL connected accounts in parallel via `user_integrations`. `gmail-context` returns `{ actionThreads, waitingThreads, recentUnread }`.
+
+## Reviews & Notes — Removed From App (2026-07-12)
+
+Both pulled out of Focus Flow entirely — not paused, not stubbed, gone. Direction: Focus Flow stays pure deterministic GTD execution; anything requiring judgment/synthesis (reviews) or a different mental model (notes) lives outside it, not bolted onto this app.
+
+**Reviews:** the Daily/Weekly/Monthly review workflow will be rebuilt as an external AI-driven skill, connected through the MCP tool layer (or whatever connection mechanism gets chosen) instead of an in-app page. Removed: `src/pages/Reviews.jsx`, `src/lib/api/reviews.js`, `/reviews` + `/reviews/:type` routes, sidebar nav entry, and the `reviews` table (dropped outright — no replacement kept since nothing in-app reads/writes it anymore; had real historical content from before the 2026-06-19 AI removal, user opted not to export it).
+
+**Notes:** the user wants a dedicated system (or separate app) for notes, not a feature bolted onto a GTD tool. Removed: `src/pages/Notes.jsx`, `src/pages/NotePage.jsx`, `src/lib/api/notes.js`, `src/components/daily/NotesSection.jsx` (already dead since the 2026-06-24 rebuild), the `QuickNoteModal` + "New Note" quick-capture button on Main, the Linked Notes section on PersonPage, `/notes` + `/notes/:id` routes, sidebar nav entry, and the `notes` + `note_people` tables (dropped, no export — data was disposable).
+
+**Kept:** `@mention`/`#tag` auto-detection (`src/lib/mentions.js`) still works on Tasks and Projects — it was never Notes-specific, just also used there. The `task_comments`/`project_comments`/`people_comments` tables (the "Notes" sections on those detail pages, renamed from "Comments") are a completely unrelated concept and were untouched.
 
 ## External Agent Tool Layer — Planned
 
@@ -287,7 +292,6 @@ Direction: thin MCP server (or REST + MCP wrapper) sitting outside the app, expo
 **Capability wishlist (growing as user identifies features):**
 - Refresh / expand the quote pool from outside
 - Allow the agent to write Daily Briefs (back into `daily_notes.daily_brief`)
-- Replace the AI-driven Daily Review with an agent-orchestrated flow
 - (more to come)
 
 ## Quote System
@@ -311,8 +315,7 @@ Main Challenge section serves one small **basic-Python refresher** at a time fro
 - **Refilling the bank:** the `refresh-challenges` skill (`.claude/skills/refresh-challenges/`) generates 25 new basic-Python challenges and inserts them via Supabase MCP. Run it when the section says the bank is empty.
 
 ## Known Follow-ups
-- **Reviews page rebuild (NEXT)** — design and build a GTD-based review workflow (Daily / Weekly / Monthly) tailored to the user's preferences. Manual-first: establish the workflow and UI before adding any agentic tooling. Once the manual flow is solid, expose the write operations as agent tools so an external agent can co-pilot or automate the review. Start by defining what each review type should cover and what the user fills out.
-- **External agent tool layer** — design and build the MCP/REST surface that lets an outside agent drive the app (see "External Agent Tool Layer — Planned" above). Reviews agent tooling will be part of this.
+- **External agent tool layer (NEXT)** — design and build the MCP/REST surface that lets an outside agent drive the app (see "External Agent Tool Layer — Planned" above). This is now the primary next direction — Reviews and Notes both moved out of the app (see "Reviews & Notes — Removed" above) and will connect through this layer once it exists.
 
 ## Project Rename — Completed (2026-05-29)
 The project was officially renamed to **Focus Flow**. All references updated:
@@ -339,6 +342,5 @@ Adopt this personality for all interactions with the user. This is a long-term t
 
 ## Future Phases
 - **External-agent tool layer** (primary next direction) — MCP server wrapping `lib/api/*` operations so any agent can drive the app. See "External Agent Tool Layer — Planned" section above.
-- Weekly & Monthly Reviews — full implementation (Reviews page is currently under-construction).
 - Obsidian migration script
 - Per-user RLS scoping (if ever multi-user)
