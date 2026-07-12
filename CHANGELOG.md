@@ -13,6 +13,7 @@ All notable changes to Focus Flow are recorded here.
 
 ### Fixed
 - **Phantom "1" stuck in Dashboard Inbox stat card** — the Inbox count was including `people` rows with `status='inbox'`, but People has no status lifecycle in the UI (flat contact list only), so any newly created contact silently got stuck counting toward Inbox forever with no way to clear it. `getDailyStats` now only counts tasks and projects toward Inbox. Also normalized the one stray `people` row from `inbox` to `active`.
+- **Daily quote reroll firing on every Main visit** — the quote was rerolling on every mount of the Main dashboard (every nav-away-and-back, every refresh), not just once a day, so multiple independent random draws got squished into a single day and made repeats feel far more frequent than the "fresh quote per day" design intended. Now it only rerolls when today doesn't have a quote saved yet; once set, it sticks across revisits for the rest of the day. Skip/Never still reroll manually within the day.
 
 ### Added
 - **`@mention` / `#tag` auto-detection** — typing `@firstname` in a task title, task description, or note body automatically links the matching person on save. Typing `#tagname` automatically adds the matching context tag. Ambiguous `@mentions` (multiple people match) pop a disambiguation modal so you can pick who you meant.

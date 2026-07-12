@@ -29,11 +29,14 @@ export default function DailyQuote({ note, dateStr }) {
   const today = new Date().toLocaleDateString('en-CA')
   const isToday = dateStr === today
 
-  // On mount (and whenever today's note loads), reroll to a fresh quote not
-  // shown in the last 30 days and not on the blocklist. Past dates keep
-  // whatever was saved.
+  // Once per calendar day: if today's note has no quote yet, pick a fresh one
+  // not shown in the last 30 days and not on the blocklist. Once a quote is
+  // saved for today it sticks across revisits — re-mounting Main (nav away
+  // and back, refresh) no longer draws a new random quote every time. Past
+  // dates keep whatever was saved.
   useEffect(() => {
     if (!isToday || !note?.id) return
+    if (note.quote) return
     if (rerolledForNoteRef.current === note.id) return
     rerolledForNoteRef.current = note.id
     ;(async () => {
@@ -46,7 +49,7 @@ export default function DailyQuote({ note, dateStr }) {
         // silently swallow — the existing quote or fallback will render
       }
     })()
-  }, [isToday, note?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isToday, note?.id, note?.quote]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (dateStr > today) return null
 
