@@ -26,7 +26,7 @@ export default function ScheduleModal({ open, onClose, onConfirm, fromInbox = fa
   const { priorities } = usePriorities()
   const { areas }      = useAreas()
 
-  const [date,        setDate]        = useState(task.due_date ?? '')
+  const [date,        setDate]        = useState(task.scheduled_date ?? '')
   const [time,        setTime]        = useState(task.scheduled_time ?? '')
   const [priority,    setPriority]    = useState(task.priority ?? '')
   const [energyLevel, setEnergyLevel] = useState(task.energy_level ?? '')
@@ -40,7 +40,7 @@ export default function ScheduleModal({ open, onClose, onConfirm, fromInbox = fa
   const handleConfirm = async () => {
     if (!canConfirm) return
     setSaving(true)
-    const fields = { due_date: date, scheduled_time: time || null }
+    const fields = { scheduled_date: date, scheduled_time: time || null }
     if (fromInbox) {
       fields.priority    = priority
       fields.energy_level = energyLevel
@@ -71,7 +71,7 @@ export default function ScheduleModal({ open, onClose, onConfirm, fromInbox = fa
       <div className="space-y-4">
         {fromInbox && (
           <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-            Fill in the details below to move this task to Scheduled.
+            Fill in the details below to clarify this task and add it to Next.
           </p>
         )}
 

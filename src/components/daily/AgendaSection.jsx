@@ -144,10 +144,10 @@ export default function AgendaSection({ calendarEvents = [], dueTasks = [], endi
 
   const laidOut = useMemo(() => layoutEvents(timedEvents), [timedEvents])
 
-  // Exclude scheduled tasks — they already appear as Focus Flow calendar events
+  // Exclude tasks with a scheduled time — they already appear as timed Focus Flow calendar events
   const allDayItems = [
     ...calendarEvents.filter(e => e.all_day && !hiddenCalendars.has(e.calendar_name || '')),
-    ...dueTasks.filter(t => t.status !== 'scheduled').map(t => ({ summary: t.title, _subtitle: t.projects?.title ?? 'Task due today', _dim: true, _href: `/tasks/${t.id}` })),
+    ...dueTasks.filter(t => !t.scheduled_time).map(t => ({ summary: t.title, _subtitle: t.projects?.title ?? 'Task due today', _dim: true, _href: `/tasks/${t.id}` })),
     ...endingProjects.map(p => ({ summary: p.title, _subtitle: 'Project deadline', _dim: true, _href: `/projects/${p.id}` })),
   ]
 

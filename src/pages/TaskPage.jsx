@@ -36,6 +36,16 @@ function isClarified(task) {
   return CLARIFY_REQUIRED.every(f => task[f] != null && task[f] !== '')
 }
 
+// Formats a scheduled_date (+ optional scheduled_time "HH:MM") for display
+function formatScheduled(date, time) {
+  const dateStr = new Date(date + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+  if (!time) return dateStr
+  const [h, m] = time.split(':').map(Number)
+  const period = h >= 12 ? 'PM' : 'AM'
+  const h12 = h % 12 || 12
+  return `${dateStr}, ${h12}:${String(m).padStart(2, '0')} ${period}`
+}
+
 const inputCls = 'w-full px-3 py-2 rounded-lg text-sm border outline-none bg-transparent'
 const inputStyle = { borderColor: 'var(--border)', color: 'var(--text-primary)' }
 
@@ -122,6 +132,7 @@ export default function TaskPage() {
   const isDone      = task.status === 'done'
   const isArchived  = task.status === 'archived'
   const isCompleted = isDone || isArchived
+  const scheduleLabel = task.scheduled_date ? 'Reschedule' : 'Schedule'
 
   const startEdit  = () => { setDraft({ ...task }); setEditing(true) }
   const cancelEdit = () => { setDraft(null); setEditing(false) }
@@ -196,7 +207,6 @@ export default function TaskPage() {
   const handleWaiting   = async (reason) => {
     await moveToWaiting(task.id, reason)
     setTask(prev => ({ ...prev, status: 'waiting' }))
-    if (task.status === 'scheduled') deleteTaskCalendarEvent(task.gcal_event_id).catch(() => {})
   }
 
   const handleClearWaiting = async () => {
@@ -204,8 +214,10 @@ export default function TaskPage() {
     setTask(prev => ({ ...prev, status: 'next_action' }))
   }
 
+  // Scheduling attaches a date/time independent of GTD status and promotes
+  // the task to Next Action (you've decided when to do it, so it's actionable).
   const handleSchedule = async (fields) => {
-    const updated = await updateTask(task.id, { status: 'scheduled', ...fields })
+    const updated = await updateTask(task.id, { status: 'next_action', ...fields })
     setTask(prev => ({ ...prev, ...updated }))
 
     // Sync to Focus Flow Google Calendar (best-effort — never blocks the UI)
@@ -218,22 +230,27 @@ export default function TaskPage() {
     }).catch(() => {})
   }
 
+  const handleClearSchedule = async () => {
+    const updated = await updateTask(task.id, { scheduled_date: null, scheduled_time: null })
+    setTask(prev => ({ ...prev, ...updated }))
+    deleteTaskCalendarEvent(task.gcal_event_id).catch(() => {})
+    await updateTask(task.id, { gcal_event_id: null }).catch(() => {})
+    setTask(prev => ({ ...prev, gcal_event_id: null }))
+  }
+
   const handleNextAction = async () => {
     await moveToNextAction(task.id)
     setTask(prev => ({ ...prev, status: 'next_action' }))
-    if (task.status === 'scheduled') deleteTaskCalendarEvent(task.gcal_event_id).catch(() => {})
   }
 
   const handleQueue = async () => {
     await moveToQueued(task.id)
     setTask(prev => ({ ...prev, status: 'queued' }))
-    if (task.status === 'scheduled') deleteTaskCalendarEvent(task.gcal_event_id).catch(() => {})
   }
 
   const handleSomeday = async () => {
     const updated = await updateTask(task.id, { status: 'someday' })
     setTask(prev => ({ ...prev, ...updated }))
-    if (task.status === 'scheduled') deleteTaskCalendarEvent(task.gcal_event_id).catch(() => {})
   }
 
   const handleAssignProject = async (projectId) => {
@@ -370,6 +387,16 @@ export default function TaskPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs font-medium mb-0.5" style={{ color: 'var(--text-secondary)' }}>Scheduled</p>
+                  {task.scheduled_date ? (
+                    <p className="text-sm font-medium" style={{ color: 'var(--accent)' }}>
+                      {formatScheduled(task.scheduled_date, task.scheduled_time)}
+                    </p>
+                  ) : (
+                    <p className="text-sm" style={{ color: 'var(--text-dim)' }}>—</p>
+                  )}
+                </div>
                 <ReadField label="Project" value={task.projects?.title} />
               </div>
             </div>
@@ -526,14 +553,14 @@ export default function TaskPage() {
                       {clarified ? 'Add to Next' : 'Clarify & Add to Next'}
                     </Button>
                     <Button variant="outline" size="lg" fullWidth onClick={() => setShowCompletion(true)}>Mark Done</Button>
-                    <Button variant="outline" size="lg" fullWidth onClick={() => setShowSchedule(true)}>Schedule</Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={() => setShowSchedule(true)}>{scheduleLabel}</Button>
                     <Button variant="outline" size="lg" fullWidth onClick={() => hasProject ? handleQueue() : setShowRoute(true)}>Add to Project Queue</Button>
                     <Button variant="outline" size="lg" fullWidth onClick={() => setShowWaiting(true)}>Set to Waiting</Button>
                     <Button variant="outline" size="lg" fullWidth onClick={handleSomeday}>Add to Someday/Maybe</Button>
                   </>}
                   {task.status === 'next_action' && <>
                     <Button variant="outline" size="lg" fullWidth onClick={() => setShowCompletion(true)}>Mark Done</Button>
-                    <Button variant="outline" size="lg" fullWidth onClick={() => setShowSchedule(true)}>Schedule</Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={() => setShowSchedule(true)}>{scheduleLabel}</Button>
                     <Button variant="outline" size="lg" fullWidth onClick={() => hasProject ? handleQueue() : setShowRoute(true)}>Add to Project Queue</Button>
                     <Button variant="outline" size="lg" fullWidth onClick={() => setShowWaiting(true)}>Set to Waiting</Button>
                     <Button variant="outline" size="lg" fullWidth onClick={handleSomeday}>Add to Someday/Maybe</Button>
@@ -541,30 +568,26 @@ export default function TaskPage() {
                   {task.status === 'queued' && <>
                     <Button variant="outline" size="lg" fullWidth onClick={handleNextAction}>Add to Next</Button>
                     <Button variant="outline" size="lg" fullWidth onClick={() => setShowCompletion(true)}>Mark Done</Button>
-                    <Button variant="outline" size="lg" fullWidth onClick={() => setShowSchedule(true)}>Schedule</Button>
-                    <Button variant="outline" size="lg" fullWidth onClick={() => setShowWaiting(true)}>Set to Waiting</Button>
-                    <Button variant="outline" size="lg" fullWidth onClick={handleSomeday}>Add to Someday/Maybe</Button>
-                  </>}
-                  {task.status === 'scheduled' && <>
-                    <Button variant="outline" size="lg" fullWidth onClick={() => setShowCompletion(true)}>Mark Done</Button>
-                    <Button variant="outline" size="lg" fullWidth onClick={() => setShowSchedule(true)}>Reschedule</Button>
-                    <Button variant="outline" size="lg" fullWidth onClick={handleNextAction}>Add to Next</Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={() => setShowSchedule(true)}>{scheduleLabel}</Button>
                     <Button variant="outline" size="lg" fullWidth onClick={() => setShowWaiting(true)}>Set to Waiting</Button>
                     <Button variant="outline" size="lg" fullWidth onClick={handleSomeday}>Add to Someday/Maybe</Button>
                   </>}
                   {task.status === 'waiting' && <>
                     <Button variant="outline" size="lg" fullWidth onClick={handleClearWaiting}>Clear Blocker</Button>
                     <Button variant="outline" size="lg" fullWidth onClick={() => setShowCompletion(true)}>Mark Done</Button>
-                    <Button variant="outline" size="lg" fullWidth onClick={() => setShowSchedule(true)}>Schedule</Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={() => setShowSchedule(true)}>{scheduleLabel}</Button>
                     <Button variant="outline" size="lg" fullWidth onClick={handleSomeday}>Add to Someday/Maybe</Button>
                   </>}
                   {task.status === 'someday' && <>
                     <Button variant="outline" size="lg" fullWidth onClick={handleNextAction}>Add to Next</Button>
                     <Button variant="outline" size="lg" fullWidth onClick={() => setShowCompletion(true)}>Mark Done</Button>
-                    <Button variant="outline" size="lg" fullWidth onClick={() => setShowSchedule(true)}>Schedule</Button>
+                    <Button variant="outline" size="lg" fullWidth onClick={() => setShowSchedule(true)}>{scheduleLabel}</Button>
                     <Button variant="outline" size="lg" fullWidth onClick={() => hasProject ? handleQueue() : setShowRoute(true)}>Add to Project Queue</Button>
                     <Button variant="outline" size="lg" fullWidth onClick={() => setShowWaiting(true)}>Set to Waiting</Button>
                   </>}
+                  {task.scheduled_date && (
+                    <Button variant="ghost" size="lg" fullWidth onClick={handleClearSchedule}>Clear Schedule</Button>
+                  )}
                 </div>
                 <div className="flex items-center justify-center gap-5 mt-6">
                   <button

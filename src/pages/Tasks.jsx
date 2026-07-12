@@ -17,13 +17,12 @@ const TABS = [
   { key: 'next_action', label: 'Next'      },
   { key: 'queued',      label: 'Queued'    },
   { key: 'waiting',     label: 'Waiting'   },
-  { key: 'scheduled',   label: 'Scheduled' },
   { key: 'someday',     label: 'Someday'   },
   { key: 'done',        label: 'Done'      },
   { key: 'all',         label: 'All'       },
 ]
 
-const ALL_ACTIVE = ['inbox', 'next_action', 'queued', 'scheduled', 'waiting', 'someday']
+const ALL_ACTIVE = ['inbox', 'next_action', 'queued', 'waiting', 'someday']
 
 export default function Tasks() {
   const navigate = useNavigate()
@@ -44,7 +43,7 @@ export default function Tasks() {
 
   useEffect(() => {
     if (loading) return
-    const order = ['inbox', 'next_action', 'queued', 'scheduled', 'waiting', 'someday', 'done', 'all']
+    const order = ['inbox', 'next_action', 'queued', 'waiting', 'someday', 'done', 'all']
     const counts = order.reduce((acc, s) => {
       acc[s] = s === 'all' ? tasks.filter(t => ALL_ACTIVE.includes(t.status)).length : tasks.filter(t => t.status === s).length
       return acc

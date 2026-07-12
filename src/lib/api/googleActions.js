@@ -1,7 +1,8 @@
 /**
  * Client for the google-actions Supabase edge function.
- * Handles create / update / delete of Google Calendar events for scheduled tasks.
- * Silently no-ops when the user has no Google integration connected.
+ * Handles create / update / delete of Google Calendar events for tasks that
+ * carry a scheduled_date. Silently no-ops when the user has no Google
+ * integration connected.
  */
 
 import { supabase } from '../supabase'
@@ -67,18 +68,18 @@ function addMinutesToTime(timeStr, minutes) {
 /**
  * Build start/end ISO strings and allDay flag from task fields.
  */
-function buildEventTimes(due_date, scheduled_time, duration) {
+function buildEventTimes(scheduled_date, scheduled_time, duration) {
   if (!scheduled_time) {
     // All-day event — GCal wants just the date string
-    return { start: due_date, end: due_date, allDay: true }
+    return { start: scheduled_date, end: scheduled_date, allDay: true }
   }
 
   const durationMins = intervalToMinutes(duration)
   const endTime      = addMinutesToTime(scheduled_time, durationMins)
 
   return {
-    start:  `${due_date}T${scheduled_time}:00`,
-    end:    `${due_date}T${endTime}:00`,
+    start:  `${scheduled_date}T${scheduled_time}:00`,
+    end:    `${scheduled_date}T${endTime}:00`,
     allDay: false,
   }
 }
@@ -87,15 +88,15 @@ function buildEventTimes(due_date, scheduled_time, duration) {
  * Create or update a Google Calendar event for a scheduled task.
  * Returns the gcal_event_id to store on the task, or null if no integration.
  *
- * Pass the full task object (must have due_date; scheduled_time / duration / gcal_event_id optional).
+ * Pass the full task object (must have scheduled_date; scheduled_time / duration / gcal_event_id optional).
  */
 export async function scheduleTaskOnCalendar(task) {
-  const { title, description, due_date, scheduled_time, duration, gcal_event_id } = task
+  const { title, description, scheduled_date, scheduled_time, duration, gcal_event_id } = task
 
-  if (!due_date) return null   // can't create an event without a date
+  if (!scheduled_date) return null   // can't create an event without a date
 
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
-  const { start, end, allDay } = buildEventTimes(due_date, scheduled_time, duration)
+  const { start, end, allDay } = buildEventTimes(scheduled_date, scheduled_time, duration)
 
   let result
 

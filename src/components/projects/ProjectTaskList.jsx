@@ -9,14 +9,13 @@ const STATUS_TABS = [
   { key: 'inbox',       label: 'Inbox'     },
   { key: 'next_action', label: 'Next'      },
   { key: 'queued',      label: 'Queued'    },
-  { key: 'scheduled',   label: 'Scheduled' },
   { key: 'waiting',     label: 'Waiting'   },
   { key: 'someday',     label: 'Someday'   },
   { key: 'done',        label: 'Done'      },
   { key: 'all',         label: 'All'       },
 ]
 
-const ACTIVE = ['inbox', 'next_action', 'queued', 'scheduled', 'waiting', 'someday']
+const ACTIVE = ['inbox', 'next_action', 'queued', 'waiting', 'someday']
 
 function MiniTaskRow({ task, reorderable = false, onDragStart, onDragEnd }) {
   const navigate = useNavigate()
@@ -52,7 +51,7 @@ export default function ProjectTaskList({ projectId, onTaskCountChange }) {
   // Auto-switch to first populated tab in GTD order
   useEffect(() => {
     if (loading) return
-    const order = ['inbox', 'next_action', 'queued', 'scheduled', 'waiting', 'someday', 'done', 'all']
+    const order = ['inbox', 'next_action', 'queued', 'waiting', 'someday', 'done', 'all']
     const first = order.find(s =>
       s === 'all'
         ? tasks.filter(t => ACTIVE.includes(t.status)).length > 0
@@ -76,7 +75,6 @@ export default function ProjectTaskList({ projectId, onTaskCountChange }) {
     inbox:       tasks.filter(t => t.status === 'inbox').length,
     next_action: tasks.filter(t => t.status === 'next_action').length,
     queued:      tasks.filter(t => t.status === 'queued').length,
-    scheduled:   tasks.filter(t => t.status === 'scheduled').length,
     waiting:     tasks.filter(t => t.status === 'waiting').length,
     someday:     tasks.filter(t => t.status === 'someday').length,
     done:        tasks.filter(t => t.status === 'done').length,
@@ -185,7 +183,6 @@ export default function ProjectTaskList({ projectId, onTaskCountChange }) {
         <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
           {tasks.length} total task{tasks.length !== 1 ? 's' : ''} —&nbsp;
           {counts.next_action} next action{counts.next_action !== 1 ? 's' : ''},&nbsp;
-          {counts.scheduled} scheduled,&nbsp;
           {counts.waiting} waiting,&nbsp;
           {counts.done} done
         </p>

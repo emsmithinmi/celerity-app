@@ -9,14 +9,13 @@ import { useAreas }        from '../../contexts/AreasContext'
 import { EmptyState, SortDropdown, FilterControl } from '../ui'
 import TaskRow from '../tasks/TaskRow'
 
-const ACTIVE_STATUSES = ['inbox', 'next_action', 'queued', 'waiting', 'scheduled', 'someday']
+const ACTIVE_STATUSES = ['inbox', 'next_action', 'queued', 'waiting', 'someday']
 
 const TABS = [
   { key: 'inbox',       label: 'Inbox'     },
   { key: 'next_action', label: 'Next'      },
   { key: 'queued',      label: 'Queued'    },
   { key: 'waiting',     label: 'Waiting'   },
-  { key: 'scheduled',   label: 'Scheduled' },
   { key: 'someday',     label: 'Someday'   },
   { key: 'all',         label: 'All'       },
 ]
@@ -32,7 +31,7 @@ export default function TasksSection({ onRefreshStats }) {
 
   useEffect(() => {
     if (loading) return
-    const order = ['inbox', 'next_action', 'queued', 'scheduled', 'waiting', 'someday', 'all']
+    const order = ['inbox', 'next_action', 'queued', 'waiting', 'someday', 'all']
     const first = order.find(s =>
       s === 'all'
         ? allTasks.length > 0

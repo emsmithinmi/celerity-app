@@ -6,7 +6,6 @@ export const TASK_STATUSES = {
   inbox:       { label: 'Inbox',         bg: 'var(--status-task-inbox-bg)',     text: 'var(--status-task-inbox-text)',     border: 'var(--status-task-inbox-border)'     },
   next_action: { label: 'Next',          bg: 'var(--status-task-next-bg)',      text: 'var(--status-task-next-text)',      border: 'var(--status-task-next-border)'      },
   queued:      { label: 'Queued',        bg: 'var(--status-task-queued-bg)',    text: 'var(--status-task-queued-text)',    border: 'var(--status-task-queued-border)'    },
-  scheduled:   { label: 'Scheduled',     bg: 'var(--status-task-scheduled-bg)', text: 'var(--status-task-scheduled-text)', border: 'var(--status-task-scheduled-border)' },
   waiting:     { label: 'Waiting',       bg: 'var(--status-task-waiting-bg)',   text: 'var(--status-task-waiting-text)',   border: 'var(--status-task-waiting-border)'   },
   someday:     { label: 'Someday/Maybe', bg: 'var(--status-task-someday-bg)',   text: 'var(--status-task-someday-text)',   border: 'var(--status-task-someday-border)'   },
   done:        { label: 'Done',          bg: 'var(--status-task-done-bg)',      text: 'var(--status-task-done-text)',      border: 'var(--status-task-done-border)'      },

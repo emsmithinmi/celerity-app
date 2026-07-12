@@ -251,9 +251,9 @@ export async function getDailyStats(date) {
       .in('status', ['planning', 'in_progress', 'waiting', 'stalled'])
       .is('archived_at', null),
 
-    // All active tasks (next_action, queued, waiting, scheduled)
+    // All active tasks (next_action, queued, waiting)
     supabase.from('tasks').select('id', { count: 'exact', head: true })
-      .in('status', ['next_action', 'queued', 'waiting', 'scheduled'])
+      .in('status', ['next_action', 'queued', 'waiting'])
       .is('archived_at', null),
 
     // Projects in progress only
@@ -272,9 +272,9 @@ export async function getDailyStats(date) {
     supabase.from('projects').select('id', { count: 'exact', head: true })
       .eq('status', 'stalled').is('archived_at', null),
 
-    // Due today: due_date = today OR status = scheduled
+    // Due today: due_date = today OR scheduled_date = today
     supabase.from('tasks').select('id', { count: 'exact', head: true })
-      .or(`due_date.eq.${d},status.eq.scheduled`)
+      .or(`due_date.eq.${d},scheduled_date.eq.${d}`)
       .not('status', 'in', '("done","archived")')
       .is('archived_at', null),
 

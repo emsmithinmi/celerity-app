@@ -1,7 +1,17 @@
-﻿import { Check } from 'lucide-react'
+﻿import { Check, CalendarClock } from 'lucide-react'
 import { StatusPill, PriorityBadge, EnergyBadge, DurationDisplay, ContextTag, ProgressBar, DragHandle } from '../ui'
 import { useContextTags } from '../../contexts/ContextTagsContext'
 import { computeProgress } from '../../lib/progress'
+
+// Formats a scheduled_date (+ optional scheduled_time "HH:MM") for the row placard
+function formatScheduled(date, time) {
+  const dateStr = new Date(date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  if (!time) return dateStr
+  const [h, m] = time.split(':').map(Number)
+  const period = h >= 12 ? 'PM' : 'AM'
+  const h12 = h % 12 || 12
+  return `${dateStr}, ${h12}:${String(m).padStart(2, '0')} ${period}`
+}
 
 export default function TaskRow({ task, onClick, selectable = false, selected = false, onToggle, reorderable = false, onDragStart, onDragEnd }) {
   const { tagMap: contextTagMap } = useContextTags()
@@ -74,6 +84,21 @@ export default function TaskRow({ task, onClick, selectable = false, selected = 
 
       {/* Meta */}
       <div className="flex items-center gap-2 shrink-0">
+        {task.scheduled_date && !isDone && (
+          <span
+            className="flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded"
+            style={{
+              backgroundColor: 'transparent',
+              color: 'var(--accent)',
+              border: '1px solid var(--accent)',
+              opacity: 0.85,
+            }}
+            title={`Scheduled — ${formatScheduled(task.scheduled_date, task.scheduled_time)}`}
+          >
+            <CalendarClock size={11} />
+            {formatScheduled(task.scheduled_date, task.scheduled_time)}
+          </span>
+        )}
         {task.deadline && !isDone && (
           <span
             className="text-xs font-medium px-1.5 py-0.5 rounded"
