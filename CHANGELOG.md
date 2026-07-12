@@ -12,6 +12,7 @@ All notable changes to Focus Flow are recorded here.
 ## [Unreleased]
 
 ### Added
+- **Select All in bulk-select mode** — Tasks, Projects, People, and Notes dashboards all gained a "Select All" / "Deselect All" toggle next to Cancel when in Select mode, selecting every currently-visible row (respects active tab/search/filters).
 - **Calendar selection on Main Dashboard Agenda** — the `google-calendar` edge function now fetches both the Focus Flow and Work Hours calendars for the personal Google account (previously only fetched Focus Flow, so the toggle-chip legend had nothing to differentiate). Legend now shows whenever at least one calendar has events today, and hide/show picks persist across reloads via localStorage. Work Hours events render white background / black text (matching its actual Google Calendar color) instead of the auto-assigned palette color, which was too visually loud next to Focus Flow's blue.
 
 ### Fixed

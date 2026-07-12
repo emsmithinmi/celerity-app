@@ -104,6 +104,9 @@ export default function Projects() {
     return next
   })
 
+  const allSelected = displayed.length > 0 && displayed.every(p => selectedIds.has(p.id))
+  const toggleSelectAll = () => setSelectedIds(allSelected ? new Set() : new Set(displayed.map(p => p.id)))
+
   const exitSelectMode = () => { setSelectMode(false); setSelectedIds(new Set()); setBulkStatus('') }
 
   const handleBulkMove = async () => {
@@ -157,6 +160,11 @@ export default function Projects() {
       >
         <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>Projects Dashboard</h1>
         <div className="flex items-center gap-2">
+          {selectMode && (
+            <Button size="sm" variant="ghost" onClick={toggleSelectAll}>
+              {allSelected ? 'Deselect All' : 'Select All'}
+            </Button>
+          )}
           <Button size="sm" variant={selectMode ? 'secondary' : 'ghost'} onClick={() => selectMode ? exitSelectMode() : setSelectMode(true)}>
             {selectMode ? `Cancel (${selectedIds.size} selected)` : 'Select'}
           </Button>

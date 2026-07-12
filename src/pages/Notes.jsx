@@ -284,6 +284,9 @@ export default function Notes() {
     return next
   })
 
+  const allSelected = filtered.length > 0 && filtered.every(n => selectedIds.has(n.id))
+  const toggleSelectAll = () => setSelectedIds(allSelected ? new Set() : new Set(filtered.map(n => n.id)))
+
   const exitSelectMode = () => { setSelectMode(false); setSelectedIds(new Set()) }
 
   const handleBulkDuplicate = async () => {
@@ -313,6 +316,11 @@ export default function Notes() {
           )}
         </h1>
         <div className="flex items-center gap-2">
+          {selectMode && (
+            <Button size="sm" variant="ghost" onClick={toggleSelectAll}>
+              {allSelected ? 'Deselect All' : 'Select All'}
+            </Button>
+          )}
           <Button size="sm" variant={selectMode ? 'secondary' : 'ghost'} onClick={() => selectMode ? exitSelectMode() : setSelectMode(true)}>
             {selectMode ? `Cancel (${selectedIds.size} selected)` : 'Select'}
           </Button>
