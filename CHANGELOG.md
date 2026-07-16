@@ -4,6 +4,14 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-07-16
+
+### Changed
+- **Habits target specific weekdays instead of a day count** — `habits.target_days` (int 1-7) replaced with `habits.target_weekdays` (smallint[], 0=Sun...6=Sat). Add Habit modal and the Habits dashboard card editor now show a S/M/T/W/T/F/S day picker instead of a 1-7 count picker, so a habit can target e.g. Mon/Wed/Fri specifically instead of just "3 days a week." Existing habits were backfilled to every day (their prior count couldn't be mapped to specific days) — Meditation, 30 Min Eliptical Training, and 50 Squats need their actual target days re-picked in the Habits dashboard.
+- **Main Dashboard Habits section now shows each habit's actual target weekdays** — the row for each habit is a real Sun-Sat strip with that habit's target days highlighted (non-target days dimmed) instead of a plain count-based pill bar. Any non-future target day is now clickable to toggle, not just today. Habits dashboard cards got the same day-strip treatment in place of the old fill-count pills.
+
+---
+
 ## 2026-06-28
 
 ### Changed

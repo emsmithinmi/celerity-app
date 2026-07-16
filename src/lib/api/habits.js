@@ -8,20 +8,20 @@ async function getUserId() {
 export async function getHabits() {
   const { data, error } = await supabase
     .from('habits')
-    .select('id, key, label, target_days, sort_order')
+    .select('id, key, label, target_weekdays, sort_order')
     .eq('is_active', true)
     .order('sort_order', { ascending: true })
   if (error) throw error
   return data ?? []
 }
 
-export async function createHabit(label, targetDays = 7) {
+export async function createHabit(label, targetWeekdays = [0, 1, 2, 3, 4, 5, 6]) {
   const key = 'habit_' + label.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '').replace(/_+/g, '_').replace(/^_|_$/g, '')
   const { data: last } = await supabase.from('habits').select('sort_order').order('sort_order', { ascending: false }).limit(1).maybeSingle()
   const sortOrder = (last?.sort_order ?? -1) + 1
   const { data, error } = await supabase
     .from('habits')
-    .insert({ key, label, target_days: targetDays, sort_order: sortOrder, is_active: true })
+    .insert({ key, label, target_weekdays: targetWeekdays, sort_order: sortOrder, is_active: true })
     .select()
     .single()
   if (error) throw error

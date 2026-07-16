@@ -6,6 +6,15 @@ import { ConfirmDialog } from '../components/ui'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+const DOW_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+const DOW_NAMES   = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+const DOW_SHORT   = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+
+function describeWeekdays(weekdays) {
+  if (weekdays.length === 7) return 'Every day'
+  return [...weekdays].sort((a, b) => a - b).map(d => DOW_SHORT[d]).join(', ')
+}
+
 function buildDateMap(history) {
   const map = {}
   for (const row of history) map[row.date] = row.entries ?? {}
@@ -36,8 +45,8 @@ function getThisWeekDates() {
   })
 }
 
-function computeWeekCount(dateMap, habitKey, weekDates) {
-  return weekDates.filter(d => !!dateMap[d]?.[habitKey]).length
+function computeWeekCount(dateMap, habitKey, weekDates, targetWeekdays) {
+  return weekDates.filter((d, i) => targetWeekdays.includes(i) && !!dateMap[d]?.[habitKey]).length
 }
 
 function computePercent30(dateMap, habitKey) {
@@ -59,19 +68,29 @@ function computePercent30(dateMap, habitKey) {
 
 function AddHabitModal({ open, onClose, onAdd }) {
   const [label, setLabel] = useState('')
-  const [targetDays, setTargetDays] = useState(7)
+  const [targetWeekdays, setTargetWeekdays] = useState([0, 1, 2, 3, 4, 5, 6])
   const [saving, setSaving] = useState(false)
 
   if (!open) return null
+
+  const toggleDay = (i) => {
+    setTargetWeekdays(prev => {
+      if (prev.includes(i)) {
+        if (prev.length === 1) return prev
+        return prev.filter(d => d !== i)
+      }
+      return [...prev, i].sort((a, b) => a - b)
+    })
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!label.trim() || saving) return
     setSaving(true)
     try {
-      await onAdd(label.trim(), targetDays)
+      await onAdd(label.trim(), targetWeekdays)
       setLabel('')
-      setTargetDays(7)
+      setTargetWeekdays([0, 1, 2, 3, 4, 5, 6])
       onClose()
     } finally {
       setSaving(false)
@@ -97,21 +116,22 @@ function AddHabitModal({ open, onClose, onAdd }) {
           </div>
           <div>
             <label className="block text-xs font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
-              Target — {targetDays} day{targetDays !== 1 ? 's' : ''} per week
+              Which days — {describeWeekdays(targetWeekdays)}
             </label>
             <div className="flex gap-1">
-              {[1,2,3,4,5,6,7].map(n => (
+              {DOW_LETTERS.map((letter, i) => (
                 <button
-                  key={n}
+                  key={i}
                   type="button"
-                  onClick={() => setTargetDays(n)}
+                  title={DOW_NAMES[i]}
+                  onClick={() => toggleDay(i)}
                   className="flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors"
                   style={{
-                    backgroundColor: targetDays === n ? 'var(--accent)' : 'var(--border)',
-                    color: targetDays === n ? 'var(--app-bg)' : 'var(--text-primary)',
+                    backgroundColor: targetWeekdays.includes(i) ? 'var(--accent)' : 'var(--border)',
+                    color: targetWeekdays.includes(i) ? 'var(--app-bg)' : 'var(--text-primary)',
                   }}
                 >
-                  {n}
+                  {letter}
                 </button>
               ))}
             </div>
@@ -133,11 +153,21 @@ function AddHabitModal({ open, onClose, onAdd }) {
 const THIS_WEEK = getThisWeekDates()
 
 function HabitCard({ habit, dateMap, onEdit, onDelete, onClick }) {
+  const today      = new Date().toLocaleDateString('en-CA')
   const streak     = computeCurrentStreak(dateMap, habit.key)
-  const target     = habit.target_days ?? 7
-  const weekCount  = computeWeekCount(dateMap, habit.key, THIS_WEEK)
-  const filled     = Math.min(weekCount, target)
+  const weekdays   = habit.target_weekdays ?? [0, 1, 2, 3, 4, 5, 6]
+  const target     = weekdays.length
+  const weekCount  = computeWeekCount(dateMap, habit.key, THIS_WEEK, weekdays)
   const [editingTarget, setEditingTarget] = useState(false)
+
+  const toggleWeekday = (i) => {
+    if (weekdays.includes(i)) {
+      if (weekdays.length === 1) return
+      onEdit({ target_weekdays: weekdays.filter(d => d !== i).sort((a, b) => a - b) })
+    } else {
+      onEdit({ target_weekdays: [...weekdays, i].sort((a, b) => a - b) })
+    }
+  }
 
   return (
     <div
@@ -169,16 +199,31 @@ function HabitCard({ habit, dateMap, onEdit, onDelete, onClick }) {
         <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>day streak</p>
       </div>
 
-      {/* This week: target pills */}
+      {/* This week: day-of-week strip */}
       <div className="space-y-1">
         <div className="flex gap-1">
-          {Array.from({ length: target }, (_, i) => (
-            <div
-              key={i}
-              className="flex-1 h-2 rounded-full"
-              style={{ backgroundColor: i < filled ? 'var(--habit-done-bg)' : 'var(--border)' }}
-            />
-          ))}
+          {THIS_WEEK.map((dateStr, i) => {
+            const isTarget = weekdays.includes(i)
+            const isDone   = !!dateMap[dateStr]?.[habit.key]
+            const isToday  = dateStr === today
+            return (
+              <div
+                key={i}
+                title={DOW_NAMES[i]}
+                className="flex-1 flex items-center justify-center rounded text-[10px] font-medium"
+                style={{
+                  height: 20,
+                  outline: isToday ? '1.5px solid var(--accent)' : 'none',
+                  outlineOffset: -1.5,
+                  backgroundColor: !isTarget ? 'transparent' : isDone ? 'var(--habit-done-bg)' : 'var(--border)',
+                  color: !isTarget ? 'var(--text-dim)' : isDone ? '#000' : 'var(--text-secondary)',
+                  opacity: isTarget ? 1 : 0.4,
+                }}
+              >
+                {DOW_LETTERS[i]}
+              </div>
+            )
+          })}
         </div>
         <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
           {weekCount} of {target} this week
@@ -189,19 +234,29 @@ function HabitCard({ habit, dateMap, onEdit, onDelete, onClick }) {
       <div>
         {editingTarget ? (
           <div className="space-y-1.5">
-            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Target per week:</p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Which days:</p>
+              <button
+                onClick={() => setEditingTarget(false)}
+                className="text-xs transition-opacity hover:opacity-70"
+                style={{ color: 'var(--accent)', background: 'transparent' }}
+              >
+                Done
+              </button>
+            </div>
             <div className="flex gap-1">
-              {[1,2,3,4,5,6,7].map(n => (
+              {DOW_LETTERS.map((letter, i) => (
                 <button
-                  key={n}
-                  onClick={() => { onEdit({ target_days: n }); setEditingTarget(false) }}
+                  key={i}
+                  title={DOW_NAMES[i]}
+                  onClick={() => toggleWeekday(i)}
                   className="flex-1 py-1 rounded text-xs font-medium transition-colors"
                   style={{
-                    backgroundColor: habit.target_days === n ? 'var(--accent)' : 'var(--border)',
-                    color: habit.target_days === n ? 'var(--app-bg)' : 'var(--text-primary)',
+                    backgroundColor: weekdays.includes(i) ? 'var(--accent)' : 'var(--border)',
+                    color: weekdays.includes(i) ? 'var(--app-bg)' : 'var(--text-primary)',
                   }}
                 >
-                  {n}
+                  {letter}
                 </button>
               ))}
             </div>
@@ -212,7 +267,7 @@ function HabitCard({ habit, dateMap, onEdit, onDelete, onClick }) {
             className="text-xs transition-opacity hover:opacity-70"
             style={{ color: 'var(--text-secondary)', background: 'transparent' }}
           >
-            {habit.target_days}× per week — change
+            {describeWeekdays(weekdays)} — change
           </button>
         )}
       </div>
@@ -249,8 +304,8 @@ export default function Habits() {
 
   const dateMap = useMemo(() => buildDateMap(history), [history])
 
-  const handleAdd = async (label, targetDays) => {
-    const newHabit = await createHabit(label, targetDays)
+  const handleAdd = async (label, targetWeekdays) => {
+    const newHabit = await createHabit(label, targetWeekdays)
     setHabits(prev => [...prev, newHabit])
   }
 
