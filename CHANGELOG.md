@@ -4,6 +4,13 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-07-19
+
+### Fixed
+- **Settings drag-to-reorder no longer snaps back** — Energy Levels, Priorities, Areas, and Context Tags in Settings would visually revert to the pre-drag order a moment after dropping, even though the new `sort_order` was saved correctly in the DB. `useLocalList`'s optimistic `local` snapshot (used for instant add/edit/delete feedback) never reset once populated, so it permanently shadowed the freshly-reloaded, correctly-sorted context data after any drag-reorder. Now `local` clears whenever the underlying context list changes, so a completed reload always wins. Diagnosed from a user-recorded Jam (`Priorities in Settings won't sort`) whose network trace showed the DB saves were correct all along.
+
+---
+
 ## 2026-07-16
 
 ### Changed

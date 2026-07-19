@@ -778,6 +778,10 @@ function AddContextTagForm({ onAdded, nextSortOrder }) {
 // ─── Settings Page ────────────────────────────────────────────────────────────
 function useLocalList(contextList, reloadFn) {
   const [local, setLocal] = useState(null)
+  // Once a reload lands and the context list actually changes underneath us
+  // (add/edit/delete/reorder), drop the optimistic snapshot so `displayed`
+  // falls back to the fresh, correctly-ordered context data.
+  useEffect(() => { setLocal(null) }, [contextList])
   const displayed = local ?? contextList
   const onSaved   = u  => { setLocal(p => (p ?? contextList).map(i => i.id === u.id ? u : i)); reloadFn() }
   const onDeleted = id => { setLocal(p => (p ?? contextList).filter(i => i.id !== id)); reloadFn() }
