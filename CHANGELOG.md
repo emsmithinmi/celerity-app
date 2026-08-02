@@ -4,6 +4,13 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-08-02
+
+### Added
+- **`HANDOFF.md`** — a narrative project handoff doc at the repo root: the story of the project from initial build through today, the reasoning behind major direction changes (AI removal, Reviews/Notes removal, scheduling decoupling), an architecture snapshot, and where to pick up next. Complements `CLAUDE.md` (the living structural reference) rather than duplicating it — this one explains *why* things are shaped the way they are.
+
+---
+
 ## 2026-07-19
 
 ### Fixed
