@@ -1,5 +1,15 @@
 # React + Vite
 
+## Project layout and deployment boundary
+
+The outer PARA project container is `Focus Flow App`, with three sibling folders:
+
+- `Project Repository` contains the complete Focus Flow application repository and its Git history.
+- `Support Files` is reserved for project support material.
+- `Artifacts` is reserved for generated or exported artifacts.
+
+GitHub remains the repository's `origin` because Cloudflare automatically deploys Focus Flow from GitHub. Any server-canonical or mirror arrangement is deferred and must not alter this GitHub deployment channel without an explicit later plan.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
