@@ -2,7 +2,7 @@
 
 ## Decision
 
-Focus Flow will support multiple isolated users. The existing personal account remains the owner of the current data. The existing development account is the intended demo account and will receive its own representative sample data. No user will be able to read, modify, or delete another user's personal data through the client or the Supabase Data API.
+Focus Flow now supports multiple isolated users at the database boundary. The existing personal account remains the owner of the original data. The existing development account is the demo account and has its own representative sample data. No user should be able to read, modify, or delete another user's personal data through the client or the Supabase Data API.
 
 ## Ownership model
 
@@ -27,11 +27,11 @@ New rows default `user_id` to the authenticated user. This keeps the existing cl
 3. Add owner-scoped uniqueness, foreign keys, indexes, and non-null/default constraints.
 4. Replace the current broad policies with owner-scoped authenticated policies; remove anonymous access to personal tables.
 5. Install a private signup-defaults trigger so every new user gets their own taxonomy, habits, challenge, and settings rows.
-6. Seed the existing demo account with clearly labeled sample projects, tasks, people, habits, daily data, and relationship records.
-7. Verify the personal and demo accounts separately, including direct Data API reads/writes and attempted cross-user IDs.
+6. Seed the existing demo account with clearly labeled sample projects, tasks, people, habits, daily data, and relationship records. **Complete in production.**
+7. Verify the personal and demo accounts separately, including direct Data API reads/writes and attempted cross-user IDs. **Database-role isolation verified; browser verification remains.**
 8. Re-run Supabase security/performance advisors and deploy the frontend only after the database checks pass.
 
-The migration draft in `supabase/migrations/20260815190000_multi_user_ownership.sql` is intentionally not applied until the preflight and backup steps are complete. The demo seed is separate so it can be reset or regenerated without altering the ownership migration.
+The migration in `supabase/migrations/20260815190000_multi_user_ownership.sql` has been applied to the production Supabase project after preflight and backup checks. The demo seed is separate so it can be reset or regenerated without altering the ownership migration.
 
 ## Verification requirements
 
@@ -42,4 +42,3 @@ The migration draft in `supabase/migrations/20260815190000_multi_user_ownership.
 - A new authenticated account receives defaults without seeing either existing account's data.
 - Anonymous requests cannot read or write personal tables.
 - Deleting a user's account cascades or safely removes that user's owned records and integrations.
-

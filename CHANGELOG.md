@@ -16,7 +16,7 @@ All notable changes to Focus Flow are recorded here.
 - **Reference data now waits for authentication** — Areas, Priorities, Energy Levels, and Context Tags no longer query Supabase before the authenticated application shell is ready, preventing startup permission errors and empty taxonomy data.
 
 ### Changed
-- **Multi-user ownership foundation drafted** — documented the owner-scoped data model, rollback/preflight sequence, private signup defaults, and a separate demo-data seed for the existing development account. The live database migration has been validated in a rollback-only transaction and has not yet been applied.
+- **Multi-user ownership foundation applied** — added owner-scoped data ownership, authenticated RLS policies, private signup defaults, and a separate demo-data seed for the existing development account. The production migration and demo seed are applied; database-role isolation is verified, with browser/session verification still pending.
 - **Local setup is now self-describing** — added a safe `.env.example` with the known Supabase project URL and explicit placeholders for local-only credentials, and documented the copy-and-fill workflow without placing secrets in Git.
 
 - **Repository cleanup and backup mirror** — removed rebuildable local `node_modules` and `dist` folders, moved historical/reference-only material to the labeled outer temporary archive, consolidated the project README and maintainer guidance, and added a tracked archive manifest. The verified `main` commit is mirrored to the homelab backup repository while GitHub remains the Cloudflare release source.

@@ -323,16 +323,11 @@ Current gaps:
 **Impact:** The installed Vite range is affected by a Windows `server.fs.deny` bypass; another Vite/launch-editor issue can disclose an NTLMv2 hash through UNC handling. These primarily affect development servers, especially when exposed to a network. A low-severity Babel source-map arbitrary-file-read advisory is also present.
 **Remaining work:** Complete a clean `npm ci` after the locked local process/file handle is released, rerun the build, and avoid exposing the Vite development server to untrusted networks.
 
-#### SEC-06: Supabase security advisor reports additional live hardening gaps
+#### SEC-06: Supabase security advisor hardening
 
-**Status:** Confirmed.
-**Impact and repair:**
-
-- Revoke `EXECUTE` on the `SECURITY DEFINER` event-trigger function `public.rls_auto_enable()` from `anon`, `authenticated`, and `PUBLIC`; keep privileged helpers outside exposed schemas where possible.
-- Set safe `search_path` values on `update_updated_at`, `mark_stale_people`, and `set_updated_at`.
-- Remove broad avatar-bucket listing policies; public object URLs do not require listing every object.
-- Enable leaked-password protection.
-- Consolidate duplicate permissive policies. The performance advisor reports 36 duplicate-policy warnings.
+**Status:** Database-side items complete. The live security advisor now reports only the Auth setting for leaked-password protection.
+**Repair completed:** The internal `public.rls_auto_enable()` function is no longer callable through the Data API, and explicit `search_path` values are set on the three existing trigger/helper functions. The multi-user migration also replaced the broad personal-data policies with owner-scoped policies and removed anonymous table privileges.
+**Remaining work:** Enable leaked-password protection in the Supabase Auth project settings. This is a dashboard/project configuration change, not a repository migration.
 
 #### BUG-05: Reference-data providers can load before authentication and never recover
 
