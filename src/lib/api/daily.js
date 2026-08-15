@@ -35,7 +35,7 @@ export async function ensureNoteForDate(date) {
 
   const { data, error } = await supabase
     .from('daily_notes')
-    .insert({
+    .upsert({
       date,
       top_of_mind: [],
       agenda: [],
@@ -48,11 +48,11 @@ export async function ensureNoteForDate(date) {
       habit_stretching: false,
       habit_health_tracking: false,
       habit_code_challenge: false,
-    })
+    }, { onConflict: 'user_id,date', ignoreDuplicates: true })
     .select()
-    .single()
+    .maybeSingle()
   if (error) throw error
-  return data
+  return data ?? getNoteByDate(date)
 }
 
 // Convenience wrapper kept for any callers outside the Daily page
