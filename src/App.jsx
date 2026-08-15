@@ -23,21 +23,31 @@ import Habits from './pages/Habits'
 import HabitPage from './pages/HabitPage'
 import Settings from './pages/Settings'
 
+function AuthenticatedProviders({ children }) {
+  return (
+    <EnergyLevelsProvider>
+    <PrioritiesProvider>
+    <AreasProvider>
+    <ContextTagsProvider>
+      {children}
+    </ContextTagsProvider>
+    </AreasProvider>
+    </PrioritiesProvider>
+    </EnergyLevelsProvider>
+  )
+}
+
 export default function App() {
   return (
     <ThemeProvider>
     <AuthProvider>
-      <EnergyLevelsProvider>
-      <PrioritiesProvider>
-      <AreasProvider>
-      <ContextTagsProvider>
         <BrowserRouter>
           <Routes>
             <Route path="/login"                  element={<Login />} />
             <Route path="/reset-password"         element={<ResetPassword />} />
             <Route path="/auth/callback"          element={<AuthCallback />} />
             <Route path="/auth/google-callback"   element={<GoogleCallback />} />
-            <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+            <Route path="/" element={<ProtectedRoute><AuthenticatedProviders><Layout /></AuthenticatedProviders></ProtectedRoute>}>
               <Route index element={<Navigate to="/daily" replace />} />
               <Route path="daily"         element={<Daily />} />
               <Route path="tasks"         element={<Tasks />} />
@@ -53,10 +63,6 @@ export default function App() {
           </Routes>
         </BrowserRouter>
         <ReloadPrompt />
-      </ContextTagsProvider>
-      </AreasProvider>
-      </PrioritiesProvider>
-      </EnergyLevelsProvider>
     </AuthProvider>
     </ThemeProvider>
   )

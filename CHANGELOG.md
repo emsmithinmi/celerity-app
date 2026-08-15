@@ -8,6 +8,7 @@ All notable changes to Focus Flow are recorded here.
 
 ### Fixed
 - **Stalled projects can now be completed** — when the last Next Action is finished, the project may become stale/stalled, but its project page now keeps the `All Done` action available so finished work is not trapped in the stale state.
+- **Reference data now waits for authentication** — Areas, Priorities, Energy Levels, and Context Tags no longer query Supabase before the authenticated application shell is ready, preventing startup permission errors and empty taxonomy data.
 
 ### Changed
 - **Local setup is now self-describing** — added a safe `.env.example` with the known Supabase project URL and explicit placeholders for local-only credentials, and documented the copy-and-fill workflow without placing secrets in Git.
