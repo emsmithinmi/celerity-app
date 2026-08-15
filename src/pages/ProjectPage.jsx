@@ -345,11 +345,19 @@ export default function ProjectPage() {
                     {completing ? 'Completing…' : PROJECT_ACTIONS.complete}
                   </Button>
                 )}
-                {(project.status === 'stalled' || project.status === 'waiting') && (
+                {project.status === 'stalled' && (
+                  <>
+                    <Button variant="outline" size="lg" fullWidth onClick={handleComplete} disabled={completing}>
+                      {completing ? 'Completing…' : PROJECT_ACTIONS.complete}
+                    </Button>
+                    <p className="text-sm text-center" style={{ color: 'var(--text-secondary)' }}>
+                      Move a task to Next to continue, or complete the project if the work is finished.
+                    </p>
+                  </>
+                )}
+                {project.status === 'waiting' && (
                   <p className="text-sm text-center" style={{ color: 'var(--text-secondary)' }}>
-                    {project.status === 'stalled'
-                      ? 'Move a task to Next to un-stall this project.'
-                      : 'Clear blockers on waiting tasks to resume.'}
+                    Clear blockers on waiting tasks to resume.
                   </p>
                 )}
               </div>

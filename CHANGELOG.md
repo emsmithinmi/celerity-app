@@ -6,6 +6,9 @@ All notable changes to Focus Flow are recorded here.
 
 ## 2026-08-15
 
+### Fixed
+- **Stalled projects can now be completed** — when the last Next Action is finished, the project may become stale/stalled, but its project page now keeps the `All Done` action available so finished work is not trapped in the stale state.
+
 ### Changed
 - **Repository cleanup and backup mirror** — removed rebuildable local `node_modules` and `dist` folders, moved historical/reference-only material to the labeled outer temporary archive, consolidated the project README and maintainer guidance, and added a tracked archive manifest. The verified `main` commit is mirrored to the homelab backup repository while GitHub remains the Cloudflare release source.
 
