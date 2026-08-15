@@ -153,7 +153,7 @@ This schema is structurally single-tenant. Making policies stricter alone is not
 - `ProtectedRoute` prevents unauthenticated access to application pages.
 - Login supports email magic links, email/password sign-in, password reset, and Google OAuth. Passwords are managed by Supabase Auth and are never stored in the repository.
 - The Google login requests broad Calendar and Gmail scopes and writes provider tokens to `user_integrations` from the browser.
-- A development-only password sign-in is enabled when `VITE_DEV_EMAIL` and `VITE_DEV_PASSWORD` exist.
+- Local development can still auto-sign in with `VITE_DEV_EMAIL` and `VITE_DEV_PASSWORD` when those ignored variables are present; normal users sign in through the password form or the other available providers.
 
 ### Additional Google accounts
 
