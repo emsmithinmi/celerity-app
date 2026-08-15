@@ -18,13 +18,16 @@ export default function Login() {
   const { session } = useAuth()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [authMode, setAuthMode] = useState('magic')
 
   useEffect(() => {
     if (session) navigate('/daily', { replace: true })
   }, [session, navigate])
   const [googleLoading, setGoogleLoading] = useState(false)
   const [sent, setSent] = useState(false)
+  const [resetSent, setResetSent] = useState(false)
   const [error, setError] = useState(null)
 
   const handleSubmit = async (e) => {
@@ -32,19 +35,34 @@ export default function Login() {
     setLoading(true)
     setError(null)
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo: window.location.origin,
-      },
-    })
+    const { error } = authMode === 'password'
+      ? await supabase.auth.signInWithPassword({ email, password })
+      : await supabase.auth.signInWithOtp({
+          email,
+          options: { emailRedirectTo: window.location.origin },
+        })
 
     if (error) {
       setError(error.message)
     } else {
-      setSent(true)
+      if (authMode === 'magic') setSent(true)
     }
     setLoading(false)
+  }
+
+  const handlePasswordReset = async () => {
+    if (!email) {
+      setError('Enter your account email first.')
+      return
+    }
+    setLoading(true)
+    setError(null)
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+    setLoading(false)
+    if (error) setError(error.message)
+    else setResetSent(true)
   }
 
   const handleGoogleSignIn = async () => {
@@ -130,6 +148,31 @@ export default function Login() {
             </div>
 
             {/* Magic link form */}
+            <div className="flex gap-2 text-sm">
+              <button
+                type="button"
+                onClick={() => { setAuthMode('magic'); setError(null) }}
+                className="flex-1 py-2 rounded-lg border"
+                style={{
+                  borderColor: authMode === 'magic' ? 'var(--accent)' : 'var(--border)',
+                  color: 'var(--text-primary)',
+                }}
+              >
+                Email link
+              </button>
+              <button
+                type="button"
+                onClick={() => { setAuthMode('password'); setError(null) }}
+                className="flex-1 py-2 rounded-lg border"
+                style={{
+                  borderColor: authMode === 'password' ? 'var(--accent)' : 'var(--border)',
+                  color: 'var(--text-primary)',
+                }}
+              >
+                Password
+              </button>
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label
@@ -157,6 +200,31 @@ export default function Login() {
                 />
               </div>
 
+              {authMode === 'password' && (
+                <div>
+                  <label
+                    htmlFor="password"
+                    className="block text-sm font-medium mb-1.5"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    Password
+                  </label>
+                  <input
+                    id="password"
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg text-sm border outline-none"
+                    style={{
+                      backgroundColor: 'var(--app-bg)',
+                      borderColor: 'var(--border)',
+                      color: 'var(--text-primary)',
+                    }}
+                  />
+                </div>
+              )}
+
               {error && (
                 <p className="text-sm" style={{ color: 'var(--danger)' }}>
                   {error}
@@ -165,13 +233,33 @@ export default function Login() {
 
               <button
                 type="submit"
-                disabled={loading || !email}
+                disabled={loading || !email || (authMode === 'password' && !password)}
                 className="w-full py-2.5 rounded-lg text-sm font-medium transition-opacity disabled:opacity-50"
                 style={{ backgroundColor: 'var(--accent)', color: 'var(--app-bg)' }}
               >
-                {loading ? 'Sending...' : 'Send magic link'}
+                {loading ? (authMode === 'password' ? 'Signing in...' : 'Sending...') : (authMode === 'password' ? 'Sign in' : 'Send magic link')}
               </button>
             </form>
+
+            {authMode === 'password' && (
+              <div className="text-center">
+                {resetSent ? (
+                  <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    If an account exists for that email, a password-reset link is on its way.
+                  </p>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handlePasswordReset}
+                    disabled={loading || !email}
+                    className="text-xs underline disabled:opacity-50"
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
+                    Forgot or need to set a password?
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

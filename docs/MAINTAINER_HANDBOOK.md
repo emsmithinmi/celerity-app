@@ -151,7 +151,7 @@ This schema is structurally single-tenant. Making policies stricter alone is not
 
 - `AuthContext` initializes the stored session and subscribes to auth changes.
 - `ProtectedRoute` prevents unauthenticated access to application pages.
-- Login supports email magic links and Google OAuth.
+- Login supports email magic links, email/password sign-in, password reset, and Google OAuth. Passwords are managed by Supabase Auth and are never stored in the repository.
 - The Google login requests broad Calendar and Gmail scopes and writes provider tokens to `user_integrations` from the browser.
 - A development-only password sign-in is enabled when `VITE_DEV_EMAIL` and `VITE_DEV_PASSWORD` exist.
 
