@@ -203,10 +203,10 @@ Initial capability candidates are reading and writing daily data, writing Daily 
 
 ### Priority 1 — Security foundation
 
-- Model ownership for personal-data tables.
-- Add and verify owner-scoped RLS policies.
-- Remove unnecessary anonymous grants.
-- Add two-account isolation tests before claiming multi-user support.
+- Model ownership for personal-data tables. **In progress:** the ownership model and validated migration draft are in `docs/MULTI_USER_DATA_MODEL.md` and `supabase/migrations/20260815190000_multi_user_ownership.sql`.
+- Add and verify owner-scoped RLS policies. **In progress:** the draft replaces broad policies with owner-scoped authenticated policies.
+- Remove unnecessary anonymous grants. **In progress:** the draft revokes anonymous table privileges for personal data.
+- Add two-account isolation tests before claiming multi-user support. **Pending live migration and demo seed.**
 - Review OAuth CSRF/state handling and cache headers for private responses.
 
 ### Priority 1 — Quality foundation
