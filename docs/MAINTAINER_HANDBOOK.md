@@ -325,9 +325,9 @@ Current gaps:
 
 #### SEC-06: Supabase security advisor hardening
 
-**Status:** Database-side items complete. The live security advisor now reports only the Auth setting for leaked-password protection.
+**Status:** Complete. Database-side hardening is applied and leaked-password protection is enabled in the Supabase Auth provider settings.
 **Repair completed:** The internal `public.rls_auto_enable()` function is no longer callable through the Data API, and explicit `search_path` values are set on the three existing trigger/helper functions. The multi-user migration also replaced the broad personal-data policies with owner-scoped policies and removed anonymous table privileges.
-**Remaining work:** Enable leaked-password protection in the Supabase Auth project settings. This is a dashboard/project configuration change, not a repository migration.
+**Remaining work:** Refresh the Supabase advisor cache if it continues to display the previous warning; the Auth provider screen now shows the protection enabled.
 
 #### BUG-05: Reference-data providers can load before authentication and never recover
 
