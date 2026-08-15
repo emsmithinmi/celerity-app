@@ -4,16 +4,17 @@ import { supabase } from '../lib/supabase'
 
 export default function AuthCallback() {
   const navigate = useNavigate()
-  const [error, setError] = useState(null)
+  const [error, setError] = useState(() => {
+    const params = new URLSearchParams(window.location.search)
+    return params.get('error_description') || params.get('error') || null
+  })
 
   useEffect(() => {
     // Check for OAuth errors in the URL
     const params = new URLSearchParams(window.location.search)
     const errorParam = params.get('error')
-    const errorDescription = params.get('error_description')
 
     if (errorParam) {
-      setError(errorDescription || errorParam)
       return
     }
 
@@ -49,7 +50,6 @@ export default function AuthCallback() {
       clearTimeout(timeout)
     }
 
-    handleCallback()
   }, [navigate])
 
   if (error) {

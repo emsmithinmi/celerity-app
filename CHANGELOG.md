@@ -7,6 +7,11 @@ All notable changes to Focus Flow are recorded here.
 ## 2026-08-15
 
 ### Fixed
+- **Auth callback no longer contains unreachable broken code** — removed the stray undefined callback invocation after the Supabase session listener cleanup.
+- **Auth callback errors initialize without an effect-time state update**, and the authentication hook now lives in its own module so Fast Refresh can track the provider cleanly.
+- **Private Supabase responses are no longer runtime-cached** — the PWA no longer caches authenticated REST responses, and the legacy private cache is purged on startup and sign-out.
+- **Google refresh tokens are preserved** — session-token persistence no longer replaces an existing refresh token with `null`, and persistence failures are logged.
+- **Production dependency audit is clean** — the lockfile now resolves patched React Router, Vite, and Babel versions; the audit reports zero vulnerabilities. A clean local reinstall remains pending because Windows held a native dependency open.
 - **Stalled projects can now be completed** — when the last Next Action is finished, the project may become stale/stalled, but its project page now keeps the `All Done` action available so finished work is not trapped in the stale state.
 - **Reference data now waits for authentication** — Areas, Priorities, Energy Levels, and Context Tags no longer query Supabase before the authenticated application shell is ready, preventing startup permission errors and empty taxonomy data.
 

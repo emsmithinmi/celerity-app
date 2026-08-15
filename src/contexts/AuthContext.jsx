@@ -1,12 +1,13 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-
-const AuthContext = createContext(null)
+import { AuthContext } from './AuthContextValue'
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(undefined) // undefined = loading, null = logged out
 
   useEffect(() => {
+    clearPrivateCaches()
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
@@ -26,6 +27,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   const signOut = async () => {
+    await clearPrivateCaches()
     await supabase.auth.signOut()
   }
 
@@ -44,20 +46,24 @@ async function saveGoogleTokens(session) {
   const providerRefreshToken = session?.provider_refresh_token
   if (!providerToken) return // not a Google OAuth session
 
-  await supabase.from('user_integrations').upsert(
-    {
-      user_id: session.user.id,
-      provider: 'google',
-      access_token: providerToken,
-      refresh_token: providerRefreshToken ?? null,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'user_id,provider' }
-  )
+  const payload = {
+    user_id: session.user.id,
+    provider: 'google',
+    access_token: providerToken,
+    updated_at: new Date().toISOString(),
+  }
+  if (providerRefreshToken) payload.refresh_token = providerRefreshToken
+
+  const { error } = await supabase.from('user_integrations').upsert(payload, { onConflict: 'user_id,provider' })
+  if (error) console.error('Unable to save Google integration tokens:', error)
 }
 
-export function useAuth() {
-  const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider')
-  return ctx
+async function clearPrivateCaches() {
+  if (!('caches' in window)) return
+  const cacheNames = await caches.keys()
+  await Promise.all(
+    cacheNames
+      .filter(name => name === 'supabase-api')
+      .map(name => caches.delete(name))
+  )
 }

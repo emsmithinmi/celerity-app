@@ -3,7 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 import {
   Pin, PinOff, LayoutDashboard, FolderKanban, Zap, Users, Target, Settings, LogOut,
 } from 'lucide-react'
-import { useAuth } from '../../contexts/AuthContext'
+import { useAuth } from '../../contexts/useAuth'
 import AvatarCircle from '../ui/AvatarCircle'
 import { uploadUserAvatar } from '../../lib/api/user'
 

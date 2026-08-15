@@ -277,10 +277,10 @@ Current gaps:
 
 #### BUG-01: The Supabase auth callback calls an undefined function
 
-**Status:** Confirmed by source and ESLint.
+**Status:** Fixed in the current frontend branch; the callback now relies on the Supabase session listener and existing-session check without unreachable code.
 **Location:** `src/pages/AuthCallback.jsx:52`
 **Impact:** The effect executes `handleCallback()` after a `return` statement, even though no such function exists. ESLint reports both `no-undef` and unreachable code. Depending on callback timing, users can see an error or fail to navigate cleanly. The thrown error also prevents React from registering the effect cleanup.
-**Repair:** Remove the stray call, handle `getSession()` errors, and add callback tests for success, denial, existing session, and timeout.
+**Remaining work:** Handle `getSession()` errors explicitly and add callback tests for success, denial, existing session, and timeout.
 
 #### SEC-03: Additional-account OAuth has no CSRF `state` protection
 
@@ -312,16 +312,16 @@ Current gaps:
 
 #### SEC-04: The PWA caches authenticated Supabase REST responses across sessions
 
-**Status:** Confirmed configuration risk.
+**Status:** Frontend mitigation applied: authenticated Supabase REST responses are no longer runtime-cached, and the legacy cache is purged on startup/sign-out.
 **Location:** `vite.config.js:47-60`
 **Impact:** Workbox stores up to 50 Supabase REST responses for five minutes under one cache name. Responses can contain tasks, people, notes, or other private data. Cache entries are not partitioned by user or cleared on sign-out, so another account on the same browser could receive the previous user's cached response during a timeout/offline fallback. Sensitive data also persists in Cache Storage after logout.
-**Repair:** Do not runtime-cache authenticated Data API responses unless an explicit encrypted offline-data design is adopted. At minimum, restrict caching to known non-sensitive public GETs, partition by user, and purge on sign-out.
+**Remaining work:** Verify the deployed service worker has replaced older versions and confirm private Cache Storage is empty after an upgrade and sign-out.
 
 #### SEC-05: Vite 8.0.12/8.0.14 is affected by a high-severity development-server path disclosure advisory
 
-**Status:** Confirmed by `npm audit`.
+**Status:** The committed lockfile is updated to patched dependency versions and `npm audit --omit=dev` reports zero vulnerabilities. The current local `node_modules` tree could not be replaced because Windows held a native Vite binding open during `npm ci`.
 **Impact:** The installed Vite range is affected by a Windows `server.fs.deny` bypass; another Vite/launch-editor issue can disclose an NTLMv2 hash through UNC handling. These primarily affect development servers, especially when exposed to a network. A low-severity Babel source-map arbitrary-file-read advisory is also present.
-**Repair:** Update the lockfile to patched Vite and Babel versions, run build/lint/audit, and avoid exposing the Vite development server to untrusted networks.
+**Remaining work:** Complete a clean `npm ci` after the locked local process/file handle is released, rerun the build, and avoid exposing the Vite development server to untrusted networks.
 
 #### SEC-06: Supabase security advisor reports additional live hardening gaps
 
@@ -336,10 +336,10 @@ Current gaps:
 
 #### BUG-05: Reference-data providers can load before authentication and never recover
 
-**Status:** Confirmed architectural race.
+**Status:** Fixed in the current frontend branch; reference providers now mount inside the authenticated application shell.
 **Locations:** `src/App.jsx:28-60` and the four reference contexts
 **Impact:** Energy, priority, area, and context providers mount outside `ProtectedRoute` and query immediately. On a fresh OAuth callback or logged-out visit, some queries run as `anon`, fail, set loading false, and do not automatically retry after sign-in because the providers stay mounted. Lists and badges may remain empty until a full reload.
-**Repair:** Mount authenticated data providers inside the protected application shell, or make them depend on auth readiness and reload when the user/session changes.
+**Remaining work:** Add an automated auth/provider regression test and verify the deployed app after the next release.
 
 ### P2 — maintenance and data-integrity work
 
@@ -374,9 +374,9 @@ Current gaps:
 
 #### BUG-07: Session events can overwrite a stored Google refresh token with `null`
 
-**Location:** `src/contexts/AuthContext.jsx:42-56`
+**Location:** `src/contexts/AuthContext.jsx`
 **Impact:** `saveGoogleTokens()` upserts `refresh_token: null` whenever a provider access token exists but a refresh token is absent. Providers commonly omit a refresh token outside the initial consent exchange, so a valid stored token may be erased. Errors are ignored.
-**Repair:** Update `refresh_token` only when a new non-empty value is present, and log/surface failed persistence safely.
+**Status:** Fixed in the current frontend branch: refresh tokens are only included when a new non-empty value is present, and persistence failures are logged.
 
 #### BUG-08: Daily and Google failures are deliberately hidden
 

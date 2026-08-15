@@ -44,21 +44,6 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,ico,woff2}'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/rest\//, /^\/auth\//],
-        runtimeCaching: [
-          {
-            // Supabase REST: always hit the network for live data; fall back to
-            // cache only when offline. NetworkFirst (not StaleWhileRevalidate)
-            // so a save is reflected on the next read instead of needing a
-            // double refresh. networkTimeoutSeconds keeps offline graceful.
-            urlPattern: /https:\/\/.*\.supabase\.co\/rest\/.*/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'supabase-api',
-              networkTimeoutSeconds: 5,
-              expiration: { maxEntries: 50, maxAgeSeconds: 300 },
-            },
-          },
-        ],
       },
     }),
   ],
