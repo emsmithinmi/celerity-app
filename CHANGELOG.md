@@ -4,6 +4,11 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-08-15
+
+### Changed
+- **Repository cleanup and backup mirror** — removed rebuildable local `node_modules` and `dist` folders, moved historical/reference-only material to the labeled outer temporary archive, consolidated the project README and maintainer guidance, and added a tracked archive manifest. The verified `main` commit is mirrored to the homelab backup repository while GitHub remains the Cloudflare release source.
+
 ## 2026-07-19
 
 ### Fixed

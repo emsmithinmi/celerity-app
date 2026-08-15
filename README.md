@@ -1,26 +1,73 @@
-# React + Vite
+# Focus Flow
 
-## Project layout and deployment boundary
+Focus Flow is a personal Getting Things Done (GTD) productivity PWA for
+capturing, clarifying, organizing, scheduling, and executing tasks, projects,
+habits, and people follow-up.
 
-The outer PARA project container is `Focus Flow App`, with three sibling folders:
+The application is intentionally deterministic. Reviews, coaching, synthesis,
+and knowledge-management work belong in external tools rather than inside the
+app.
 
-- `Project Repository` contains the complete Focus Flow application repository and its Git history.
-- `Support Files` is reserved for project support material.
-- `Artifacts` is reserved for generated or exported artifacts.
+## Stack
 
-GitHub remains the repository's `origin` because Cloudflare automatically deploys Focus Flow from GitHub. Any server-canonical or mirror arrangement is deferred and must not alter this GitHub deployment channel without an explicit later plan.
+- React and JSX with Vite
+- Tailwind CSS
+- Supabase Postgres, Auth, Storage, and Edge Functions
+- Google OAuth, Calendar, and Gmail integrations
+- Cloudflare Pages deployment through GitHub Actions
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Repository layout
 
-Currently, two official plugins are available:
+- `src/` — frontend application, route pages, components, contexts, hooks, and API helpers
+- `supabase/functions/` — authenticated Google integration functions
+- `public/` — static assets and SPA routing configuration
+- `.github/workflows/` — build and Cloudflare deployment workflow
+- `PROJECT.md` — product direction, architecture, invariants, and source-of-truth hierarchy
+- `AGENTS.md` — concise maintainer instructions
+- `docs/MAINTAINER_HANDBOOK.md` — detailed operational and security review
+- `CHANGELOG.md` — human-readable implementation history
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Historical or reference-only files moved during cleanup are preserved outside
+the repository in `Support Files/Temporary Archive - Review Before Deletion/`.
+See `docs/temporary-archive-manifest.md` before deleting that archive.
 
-## React Compiler
+## Local development
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Environment values belong in the ignored `.env.local` file. Never commit
+passwords, API keys, OAuth tokens, or service-role credentials.
 
-## Expanding the ESLint configuration
+```text
+npm install
+npm run dev
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Validation commands:
+
+```text
+npm run build
+npm run lint
+```
+
+There is currently no automated test suite. The production build is the minimum
+required check for maintenance work; run lint and a targeted browser check when
+the change affects behavior.
+
+## Git and deployment
+
+GitHub `main` is the canonical release path because pushes trigger the
+Cloudflare Pages deployment. The homelab bare repository is a backup remote;
+it is not the deployment source.
+
+For completed changes:
+
+1. Update `CHANGELOG.md`.
+2. Review the staged file list for secrets and unrelated files.
+3. Commit intentionally.
+4. Push the same commit to GitHub `origin/main` and the homelab `server-backup/main`.
+5. Verify the local, GitHub, and server refs and report what was actually deployed.
+
+## Current product boundary
+
+Do not reintroduce in-app AI, Reviews, or a general Notes/knowledge-management
+system without an explicit product decision. Read `PROJECT.md` and the
+relevant code before changing behavior.
