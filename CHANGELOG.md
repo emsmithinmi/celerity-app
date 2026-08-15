@@ -10,6 +10,8 @@ All notable changes to Focus Flow are recorded here.
 - **Stalled projects can now be completed** — when the last Next Action is finished, the project may become stale/stalled, but its project page now keeps the `All Done` action available so finished work is not trapped in the stale state.
 
 ### Changed
+- **Local setup is now self-describing** — added a safe `.env.example` with the known Supabase project URL and explicit placeholders for local-only credentials, and documented the copy-and-fill workflow without placing secrets in Git.
+
 - **Repository cleanup and backup mirror** — removed rebuildable local `node_modules` and `dist` folders, moved historical/reference-only material to the labeled outer temporary archive, consolidated the project README and maintainer guidance, and added a tracked archive manifest. The verified `main` commit is mirrored to the homelab backup repository while GitHub remains the Cloudflare release source.
 
 ## 2026-07-19

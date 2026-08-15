@@ -175,10 +175,11 @@ The manual flow lacks a `state` nonce and validation. It also asks only for read
 
 ### Required frontend environment variables
 
-Create `.env.local` in the repository root:
+Copy `.env.example` to `.env.local` in the repository root, then fill in the
+local Supabase publishable/anon key:
 
 ```dotenv
-VITE_SUPABASE_URL=https://<project-ref>.supabase.co
+VITE_SUPABASE_URL=https://egxbhglczkslnskxorlf.supabase.co
 VITE_SUPABASE_ANON_KEY=<publishable-or-legacy-anon-key>
 ```
 

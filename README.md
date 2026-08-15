@@ -33,8 +33,17 @@ See `docs/temporary-archive-manifest.md` before deleting that archive.
 
 ## Local development
 
-Environment values belong in the ignored `.env.local` file. Never commit
-passwords, API keys, OAuth tokens, or service-role credentials.
+Environment values belong in the ignored `.env.local` file. Start from
+`.env.example`, then fill in the Supabase publishable/anon key. The repository
+does not contain real credentials, and none should be added to Git.
+
+```text
+Copy-Item .env.example .env.local
+```
+
+The optional `VITE_DEV_EMAIL` and `VITE_DEV_PASSWORD` values enable the
+development-only auto-login path. Use a dedicated development account or leave
+them blank and use the normal login page.
 
 ```text
 npm install
