@@ -14,9 +14,9 @@ declare
   demo_task_waiting_id uuid := '10000000-0000-4000-8000-000000000004';
   demo_task_done_id uuid := '10000000-0000-4000-8000-000000000005';
 begin
-  select id into demo_id from auth.users where lower(email) = 'claude-dev@focusflow.dev' limit 1;
+  select id into demo_id from auth.users where lower(email) = 'e-under-electric-sky@proton.me' limit 1;
   if demo_id is null then
-    raise exception 'Demo account claude-dev@focusflow.dev was not found';
+    raise exception 'Demo account e-under-electric-sky@proton.me was not found';
   end if;
 
   perform private.seed_user_defaults(demo_id);
