@@ -9,9 +9,30 @@ export function AuthProvider({ children }) {
     clearPrivateCaches()
 
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+      if (error) {
+        await clearInvalidSession()
+        setSession(null)
+        return
+      }
+      if (session) {
+        const { error: userError } = await supabase.auth.getUser()
+        if (userError && isRecoverableSessionError(userError)) {
+          await clearInvalidSession()
+          setSession(null)
+          return
+        }
+      }
       setSession(session)
       if (session) saveGoogleTokens(session)
+    }).catch(async (error) => {
+      if (isRecoverableSessionError(error)) {
+        await clearInvalidSession()
+        setSession(null)
+      } else {
+        console.error('Unable to restore the saved session:', error)
+        setSession(null)
+      }
     })
 
     // Listen for auth changes (magic link clicks, logouts, Google OAuth callbacks, etc.)
@@ -36,6 +57,21 @@ export function AuthProvider({ children }) {
       {children}
     </AuthContext.Provider>
   )
+}
+
+function isRecoverableSessionError(error) {
+  const message = error?.message ?? ''
+  return /jwt issued at future|invalid jwt|jwt expired|refresh token/i.test(message)
+}
+
+async function clearInvalidSession() {
+  // A local sign-out removes the browser's stale token without depending on
+  // that token being accepted by the Auth server.
+  try {
+    await supabase.auth.signOut({ scope: 'local' })
+  } catch {
+    // The session is still cleared locally by supabase-js in normal operation.
+  }
 }
 
 // When a user signs in with Google, Supabase surfaces the provider tokens
