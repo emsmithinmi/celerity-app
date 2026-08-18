@@ -1,0 +1,4 @@
+project_id = "egxbhglczkslnskxorlf"
+
+[functions.focus-flow-agent]
+verify_jwt = true
