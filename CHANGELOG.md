@@ -4,6 +4,11 @@ All notable changes to Focus Flow are recorded here.
 
 ---
 
+## 2026-08-19
+
+### Added
+- **Read-only Focus Flow agent gateway** — added the authenticated `focus-flow-agent` Supabase Edge Function with bounded read-only queries for tasks, projects, waiting tasks, and people. Requests require a valid user session and continue to use the caller's RLS-scoped Supabase client; no service-role credentials or write actions are exposed.
+
 ## 2026-08-15
 
 ### Fixed
