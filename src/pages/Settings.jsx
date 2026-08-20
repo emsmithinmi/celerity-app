@@ -14,6 +14,7 @@ import { createArea,       updateArea,       deleteArea       } from '../lib/api
 import { createContextTag, updateContextTag, deleteContextTag } from '../lib/api/contextTags'
 import { useTheme } from '../contexts/ThemeContext'
 import { useSortableList } from '../hooks/useSortableList'
+import HermesConnectionSection from '../components/settings/HermesConnectionSection'
 
 // Drag handle — wraps GripVertical with draggable + cursor:grab. Set on the
 // element you want the user to grab to start a drag; the surrounding row
@@ -1060,6 +1061,8 @@ export default function Settings() {
         </div>
         <GoogleAccountsSection />
       </section>
+
+      <HermesConnectionSection />
     </div>
   )
 }
